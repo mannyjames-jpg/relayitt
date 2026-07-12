@@ -138,26 +138,37 @@ function Dashboard() {
             count={groups.waitingGroups.reduce((n, g) => n + g.tasks.length, 0)}
           >
             <div className="space-y-3">
-              {groups.waitingGroups.map((g) => (
-                <div key={g.label}>
-                  <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">
-                    {g.label}
+              {groups.waitingGroups.map((g) => {
+                const contact = g.contactId
+                  ? contacts.find((c) => c.id === g.contactId)
+                  : null;
+                const label = contact
+                  ? contact.role
+                    ? `${contact.name} (${contact.role})`
+                    : contact.name
+                  : g.name || "Unassigned";
+                return (
+                  <div key={g.key}>
+                    <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">
+                      {label}
+                    </div>
+                    <div className="rounded-lg border border-border bg-card">
+                      {g.tasks.map((t) => (
+                        <TaskRow
+                          key={t.id}
+                          task={t}
+                          contacts={contacts}
+                          showWaitingBadge
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="rounded-lg border border-border bg-card">
-                    {g.tasks.map((t) => (
-                      <TaskRow
-                        key={t.id}
-                        task={t}
-                        contacts={contacts}
-                        showWaitingBadge
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Section>
         )}
+
 
         {groups.upcoming.length > 0 && (
           <Section title="Upcoming" count={groups.upcoming.reduce((n, g) => n + g.tasks.length, 0)}>
