@@ -144,7 +144,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_google_connected: { Args: never; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       task_source: "From Boss" | "Delegated by Me" | "Personal Reminder"
