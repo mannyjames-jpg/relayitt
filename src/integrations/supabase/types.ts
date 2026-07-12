@@ -14,16 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      google_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          refresh_token: string
+          scope: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          refresh_token: string
+          scope?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          refresh_token?: string
+          scope?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          assigned_to_name: string | null
+          calendar_event_id: string | null
+          completed_at: string | null
+          created_at: string
+          due_date: string | null
+          due_time: string | null
+          id: string
+          last_followup_at: string | null
+          notes: string | null
+          source: Database["public"]["Enums"]["task_source"]
+          status: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          calendar_event_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          due_time?: string | null
+          id?: string
+          last_followup_at?: string | null
+          notes?: string | null
+          source?: Database["public"]["Enums"]["task_source"]
+          status?: Database["public"]["Enums"]["task_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          calendar_event_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string | null
+          due_time?: string | null
+          id?: string
+          last_followup_at?: string | null
+          notes?: string | null
+          source?: Database["public"]["Enums"]["task_source"]
+          status?: Database["public"]["Enums"]["task_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_google_connected: { Args: never; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      task_source: "From Boss" | "Delegated by Me" | "Personal Reminder"
+      task_status: "Not Started" | "In Progress" | "Waiting on Someone" | "Done"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +275,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      task_source: ["From Boss", "Delegated by Me", "Personal Reminder"],
+      task_status: ["Not Started", "In Progress", "Waiting on Someone", "Done"],
+    },
   },
 } as const
