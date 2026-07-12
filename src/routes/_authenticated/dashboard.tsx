@@ -294,38 +294,31 @@ function groupTasks(tasks: Task[], today: string) {
       ),
     }));
 
-  // Group waiting by assignee
-  const wMap = new Map<string, Task[]>();
+  type WaitingGroup = {
+    key: string;
+    contactId: string | null;
+    name: string | null;
+    tasks: Task[];
+  };
+  const combined = new Map<string, WaitingGroup>();
   for (const t of waiting) {
-    const key = t.assigned_to_name || "Unassigned";
-    const arr = wMap.get(key) ?? [];
-    arr.push(t);
-    wMap.set(key, arr);
-  }
-  // Fill in real contact names via assigned_to when we regroup at render time is fine, but we've kept assigned_to_name null for contact-based.
-  // Group by contact id too — use assigned_to as a secondary key.
-  const waitingGroups: { label: string; tasks: Task[] }[] = [];
-  const byContact = new Map<string | null, Task[]>();
-  for (const t of waiting) {
-    const k = t.assigned_to;
-    const arr = byContact.get(k) ?? [];
-    arr.push(t);
-    byContact.set(k, arr);
-  }
-  // We'll return raw grouping; the label lookup happens at render — but simpler: recompute in caller.
-  // For now, group by whichever identifier is present:
-  const combined = new Map<string, Task[]>();
-  for (const t of waiting) {
-    const label = t.assigned_to
-      ? `contact:${t.assigned_to}`
+    const key = t.assigned_to
+      ? `c:${t.assigned_to}`
       : t.assigned_to_name
-        ? `name:${t.assigned_to_name}`
-        : "Unassigned";
-    const arr = combined.get(label) ?? [];
-    arr.push(t);
-    combined.set(label, arr);
+        ? `n:${t.assigned_to_name.toLowerCase()}`
+        : "unassigned";
+    const existing = combined.get(key);
+    if (existing) existing.tasks.push(t);
+    else
+      combined.set(key, {
+        key,
+        contactId: t.assigned_to,
+        name: t.assigned_to_name,
+        tasks: [t],
+      });
   }
-  for (const [label, tasks] of combined) waitingGroups.push({ label, tasks });
+  const waitingGroups: WaitingGroup[] = [...combined.values()];
 
   return { overdue, today: todays, upcoming, someday, waitingGroups };
 }
+
