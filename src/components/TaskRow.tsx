@@ -367,10 +367,9 @@ export function TaskRow({
               size="sm"
               variant="ghost"
               className="h-8 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-              onClick={async () => {
-                setNudgeFlash(true);
-                setTimeout(() => setNudgeFlash(false), 700);
-                await nudgeM.mutateAsync({ data: { id: task.id } });
+              onClick={() => {
+                setRemindDays(2);
+                setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "reminder");
               }}
               aria-label="Mark nudge sent"
             >
