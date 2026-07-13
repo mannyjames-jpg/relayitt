@@ -9,6 +9,7 @@ import {
   Clock,
   MessageCircleQuestion,
   Play,
+  PlayCircle,
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,7 +25,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { deleteTask, nudgeTask, updateTask } from "@/lib/tasks.functions";
+import {
+  deleteTask,
+  getVoiceNoteUrl,
+  nudgeTask,
+  updateTask,
+} from "@/lib/tasks.functions";
 import { formatTime, daysSince } from "@/lib/date-utils";
 import type { ContactOption } from "./AssigneeCombobox";
 import { AssigneeCombobox } from "./AssigneeCombobox";
@@ -35,12 +41,51 @@ export type Task = {
   notes: string | null;
   source: "From Boss" | "Delegated by Me" | "Personal Reminder";
   status: "Not Started" | "In Progress" | "Waiting on Someone" | "Done";
+  category:
+    | "Travel"
+    | "Household"
+    | "Scheduling"
+    | "Errands"
+    | "Gifts/Events"
+    | "Finance"
+    | "Vendors"
+    | "Other"
+    | null;
+  priority: "Normal" | "Important" | "Urgent";
   assigned_to: string | null;
   assigned_to_name: string | null;
+  delegated_to_contact_id?: string | null;
   due_date: string | null;
   due_time: string | null;
   last_followup_at: string | null;
+  source_type?: "Typed" | "Voice";
+  voice_note_url?: string | null;
+  raw_transcript?: string | null;
   created_at: string;
+};
+
+type Category = NonNullable<Task["category"]>;
+
+const CATEGORIES: Category[] = [
+  "Travel",
+  "Household",
+  "Scheduling",
+  "Errands",
+  "Gifts/Events",
+  "Finance",
+  "Vendors",
+  "Other",
+];
+
+const CATEGORY_PILL: Record<Category, string> = {
+  Travel: "pill-cat-travel",
+  Household: "pill-cat-household",
+  Scheduling: "pill-cat-scheduling",
+  Errands: "pill-cat-errands",
+  "Gifts/Events": "pill-cat-gifts",
+  Finance: "pill-cat-finance",
+  Vendors: "pill-cat-vendors",
+  Other: "pill-cat-other",
 };
 
 const STATUS_ICON: Record<Task["status"], React.ReactNode> = {
@@ -65,6 +110,7 @@ export function TaskRow({
   const update = useServerFn(updateTask);
   const del = useServerFn(deleteTask);
   const nudge = useServerFn(nudgeTask);
+  const getVoice = useServerFn(getVoiceNoteUrl);
 
   const [expanded, setExpanded] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -77,6 +123,8 @@ export function TaskRow({
   const [dueTime, setDueTime] = useState(task.due_time?.slice(0, 5) ?? "");
   const [contactId, setContactId] = useState<string | null>(task.assigned_to);
   const [freeText, setFreeText] = useState(task.assigned_to_name ?? "");
+  const [category, setCategory] = useState<Category | null>(task.category);
+  const [priority, setPriority] = useState<Task["priority"]>(task.priority);
 
   useEffect(() => {
     setTitle(task.title);
@@ -86,6 +134,8 @@ export function TaskRow({
     setDueTime(task.due_time?.slice(0, 5) ?? "");
     setContactId(task.assigned_to);
     setFreeText(task.assigned_to_name ?? "");
+    setCategory(task.category);
+    setPriority(task.priority);
   }, [task]);
 
   const updateM = useMutation({
@@ -104,6 +154,8 @@ export function TaskRow({
   const assignee =
     contacts.find((c) => c.id === task.assigned_to)?.name ??
     task.assigned_to_name;
+
+  const isUrgent = task.priority === "Urgent";
 
   async function toggleDone() {
     setCompleting(true);
@@ -135,6 +187,8 @@ export function TaskRow({
               title: snapshot.title,
               source: snapshot.source,
               notes: snapshot.notes,
+              category: snapshot.category,
+              priority: snapshot.priority,
               assigned_to: snapshot.assigned_to,
               assigned_to_name: snapshot.assigned_to_name,
               due_date: snapshot.due_date,
@@ -154,6 +208,8 @@ export function TaskRow({
         title: title.trim() || task.title,
         notes: notes || null,
         status,
+        category,
+        priority,
         assigned_to: contactId,
         assigned_to_name: contactId ? null : freeText.trim() || null,
         due_date: dueDate || null,
@@ -161,6 +217,17 @@ export function TaskRow({
       },
     });
     setExpanded(false);
+  }
+
+  async function playOriginal() {
+    if (!task.voice_note_url) return;
+    try {
+      const res = await getVoice({ data: { path: task.voice_note_url } });
+      const audio = new Audio(res.url);
+      void audio.play();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't play audio");
+    }
   }
 
   const waitDays = daysSince(task.last_followup_at ?? task.created_at);
@@ -187,14 +254,42 @@ export function TaskRow({
           onClick={() => setExpanded((v) => !v)}
           className="flex-1 text-left min-w-0"
         >
-          <div className="text-[15px] leading-snug text-foreground">
-            {task.title}
+          <div className="flex items-center gap-2">
+            {isUrgent && (
+              <span
+                aria-label="Urgent"
+                className="inline-block h-2 w-2 shrink-0 rounded-full bg-primary"
+              />
+            )}
+            <div
+              className={cn(
+                "text-[15px] leading-snug text-foreground",
+                isUrgent && "font-semibold",
+              )}
+            >
+              {task.title}
+            </div>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               {STATUS_ICON[status]}
               <span>{status}</span>
             </span>
+            {task.category && (
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
+                  CATEGORY_PILL[task.category],
+                )}
+              >
+                {task.category}
+              </span>
+            )}
+            {task.priority === "Important" && (
+              <span className="inline-flex items-center rounded-full bg-rose/20 px-2 py-0.5 text-[11px] font-medium text-rose-foreground">
+                Important
+              </span>
+            )}
             {task.due_date && (
               <span className="inline-flex items-center gap-1">
                 <CalIcon className="h-3.5 w-3.5" />
@@ -268,7 +363,7 @@ export function TaskRow({
       </div>
 
       {expanded && (
-        <div className="px-3 pb-4 space-y-3 bg-secondary/40 border-t border-border">
+        <div className="px-3 pb-4 space-y-3 bg-surface border-t border-border">
           <div className="pt-3">
             <Label htmlFor={`t-${task.id}`} className="text-xs">
               Title
@@ -292,6 +387,45 @@ export function TaskRow({
               className="mt-1"
               rows={3}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Category</Label>
+              <Select
+                value={category ?? "__none"}
+                onValueChange={(v) =>
+                  setCategory(v === "__none" ? null : (v as Category))
+                }
+              >
+                <SelectTrigger className="mt-1 h-10">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">None</SelectItem>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Priority</Label>
+              <Select
+                value={priority}
+                onValueChange={(v) => setPriority(v as Task["priority"])}
+              >
+                <SelectTrigger className="mt-1 h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Important">Important</SelectItem>
+                  <SelectItem value="Urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -337,6 +471,32 @@ export function TaskRow({
               />
             </div>
           </div>
+
+          {task.source_type === "Voice" && (
+            <div className="rounded-md bg-secondary/70 px-3 py-2 text-xs text-muted-foreground space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-foreground/80">
+                  From voice note
+                </span>
+                {task.voice_note_url && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 gap-1"
+                    onClick={playOriginal}
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    Play original
+                  </Button>
+                )}
+              </div>
+              {task.raw_transcript && (
+                <p className="italic">"{task.raw_transcript}"</p>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center justify-between pt-1">
             <Button
               type="button"
