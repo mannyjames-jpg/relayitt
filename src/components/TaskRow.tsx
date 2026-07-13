@@ -326,10 +326,13 @@ export function TaskRow({
                   waitDays >= 3
                     ? "bg-primary/15 text-primary font-medium"
                     : "bg-secondary text-muted-foreground",
+                  followupOverdue && "ring-2 ring-primary/60 ring-offset-1 ring-offset-background",
                   nudgeFlash && "animate-flash",
                 )}
+                title={followupOverdue ? "Your follow-up reminder is past due" : undefined}
               >
                 waiting {waitDays}d
+                {followupOverdue && <span className="ml-0.5">!</span>}
               </span>
             )}
           </div>
