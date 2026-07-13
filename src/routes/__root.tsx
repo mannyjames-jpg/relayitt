@@ -89,10 +89,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "Capture tasks, delegate to your team, and track what you're waiting on.",
+          "Capture tasks, delegate to your team, and track what you're waiting on — built for one busy personal assistant.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Relay — Personal Assistant Tasks" },
+      { name: "twitter:description", content: "Capture tasks, delegate to your team, and track what you're waiting on — built for one busy personal assistant." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/42cc4f54-c3dd-4d19-8063-48867836ca3b" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/42cc4f54-c3dd-4d19-8063-48867836ca3b" },
     ],
 
     links: [
