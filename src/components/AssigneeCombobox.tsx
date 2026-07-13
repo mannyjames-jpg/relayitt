@@ -12,7 +12,13 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
-export type ContactOption = { id: string; name: string; role?: string | null };
+export type ContactOption = {
+  id: string;
+  name: string;
+  role?: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
 
 interface Props {
   contacts: ContactOption[];
