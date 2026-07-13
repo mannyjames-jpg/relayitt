@@ -8,10 +8,24 @@ import {
   Circle,
   Clock,
   MessageCircleQuestion,
+  MessageSquare,
+  Phone,
   Play,
   PlayCircle,
   Trash2,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +72,7 @@ export type Task = {
   due_date: string | null;
   due_time: string | null;
   last_followup_at: string | null;
+  next_followup_reminder_at?: string | null;
   source_type?: "Typed" | "Voice";
   voice_note_url?: string | null;
   raw_transcript?: string | null;
