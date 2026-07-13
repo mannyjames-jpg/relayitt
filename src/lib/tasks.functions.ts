@@ -141,7 +141,9 @@ export const updateTask = createServerFn({ method: "POST" })
     }
     if (patch.due_date === null) patch.due_time = null;
     // Keep delegated_to_contact_id in sync if source/assignee change.
-    const derived: Record<string, unknown> = { ...patch };
+    const derived = { ...patch } as typeof patch & {
+      delegated_to_contact_id?: string | null;
+    };
     if ("assigned_to" in patch || "source" in patch) {
       const src = patch.source;
       const contact = patch.assigned_to;
