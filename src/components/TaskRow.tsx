@@ -125,6 +125,8 @@ export function TaskRow({
   const [expanded, setExpanded] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [nudgeFlash, setNudgeFlash] = useState(false);
+  const [nudgeStep, setNudgeStep] = useState<null | "contact" | "reminder">(null);
+  const [remindDays, setRemindDays] = useState<number>(2);
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
