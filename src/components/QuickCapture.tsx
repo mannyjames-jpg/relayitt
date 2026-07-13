@@ -12,6 +12,7 @@ import { VoiceCapture } from "./VoiceCapture";
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
+export type FilterSource = Source | "All";
 
 const PRIORITIES = ["Normal", "Important", "Urgent"] as const;
 type Priority = (typeof PRIORITIES)[number];
@@ -27,7 +28,13 @@ const CATEGORIES = [
 ] as const;
 type Category = (typeof CATEGORIES)[number];
 
-export function QuickCapture() {
+export function QuickCapture({
+  filter,
+  onFilterChange,
+}: {
+  filter: FilterSource;
+  onFilterChange: (f: FilterSource) => void;
+}) {
   const qc = useQueryClient();
   const create = useServerFn(createTask);
   const createC = useServerFn(createContact);
