@@ -11,7 +11,8 @@ import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { todayISO } from "@/lib/date-utils";
 import { formatDateLabel } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
-import { QuickCapture } from "@/components/QuickCapture";
+import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
+import { useAuth } from "@/hooks/use-auth";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { toast } from "sonner";
 
