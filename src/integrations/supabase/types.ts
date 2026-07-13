@@ -82,57 +82,82 @@ export type Database = {
           assigned_to: string | null
           assigned_to_name: string | null
           calendar_event_id: string | null
+          category: Database["public"]["Enums"]["task_category"] | null
           completed_at: string | null
           created_at: string
+          delegated_to_contact_id: string | null
           due_date: string | null
           due_time: string | null
           id: string
           last_followup_at: string | null
           notes: string | null
+          priority: Database["public"]["Enums"]["task_priority"]
+          raw_transcript: string | null
           source: Database["public"]["Enums"]["task_source"]
+          source_type: Database["public"]["Enums"]["task_source_type"]
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
           user_id: string
+          voice_note_url: string | null
         }
         Insert: {
           assigned_to?: string | null
           assigned_to_name?: string | null
           calendar_event_id?: string | null
+          category?: Database["public"]["Enums"]["task_category"] | null
           completed_at?: string | null
           created_at?: string
+          delegated_to_contact_id?: string | null
           due_date?: string | null
           due_time?: string | null
           id?: string
           last_followup_at?: string | null
           notes?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          raw_transcript?: string | null
           source?: Database["public"]["Enums"]["task_source"]
+          source_type?: Database["public"]["Enums"]["task_source_type"]
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
           user_id: string
+          voice_note_url?: string | null
         }
         Update: {
           assigned_to?: string | null
           assigned_to_name?: string | null
           calendar_event_id?: string | null
+          category?: Database["public"]["Enums"]["task_category"] | null
           completed_at?: string | null
           created_at?: string
+          delegated_to_contact_id?: string | null
           due_date?: string | null
           due_time?: string | null
           id?: string
           last_followup_at?: string | null
           notes?: string | null
+          priority?: Database["public"]["Enums"]["task_priority"]
+          raw_transcript?: string | null
           source?: Database["public"]["Enums"]["task_source"]
+          source_type?: Database["public"]["Enums"]["task_source_type"]
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
           user_id?: string
+          voice_note_url?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "tasks_assigned_to_fkey"
             columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_delegated_to_contact_id_fkey"
+            columns: ["delegated_to_contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
             referencedColumns: ["id"]
@@ -147,7 +172,18 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      task_category:
+        | "Travel"
+        | "Household"
+        | "Scheduling"
+        | "Errands"
+        | "Gifts/Events"
+        | "Finance"
+        | "Vendors"
+        | "Other"
+      task_priority: "Normal" | "Important" | "Urgent"
       task_source: "From Boss" | "Delegated by Me" | "Personal Reminder"
+      task_source_type: "Typed" | "Voice"
       task_status: "Not Started" | "In Progress" | "Waiting on Someone" | "Done"
     }
     CompositeTypes: {
@@ -276,7 +312,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      task_category: [
+        "Travel",
+        "Household",
+        "Scheduling",
+        "Errands",
+        "Gifts/Events",
+        "Finance",
+        "Vendors",
+        "Other",
+      ],
+      task_priority: ["Normal", "Important", "Urgent"],
       task_source: ["From Boss", "Delegated by Me", "Personal Reminder"],
+      task_source_type: ["Typed", "Voice"],
       task_status: ["Not Started", "In Progress", "Waiting on Someone", "Done"],
     },
   },
