@@ -243,6 +243,10 @@ export function TaskRow({
   }
 
   const waitDays = daysSince(task.last_followup_at ?? task.created_at);
+  const followupOverdue =
+    !!task.next_followup_reminder_at &&
+    new Date(task.next_followup_reminder_at).getTime() < Date.now();
+  const nudgeContact = contacts.find((c) => c.id === task.assigned_to) ?? null;
 
   return (
     <div
