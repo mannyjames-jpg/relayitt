@@ -11,7 +11,8 @@ import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { todayISO } from "@/lib/date-utils";
 import { formatDateLabel } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
-import { QuickCapture } from "@/components/QuickCapture";
+import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
+import { useAuth } from "@/hooks/use-auth";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { toast } from "sonner";
 
@@ -55,7 +56,26 @@ function Dashboard() {
   }, [search.google, navigate]);
 
   const today = todayISO();
-  const groups = useMemo(() => groupTasks(tasks as Task[], today), [tasks, today]);
+  const { user } = useAuth();
+  const [filter, setFilter] = useState<FilterSource>("All");
+
+  const filteredTasks = useMemo(() => {
+    if (filter === "All") return tasks as Task[];
+    return (tasks as Task[]).filter((t) => t.source === filter);
+  }, [tasks, filter]);
+  const groups = useMemo(() => groupTasks(filteredTasks, today), [filteredTasks, today]);
+
+  const greetingName = useMemo(() => {
+    const raw =
+      (user?.user_metadata?.full_name as string | undefined) ??
+      (user?.user_metadata?.name as string | undefined) ??
+      user?.email?.split("@")[0] ??
+      "";
+    return raw.split(" ")[0] || "";
+  }, [user]);
+  const hour = new Date().getHours();
+  const partOfDay =
+    hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
 
   async function connectGoogle() {
     const res = await gUrl();
@@ -77,10 +97,12 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <QuickCapture />
+      <QuickCapture filter={filter} onFilterChange={setFilter} />
 
       <header className="mx-auto max-w-2xl px-4 pt-3 flex items-center justify-between">
-        <h1 className="font-display text-2xl">Relay</h1>
+        <h1 className="font-display text-2xl">
+          {greetingName ? `Good ${partOfDay}, ${greetingName}` : "Relay"}
+        </h1>
         <div className="flex items-center gap-1">
           {google && !google.connected && google.configured && (
             <Button

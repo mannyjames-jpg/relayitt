@@ -1,0 +1,1 @@
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS next_followup_reminder_at timestamp with time zone;

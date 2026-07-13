@@ -12,6 +12,7 @@ import { VoiceCapture } from "./VoiceCapture";
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
+export type FilterSource = Source | "All";
 
 const PRIORITIES = ["Normal", "Important", "Urgent"] as const;
 type Priority = (typeof PRIORITIES)[number];
@@ -27,7 +28,13 @@ const CATEGORIES = [
 ] as const;
 type Category = (typeof CATEGORIES)[number];
 
-export function QuickCapture() {
+export function QuickCapture({
+  filter,
+  onFilterChange,
+}: {
+  filter: FilterSource;
+  onFilterChange: (f: FilterSource) => void;
+}) {
   const qc = useQueryClient();
   const create = useServerFn(createTask);
   const createC = useServerFn(createContact);
@@ -46,6 +53,7 @@ export function QuickCapture() {
   const [category, setCategory] = useState<Category | null>(null);
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -114,6 +122,11 @@ export function QuickCapture() {
               ref={inputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => {
+                // Delay so pill taps register as source changes, not filter changes.
+                setTimeout(() => setFocused(false), 150);
+              }}
               placeholder="Add a task…"
               maxLength={200}
               className="h-11 pr-10"
@@ -136,30 +149,68 @@ export function QuickCapture() {
           </Button>
         </form>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {focused ? "Adding as:" : "Showing:"}
+          </span>
           <div
             role="tablist"
-            aria-label="Task source"
-            className="inline-flex rounded-md border border-border bg-secondary p-0.5 text-xs"
+            aria-label={focused ? "Task source" : "Filter tasks by source"}
+            className={cn(
+              "inline-flex rounded-md border border-border bg-secondary p-0.5 text-xs",
+              focused && "border-primary/40 bg-primary/5",
+            )}
           >
-            {SOURCES.map((s) => (
+            {!focused && (
               <button
-                key={s}
                 type="button"
                 role="tab"
-                aria-selected={source === s}
-                onClick={() => setSource(s)}
+                aria-selected={filter === "All"}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => onFilterChange("All")}
                 className={cn(
                   "px-2.5 py-1.5 rounded-sm transition-colors min-h-[32px]",
-                  source === s
+                  filter === "All"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {s === "From Boss" ? "Boss" : s === "Delegated by Me" ? "Delegated" : "Personal"}
+                All
               </button>
-            ))}
+            )}
+            {SOURCES.map((s) => {
+              const selected = focused ? source === s : filter === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onMouseDown={(e) => {
+                    // Prevent input blur when clicking so focus stays and we set source.
+                    if (focused) e.preventDefault();
+                  }}
+                  onClick={() => {
+                    if (focused) setSource(s);
+                    else onFilterChange(s);
+                  }}
+                  className={cn(
+                    "px-2.5 py-1.5 rounded-sm transition-colors min-h-[32px]",
+                    selected
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {s === "From Boss" ? "Boss" : s === "Delegated by Me" ? "Delegated" : "Personal"}
+                </button>
+              );
+            })}
           </div>
+        </div>
+
+        {focused && (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+
 
           {source === "Delegated by Me" && (
             <>
@@ -223,7 +274,9 @@ export function QuickCapture() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
+
 
         {savePrompt && (
           <div className="mt-2 flex items-center justify-between rounded-md bg-secondary px-3 py-2 text-sm">

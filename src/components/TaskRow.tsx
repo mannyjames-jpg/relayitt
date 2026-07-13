@@ -8,6 +8,8 @@ import {
   Circle,
   Clock,
   MessageCircleQuestion,
+  MessageSquare,
+  Phone,
   Play,
   PlayCircle,
   Trash2,
@@ -17,6 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -58,6 +67,7 @@ export type Task = {
   due_date: string | null;
   due_time: string | null;
   last_followup_at: string | null;
+  next_followup_reminder_at?: string | null;
   source_type?: "Typed" | "Voice";
   voice_note_url?: string | null;
   raw_transcript?: string | null;
@@ -115,6 +125,8 @@ export function TaskRow({
   const [expanded, setExpanded] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [nudgeFlash, setNudgeFlash] = useState(false);
+  const [nudgeStep, setNudgeStep] = useState<null | "contact" | "reminder">(null);
+  const [remindDays, setRemindDays] = useState<number>(2);
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
@@ -231,6 +243,10 @@ export function TaskRow({
   }
 
   const waitDays = daysSince(task.last_followup_at ?? task.created_at);
+  const followupOverdue =
+    !!task.next_followup_reminder_at &&
+    new Date(task.next_followup_reminder_at).getTime() < Date.now();
+  const nudgeContact = contacts.find((c) => c.id === task.assigned_to) ?? null;
 
   return (
     <div
@@ -310,10 +326,13 @@ export function TaskRow({
                   waitDays >= 3
                     ? "bg-primary/15 text-primary font-medium"
                     : "bg-secondary text-muted-foreground",
+                  followupOverdue && "ring-2 ring-primary/60 ring-offset-1 ring-offset-background",
                   nudgeFlash && "animate-flash",
                 )}
+                title={followupOverdue ? "Your follow-up reminder is past due" : undefined}
               >
                 waiting {waitDays}d
+                {followupOverdue && <span className="ml-0.5">!</span>}
               </span>
             )}
           </div>
@@ -348,10 +367,9 @@ export function TaskRow({
               size="sm"
               variant="ghost"
               className="h-8 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-              onClick={async () => {
-                setNudgeFlash(true);
-                setTimeout(() => setNudgeFlash(false), 700);
-                await nudgeM.mutateAsync({ data: { id: task.id } });
+              onClick={() => {
+                setRemindDays(2);
+                setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "reminder");
               }}
               aria-label="Mark nudge sent"
             >
@@ -524,6 +542,142 @@ export function TaskRow({
           </div>
         </div>
       )}
+
+      <Dialog
+        open={nudgeStep !== null}
+        onOpenChange={(o) => {
+          if (!o) setNudgeStep(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          {nudgeStep === "contact" && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display">
+                  Reach out to {nudgeContact?.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 py-1">
+                {nudgeContact?.phone ? (
+                  <>
+                    <Button
+                      asChild
+                      className="w-full justify-start h-11"
+                      variant="secondary"
+                      onClick={() => setNudgeStep("reminder")}
+                    >
+                      <a href={`tel:${nudgeContact.phone}`}>
+                        <Phone className="h-4 w-4 mr-2" />
+                        Call {nudgeContact.phone}
+                      </a>
+                    </Button>
+                    <Button
+                      asChild
+                      className="w-full justify-start h-11"
+                      variant="secondary"
+                      onClick={() => setNudgeStep("reminder")}
+                    >
+                      <a href={`sms:${nudgeContact.phone}`}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Text {nudgeContact.phone}
+                      </a>
+                    </Button>
+                  </>
+                ) : nudgeContact?.email ? (
+                  <Button
+                    asChild
+                    className="w-full justify-start h-11"
+                    variant="secondary"
+                    onClick={() => setNudgeStep("reminder")}
+                  >
+                    <a href={`mailto:${nudgeContact.email}`}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Email {nudgeContact.email}
+                    </a>
+                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No phone number saved for this contact.{" "}
+                    <a
+                      href={`/contacts/${nudgeContact?.id ?? ""}`}
+                      className="text-primary underline"
+                    >
+                      Add phone number
+                    </a>
+                  </p>
+                )}
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="ghost" onClick={() => setNudgeStep("reminder")}>
+                  Skip
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {nudgeStep === "reminder" && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display">
+                  Remind you again?
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-1">
+                <p className="text-sm text-muted-foreground">
+                  If there's no response, we'll flag this task again.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor={`rd-${task.id}`} className="text-sm">
+                    In
+                  </Label>
+                  <Input
+                    id={`rd-${task.id}`}
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={remindDays}
+                    onChange={(e) =>
+                      setRemindDays(
+                        Math.max(1, Math.min(60, Number(e.target.value) || 1)),
+                      )
+                    }
+                    className="h-10 w-20"
+                  />
+                  <span className="text-sm">days</span>
+                </div>
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={async () => {
+                    setNudgeStep(null);
+                    setNudgeFlash(true);
+                    setTimeout(() => setNudgeFlash(false), 700);
+                    await nudgeM.mutateAsync({
+                      data: { id: task.id, remind_in_days: null },
+                    });
+                  }}
+                >
+                  Skip reminder
+                </Button>
+                <Button
+                  onClick={async () => {
+                    setNudgeStep(null);
+                    setNudgeFlash(true);
+                    setTimeout(() => setNudgeFlash(false), 700);
+                    await nudgeM.mutateAsync({
+                      data: { id: task.id, remind_in_days: remindDays },
+                    });
+                  }}
+                >
+                  Remind in {remindDays}d
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

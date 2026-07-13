@@ -90,6 +90,7 @@ export type Database = {
           due_time: string | null
           id: string
           last_followup_at: string | null
+          next_followup_reminder_at: string | null
           notes: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           raw_transcript: string | null
@@ -113,6 +114,7 @@ export type Database = {
           due_time?: string | null
           id?: string
           last_followup_at?: string | null
+          next_followup_reminder_at?: string | null
           notes?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           raw_transcript?: string | null
@@ -136,6 +138,7 @@ export type Database = {
           due_time?: string | null
           id?: string
           last_followup_at?: string | null
+          next_followup_reminder_at?: string | null
           notes?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           raw_transcript?: string | null
