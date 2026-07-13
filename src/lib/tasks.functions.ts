@@ -4,6 +4,21 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const sourceEnum = z.enum(["From Boss", "Delegated by Me", "Personal Reminder"]);
 const statusEnum = z.enum(["Not Started", "In Progress", "Waiting on Someone", "Done"]);
+const categoryEnum = z.enum([
+  "Travel",
+  "Household",
+  "Scheduling",
+  "Errands",
+  "Gifts/Events",
+  "Finance",
+  "Vendors",
+  "Other",
+]);
+const priorityEnum = z.enum(["Normal", "Important", "Urgent"]);
+const sourceTypeEnum = z.enum(["Typed", "Voice"]);
+
+const TASK_COLUMNS =
+  "id,title,notes,source,status,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,created_at,updated_at";
 
 const uuid = z.string().uuid();
 const dateStr = z
@@ -23,9 +38,7 @@ export const listTasks = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("tasks")
-      .select(
-        "id,title,notes,source,status,assigned_to,assigned_to_name,due_date,due_time,last_followup_at,calendar_event_id,completed_at,created_at,updated_at",
-      )
+      .select(TASK_COLUMNS)
       .eq("user_id", userId)
       .neq("status", "Done")
       .order("created_at", { ascending: false });
@@ -39,7 +52,9 @@ export const listCompleted = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("tasks")
-      .select("id,title,source,status,assigned_to,assigned_to_name,completed_at,due_date,due_time")
+      .select(
+        "id,title,source,status,category,priority,assigned_to,assigned_to_name,completed_at,due_date,due_time,source_type",
+      )
       .eq("user_id", userId)
       .eq("status", "Done")
       .order("completed_at", { ascending: false })
@@ -52,10 +67,15 @@ const createInput = z.object({
   title: z.string().trim().min(1).max(200),
   source: sourceEnum.default("Personal Reminder"),
   notes: z.string().optional().nullable(),
+  category: categoryEnum.nullable().optional(),
+  priority: priorityEnum.optional(),
   assigned_to: uuid.nullable().optional(),
   assigned_to_name: z.string().max(100).nullable().optional(),
   due_date: dateStr,
   due_time: timeStr,
+  source_type: sourceTypeEnum.optional(),
+  voice_note_url: z.string().max(500).nullable().optional(),
+  raw_transcript: z.string().nullable().optional(),
 });
 
 export const createTask = createServerFn({ method: "POST" })
@@ -66,6 +86,12 @@ export const createTask = createServerFn({ method: "POST" })
     if (data.due_time && !data.due_date) {
       throw new Error("Time requires a date");
     }
+    // Structured delegated_to_contact_id mirrors assigned_to when the task
+    // is delegated and a saved contact was picked.
+    const delegated =
+      data.source === "Delegated by Me" && data.assigned_to
+        ? data.assigned_to
+        : null;
     const { data: row, error } = await supabase
       .from("tasks")
       .insert({
@@ -73,10 +99,16 @@ export const createTask = createServerFn({ method: "POST" })
         title: data.title.trim(),
         source: data.source,
         notes: data.notes ?? null,
+        category: data.category ?? null,
+        priority: data.priority ?? "Normal",
         assigned_to: data.assigned_to ?? null,
         assigned_to_name: data.assigned_to_name?.trim() || null,
+        delegated_to_contact_id: delegated,
         due_date: data.due_date ?? null,
         due_time: data.due_time ?? null,
+        source_type: data.source_type ?? "Typed",
+        voice_note_url: data.voice_note_url ?? null,
+        raw_transcript: data.raw_transcript ?? null,
       })
       .select("*")
       .single();
@@ -90,6 +122,8 @@ const updateInput = z.object({
   notes: z.string().nullable().optional(),
   source: sourceEnum.optional(),
   status: statusEnum.optional(),
+  category: categoryEnum.nullable().optional(),
+  priority: priorityEnum.optional(),
   assigned_to: uuid.nullable().optional(),
   assigned_to_name: z.string().max(100).nullable().optional(),
   due_date: dateStr,
@@ -105,11 +139,23 @@ export const updateTask = createServerFn({ method: "POST" })
     if (patch.due_time && patch.due_date === null) {
       throw new Error("Time requires a date");
     }
-    // Normalize: clearing due_date should also clear due_time
     if (patch.due_date === null) patch.due_time = null;
+    // Keep delegated_to_contact_id in sync if source/assignee change.
+    const derived: Record<string, unknown> = { ...patch };
+    if ("assigned_to" in patch || "source" in patch) {
+      const src = patch.source;
+      const contact = patch.assigned_to;
+      if (src === "Delegated by Me" && contact) {
+        derived.delegated_to_contact_id = contact;
+      } else if (src && src !== "Delegated by Me") {
+        derived.delegated_to_contact_id = null;
+      } else if ("assigned_to" in patch && !contact) {
+        derived.delegated_to_contact_id = null;
+      }
+    }
     const { data: row, error } = await supabase
       .from("tasks")
-      .update(patch)
+      .update(derived)
       .eq("id", id)
       .eq("user_id", userId)
       .select("*")
@@ -144,4 +190,26 @@ export const nudgeTask = createServerFn({ method: "POST" })
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+/**
+ * Return a short-lived signed URL for a stored voice note, so the user
+ * can play back the original recording from the task detail view.
+ */
+export const getVoiceNoteUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) =>
+    z.object({ path: z.string().min(1).max(500) }).parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    // Path is scoped by first segment == userId (matches storage RLS).
+    if (!data.path.startsWith(`${userId}/`)) {
+      throw new Error("Forbidden");
+    }
+    const { data: signed, error } = await supabase.storage
+      .from("voice-notes")
+      .createSignedUrl(data.path, 60 * 60);
+    if (error) throw new Error(error.message);
+    return { url: signed.signedUrl };
   });

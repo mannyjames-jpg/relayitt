@@ -5,17 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Relay — warm boutique design system.
+ * Palette: ivory + espresso + soft blush surface with amber primary,
+ * dusty rose + muted sage as secondary accents. Serif for section headers,
+ * clean system sans for body & controls.
  */
 
 @theme inline {
@@ -26,8 +19,12 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  --font-serif: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -46,6 +43,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+
+  --color-rose: var(--rose);
+  --color-rose-foreground: var(--rose-foreground);
+  --color-sage: var(--sage);
+  --color-sage-foreground: var(--sage-foreground);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -62,77 +65,97 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  /* Relay: light, calm, high-contrast */
-  --background: oklch(1 0 0);              /* #FFFFFF */
-  --foreground: oklch(0.22 0.01 260);       /* #1F2328 charcoal */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.01 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.01 260);
-  /* Primary = warm amber #F77E2D */
-  --primary: oklch(0.72 0.17 47);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.005 260);       /* #F7F7F5-ish */
-  --secondary-foreground: oklch(0.22 0.01 260);
-  --muted: oklch(0.97 0.005 260);
-  --muted-foreground: oklch(0.5 0.01 260);  /* #6B7280 */
-  --accent: oklch(0.97 0.005 260);
-  --accent-foreground: oklch(0.22 0.01 260);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.005 260);
-  --input: oklch(0.92 0.005 260);
+  --radius: 0.75rem;
+
+  /* Warm ivory canvas + espresso ink */
+  --background: oklch(0.985 0.01 82);        /* #FBF7EF ivory */
+  --foreground: oklch(0.28 0.02 45);         /* espresso #3A2F26 */
+
+  /* Cards sit on a faint blush surface, one tick warmer than bg */
+  --surface: oklch(0.965 0.014 55);          /* #F4EBDF */
+  --card: oklch(0.98 0.012 55);              /* #F9F1E6 */
+  --card-foreground: oklch(0.28 0.02 45);
+  --popover: oklch(0.99 0.008 60);
+  --popover-foreground: oklch(0.28 0.02 45);
+
+  /* Amber primary preserved */
+  --primary: oklch(0.72 0.17 47);            /* #F77E2D */
+  --primary-foreground: oklch(0.995 0.005 80);
+
+  --secondary: oklch(0.955 0.014 60);
+  --secondary-foreground: oklch(0.28 0.02 45);
+  --muted: oklch(0.955 0.014 60);
+  --muted-foreground: oklch(0.48 0.02 45);   /* warm taupe grey */
+  --accent: oklch(0.955 0.014 60);
+  --accent-foreground: oklch(0.28 0.02 45);
+
+  /* Secondary accents used sparingly (category pills, small marks) */
+  --rose: oklch(0.68 0.075 22);              /* dusty rose ~#B87A7A */
+  --rose-foreground: oklch(0.28 0.03 22);
+  --sage: oklch(0.7 0.055 145);              /* muted sage ~#8AA588 */
+  --sage-foreground: oklch(0.28 0.03 145);
+
+  --destructive: oklch(0.55 0.16 25);
+  --destructive-foreground: oklch(0.995 0.005 80);
+
+  --border: oklch(0.9 0.012 55);             /* warm cream border */
+  --input: oklch(0.9 0.012 55);
   --ring: oklch(0.72 0.17 47);
+
   --chart-1: oklch(0.72 0.17 47);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.98 0.003 260);
-  --sidebar-foreground: oklch(0.22 0.01 260);
+  --chart-2: oklch(0.7 0.055 145);
+  --chart-3: oklch(0.68 0.075 22);
+  --chart-4: oklch(0.828 0.189 84);
+  --chart-5: oklch(0.5 0.02 45);
+
+  --sidebar: oklch(0.97 0.012 55);
+  --sidebar-foreground: oklch(0.28 0.02 45);
   --sidebar-primary: oklch(0.72 0.17 47);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.97 0.005 260);
-  --sidebar-accent-foreground: oklch(0.22 0.01 260);
-  --sidebar-border: oklch(0.92 0.005 260);
+  --sidebar-primary-foreground: oklch(0.995 0.005 80);
+  --sidebar-accent: oklch(0.955 0.014 60);
+  --sidebar-accent-foreground: oklch(0.28 0.02 45);
+  --sidebar-border: oklch(0.9 0.012 55);
   --sidebar-ring: oklch(0.72 0.17 47);
 }
 
-
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.19 0.02 45);
+  --foreground: oklch(0.96 0.01 80);
+  --surface: oklch(0.23 0.02 45);
+  --card: oklch(0.23 0.02 45);
+  --card-foreground: oklch(0.96 0.01 80);
+  --popover: oklch(0.23 0.02 45);
+  --popover-foreground: oklch(0.96 0.01 80);
+  --primary: oklch(0.75 0.17 47);
+  --primary-foreground: oklch(0.19 0.02 45);
+  --secondary: oklch(0.28 0.02 45);
+  --secondary-foreground: oklch(0.96 0.01 80);
+  --muted: oklch(0.28 0.02 45);
+  --muted-foreground: oklch(0.72 0.02 60);
+  --accent: oklch(0.28 0.02 45);
+  --accent-foreground: oklch(0.96 0.01 80);
+  --rose: oklch(0.68 0.075 22);
+  --rose-foreground: oklch(0.96 0.01 22);
+  --sage: oklch(0.7 0.055 145);
+  --sage-foreground: oklch(0.96 0.01 145);
+  --destructive: oklch(0.7 0.19 25);
+  --destructive-foreground: oklch(0.96 0.01 80);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.75 0.17 47);
+  --chart-1: oklch(0.75 0.17 47);
+  --chart-2: oklch(0.7 0.055 145);
+  --chart-3: oklch(0.68 0.075 22);
+  --chart-4: oklch(0.828 0.189 84);
+  --chart-5: oklch(0.72 0.02 60);
+  --sidebar: oklch(0.23 0.02 45);
+  --sidebar-foreground: oklch(0.96 0.01 80);
+  --sidebar-primary: oklch(0.75 0.17 47);
+  --sidebar-primary-foreground: oklch(0.19 0.02 45);
+  --sidebar-accent: oklch(0.28 0.02 45);
+  --sidebar-accent-foreground: oklch(0.96 0.01 80);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-ring: oklch(0.75 0.17 47);
 }
 
 @layer base {
@@ -152,6 +175,24 @@
     color: var(--color-foreground);
   }
 }
+
+/* Serif for section headers only. Slightly weighted optical size for warmth. */
+@utility font-display {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-variation-settings: "SOFT" 60, "WONK" 0;
+  letter-spacing: -0.005em;
+}
+
+/* Category pill palette — muted, boutique tints. Rotated across rose / sage / amber. */
+@utility pill-cat-travel      { background: oklch(0.94 0.03 145); color: oklch(0.36 0.05 145); }
+@utility pill-cat-household   { background: oklch(0.94 0.03 22);  color: oklch(0.38 0.06 22); }
+@utility pill-cat-scheduling  { background: oklch(0.94 0.03 200); color: oklch(0.36 0.05 220); }
+@utility pill-cat-errands     { background: oklch(0.94 0.03 60);  color: oklch(0.4 0.07 55); }
+@utility pill-cat-gifts       { background: oklch(0.94 0.035 340);color: oklch(0.38 0.07 350); }
+@utility pill-cat-finance     { background: oklch(0.94 0.03 100); color: oklch(0.38 0.06 105); }
+@utility pill-cat-vendors     { background: oklch(0.94 0.025 260);color: oklch(0.36 0.05 265); }
+@utility pill-cat-other       { background: oklch(0.94 0.008 55); color: oklch(0.4 0.02 45); }
 
 @keyframes shake {
   0%,100% { transform: translateX(0); }
@@ -174,3 +215,8 @@
 }
 .animate-complete { animation: complete-out 0.55s ease-in forwards; }
 
+@keyframes rec-pulse {
+  0%, 100% { transform: scale(1);   opacity: 0.9; }
+  50%      { transform: scale(1.25); opacity: 1; }
+}
+.animate-rec-pulse { animation: rec-pulse 1s ease-in-out infinite; }
