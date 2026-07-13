@@ -53,6 +53,7 @@ export function QuickCapture({
   const [category, setCategory] = useState<Category | null>(null);
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -121,6 +122,11 @@ export function QuickCapture({
               ref={inputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => {
+                // Delay so pill taps register as source changes, not filter changes.
+                setTimeout(() => setFocused(false), 150);
+              }}
               placeholder="Add a task…"
               maxLength={200}
               className="h-11 pr-10"
