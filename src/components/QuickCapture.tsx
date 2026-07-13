@@ -274,7 +274,9 @@ export function QuickCapture({
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
+
 
         {savePrompt && (
           <div className="mt-2 flex items-center justify-between rounded-md bg-secondary px-3 py-2 text-sm">
