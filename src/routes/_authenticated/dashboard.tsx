@@ -80,7 +80,7 @@ function Dashboard() {
       <QuickCapture />
 
       <header className="mx-auto max-w-2xl px-4 pt-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Relay</h1>
+        <h1 className="font-display text-2xl">Relay</h1>
         <div className="flex items-center gap-1">
           {google && !google.connected && google.configured && (
             <Button
@@ -244,7 +244,7 @@ function Section({
           ) : (
             <ChevronRight className="h-4 w-4" />
           ))}
-        <h2 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+        <h2 className="font-display text-xl tracking-tight text-foreground/90">
           {title}
         </h2>
         <span className="text-xs text-muted-foreground">({count})</span>

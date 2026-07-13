@@ -73,7 +73,7 @@ function ContactsPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-lg font-semibold flex-1">Contacts</h1>
+          <h1 className="font-display text-2xl flex-1">Contacts</h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="h-9">

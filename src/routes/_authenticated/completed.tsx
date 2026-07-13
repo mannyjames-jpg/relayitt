@@ -43,7 +43,7 @@ function CompletedPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-lg font-semibold">Completed</h1>
+          <h1 className="font-display text-2xl">Completed</h1>
         </div>
       </header>
 

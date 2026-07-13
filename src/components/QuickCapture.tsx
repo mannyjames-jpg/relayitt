@@ -8,9 +8,24 @@ import { Button } from "@/components/ui/button";
 import { createTask } from "@/lib/tasks.functions";
 import { createContact, listContacts } from "@/lib/contacts.functions";
 import { AssigneeCombobox } from "./AssigneeCombobox";
+import { VoiceCapture } from "./VoiceCapture";
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
+
+const PRIORITIES = ["Normal", "Important", "Urgent"] as const;
+type Priority = (typeof PRIORITIES)[number];
+
+const CATEGORIES = [
+  "Travel",
+  "Household",
+  "Scheduling",
+  "Errands",
+  "Gifts/Events",
+  "Finance",
+  "Other",
+] as const;
+type Category = (typeof CATEGORIES)[number];
 
 export function QuickCapture() {
   const qc = useQueryClient();
@@ -27,6 +42,8 @@ export function QuickCapture() {
   const [source, setSource] = useState<Source>("Personal Reminder");
   const [contactId, setContactId] = useState<string | null>(null);
   const [freeText, setFreeText] = useState("");
+  const [priority, setPriority] = useState<Priority>("Normal");
+  const [category, setCategory] = useState<Category | null>(null);
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
@@ -58,37 +75,40 @@ export function QuickCapture() {
       setTimeout(() => setShake(false), 400);
       return;
     }
-    const usedFreeText = source === "Delegated by Me" && !contactId && freeText.trim();
+    const usedFreeText =
+      source === "Delegated by Me" && !contactId && freeText.trim();
     await m.mutateAsync({
       data: {
         title: trimmed,
         source,
+        priority: source === "Delegated by Me" ? priority : "Normal",
+        category: source === "From Boss" ? category : null,
         assigned_to: source === "Delegated by Me" ? contactId : null,
         assigned_to_name:
-          source === "Delegated by Me" && !contactId ? freeText.trim() || null : null,
+          source === "Delegated by Me" && !contactId
+            ? freeText.trim() || null
+            : null,
       },
     });
     setTitle("");
     if (usedFreeText) {
       const nm = freeText.trim();
-      // only prompt if not already an existing contact by name
       if (!contacts.some((c) => c.name.toLowerCase() === nm.toLowerCase())) {
         setSavePrompt({ name: nm });
       }
     }
+    // Collapse contextual fields back to defaults after each capture.
     setContactId(null);
     setFreeText("");
-    // Keep source (session memory)
+    setPriority("Normal");
+    setCategory(null);
     inputRef.current?.focus();
   }
 
   return (
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
       <div className="mx-auto max-w-2xl px-4 py-3">
-        <form
-          onSubmit={onSubmit}
-          className={cn("flex gap-2", shake && "animate-shake")}
-        >
+        <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
           <div className="relative flex-1">
             <Input
               ref={inputRef}
@@ -105,6 +125,7 @@ export function QuickCapture() {
               </span>
             )}
           </div>
+          <VoiceCapture contacts={contacts} />
           <Button
             type="submit"
             className="h-11 px-4"
@@ -141,16 +162,66 @@ export function QuickCapture() {
           </div>
 
           {source === "Delegated by Me" && (
-            <AssigneeCombobox
-              compact
-              contacts={contacts}
-              contactId={contactId}
-              freeText={freeText}
-              onChange={({ contactId: id, freeText: t }) => {
-                setContactId(id);
-                setFreeText(t);
-              }}
-            />
+            <>
+              <AssigneeCombobox
+                compact
+                contacts={contacts}
+                contactId={contactId}
+                freeText={freeText}
+                onChange={({ contactId: id, freeText: t }) => {
+                  setContactId(id);
+                  setFreeText(t);
+                }}
+              />
+              <div
+                role="tablist"
+                aria-label="Priority"
+                className="inline-flex rounded-md border border-border bg-secondary p-0.5 text-xs"
+              >
+                {PRIORITIES.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    role="tab"
+                    aria-selected={priority === p}
+                    onClick={() => setPriority(p)}
+                    className={cn(
+                      "px-2.5 py-1.5 rounded-sm transition-colors min-h-[32px]",
+                      priority === p
+                        ? p === "Urgent"
+                          ? "bg-primary/15 text-primary shadow-sm font-medium"
+                          : "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {source === "From Boss" && (
+            <div className="flex flex-wrap items-center gap-1">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-pressed={category === c}
+                  onClick={() =>
+                    setCategory((prev) => (prev === c ? null : c))
+                  }
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-xs transition-colors min-h-[32px]",
+                    category === c
+                      ? "border-transparent bg-sage/25 text-sage-foreground"
+                      : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
           )}
         </div>
 
@@ -170,7 +241,9 @@ export function QuickCapture() {
               <Button
                 size="sm"
                 onClick={async () => {
-                  await saveContactM.mutateAsync({ data: { name: savePrompt.name } });
+                  await saveContactM.mutateAsync({
+                    data: { name: savePrompt.name },
+                  });
                   setSavePrompt(null);
                 }}
               >

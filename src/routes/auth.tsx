@@ -53,8 +53,8 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Relay</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="font-display text-4xl tracking-tight">Relay</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             {mode === "signin" ? "Sign in to continue" : "Reset your password"}
           </p>
         </div>
