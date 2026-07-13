@@ -97,10 +97,12 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <QuickCapture />
+      <QuickCapture filter={filter} onFilterChange={setFilter} />
 
       <header className="mx-auto max-w-2xl px-4 pt-3 flex items-center justify-between">
-        <h1 className="font-display text-2xl">Relay</h1>
+        <h1 className="font-display text-2xl">
+          {greetingName ? `Good ${partOfDay}, ${greetingName}` : "Relay"}
+        </h1>
         <div className="flex items-center gap-1">
           {google && !google.connected && google.configured && (
             <Button
