@@ -56,7 +56,26 @@ function Dashboard() {
   }, [search.google, navigate]);
 
   const today = todayISO();
-  const groups = useMemo(() => groupTasks(tasks as Task[], today), [tasks, today]);
+  const { user } = useAuth();
+  const [filter, setFilter] = useState<FilterSource>("All");
+
+  const filteredTasks = useMemo(() => {
+    if (filter === "All") return tasks as Task[];
+    return (tasks as Task[]).filter((t) => t.source === filter);
+  }, [tasks, filter]);
+  const groups = useMemo(() => groupTasks(filteredTasks, today), [filteredTasks, today]);
+
+  const greetingName = useMemo(() => {
+    const raw =
+      (user?.user_metadata?.full_name as string | undefined) ??
+      (user?.user_metadata?.name as string | undefined) ??
+      user?.email?.split("@")[0] ??
+      "";
+    return raw.split(" ")[0] || "";
+  }, [user]);
+  const hour = new Date().getHours();
+  const partOfDay =
+    hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
 
   async function connectGoogle() {
     const res = await gUrl();
