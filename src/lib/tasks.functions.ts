@@ -18,7 +18,7 @@ const priorityEnum = z.enum(["Normal", "Important", "Urgent"]);
 const sourceTypeEnum = z.enum(["Typed", "Voice"]);
 
 const TASK_COLUMNS =
-  "id,title,notes,source,status,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,created_at,updated_at";
+  "id,title,notes,source,status,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,next_followup_reminder_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,created_at,updated_at";
 
 const uuid = z.string().uuid();
 const dateStr = z
@@ -182,12 +182,29 @@ export const deleteTask = createServerFn({ method: "POST" })
 
 export const nudgeTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => z.object({ id: uuid }).parse(raw))
+  .inputValidator((raw: unknown) =>
+    z
+      .object({
+        id: uuid,
+        // null = clear reminder / skip; number = days from now
+        remind_in_days: z.number().int().min(1).max(60).nullable().optional(),
+      })
+      .parse(raw),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const nextAt =
+      data.remind_in_days === null || data.remind_in_days === undefined
+        ? null
+        : new Date(
+            Date.now() + data.remind_in_days * 24 * 60 * 60 * 1000,
+          ).toISOString();
     const { error } = await supabase
       .from("tasks")
-      .update({ last_followup_at: new Date().toISOString() })
+      .update({
+        last_followup_at: new Date().toISOString(),
+        next_followup_reminder_at: nextAt,
+      })
       .eq("id", data.id)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
