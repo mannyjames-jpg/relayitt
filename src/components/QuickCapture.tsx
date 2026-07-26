@@ -142,11 +142,21 @@ export function QuickCapture({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onFocus={() => setFocused(true)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  !(e.nativeEvent as KeyboardEvent).isComposing
+                ) {
+                  e.preventDefault();
+                  if (!m.isPending) void submitTask();
+                }
+              }}
               onBlur={() => {
                 // Delay so pill taps register as source changes, not filter changes.
                 setTimeout(() => setFocused(false), 150);
               }}
-              placeholder="Add a task…"
+              placeholder="Add a task…  (try: tomorrow 9am #travel !urgent)"
               maxLength={200}
               className="h-11 pr-10"
               aria-label="New task"
@@ -157,6 +167,7 @@ export function QuickCapture({
               </span>
             )}
           </div>
+
           <VoiceCapture contacts={contacts} />
           <Button
             type="submit"
