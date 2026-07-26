@@ -267,7 +267,7 @@ export function TaskRow({
         overdue && "border-l-2 border-l-primary",
       )}
     >
-      <div className="flex items-start gap-3 px-3 py-3 min-h-[56px]">
+      <div className="flex flex-wrap items-start gap-x-3 gap-y-1 px-3 py-3 min-h-[56px]">
         <button
           type="button"
           onClick={toggleDone}
@@ -279,24 +279,25 @@ export function TaskRow({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="flex-1 text-left min-w-0"
+          className="min-w-0 flex-1 basis-[10rem] text-left"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             {isUrgent && (
               <span
                 aria-label="Urgent"
-                className="inline-block h-2 w-2 shrink-0 rounded-full bg-primary"
+                className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary"
               />
             )}
             <div
               className={cn(
-                "text-[15px] leading-snug text-foreground",
+                "min-w-0 break-words text-[15px] leading-snug text-foreground",
                 isUrgent && "font-semibold",
               )}
             >
               {task.title}
             </div>
           </div>
+
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1">
               {STATUS_ICON[status]}
@@ -349,7 +350,7 @@ export function TaskRow({
           </div>
         </button>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <Select
             value={status}
             onValueChange={async (v) => {
