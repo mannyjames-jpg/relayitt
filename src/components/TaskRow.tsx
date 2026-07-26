@@ -27,6 +27,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -127,6 +137,7 @@ export function TaskRow({
   const [nudgeFlash, setNudgeFlash] = useState(false);
   const [nudgeStep, setNudgeStep] = useState<null | "contact" | "reminder">(null);
   const [remindDays, setRemindDays] = useState<number>(2);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
@@ -350,14 +361,26 @@ export function TaskRow({
             <SelectTrigger
               className="h-8 w-8 border-0 p-0 [&>svg:last-child]:hidden"
               aria-label="Change status"
+              title={`Status: ${status}`}
             >
               <span className="sr-only">{status}</span>
             </SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="Not Started">Not Started</SelectItem>
-              <SelectItem value="In Progress">In Progress</SelectItem>
-              <SelectItem value="Waiting on Someone">Waiting on Someone</SelectItem>
-              <SelectItem value="Done">Done</SelectItem>
+              {(
+                [
+                  "Not Started",
+                  "In Progress",
+                  "Waiting on Someone",
+                  "Done",
+                ] as Task["status"][]
+              ).map((s) => (
+                <SelectItem key={s} value={s}>
+                  <span className="inline-flex items-center gap-2">
+                    {STATUS_ICON[s]}
+                    {s}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -371,12 +394,14 @@ export function TaskRow({
                 setRemindDays(2);
                 setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "reminder");
               }}
-              aria-label="Mark nudge sent"
+              title="Reach out now and set a follow-up reminder"
+              aria-label="Follow up and set a reminder"
             >
               <BellRing className="h-3.5 w-3.5 mr-1" />
-              Nudge
+              Follow up
             </Button>
           )}
+
         </div>
       </div>
 
@@ -521,7 +546,7 @@ export function TaskRow({
               variant="ghost"
               size="sm"
               className="text-destructive hover:text-destructive"
-              onClick={handleDelete}
+              onClick={() => setConfirmDelete(true)}
             >
               <Trash2 className="h-4 w-4 mr-1" />
               Delete
@@ -677,7 +702,32 @@ export function TaskRow({
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">
+              Delete this task?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              "{task.title}" will be removed. You'll have a moment to undo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setConfirmDelete(false);
+                await handleDelete();
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
 

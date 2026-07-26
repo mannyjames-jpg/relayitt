@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, X } from "lucide-react";
@@ -9,6 +9,9 @@ import { createTask } from "@/lib/tasks.functions";
 import { createContact, listContacts } from "@/lib/contacts.functions";
 import { AssigneeCombobox } from "./AssigneeCombobox";
 import { VoiceCapture } from "./VoiceCapture";
+import { toast } from "sonner";
+import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
+
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
@@ -26,7 +29,8 @@ const CATEGORIES = [
   "Finance",
   "Other",
 ] as const;
-type Category = (typeof CATEGORIES)[number];
+type Category = QuickCategory;
+
 
 export function QuickCapture({
   filter,
@@ -75,9 +79,10 @@ export function QuickCapture({
     inputRef.current?.focus();
   }, []);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = title.trim();
+  const parsed = useMemo(() => parseQuickEntry(title), [title]);
+
+  async function submitTask() {
+    const trimmed = parsed.title.trim() || title.trim();
     if (!trimmed) {
       setShake(true);
       setTimeout(() => setShake(false), 400);
@@ -89,14 +94,22 @@ export function QuickCapture({
       data: {
         title: trimmed,
         source,
-        priority: source === "Delegated by Me" ? priority : "Normal",
-        category: source === "From Boss" ? category : null,
+        priority:
+          parsed.priority ??
+          (source === "Delegated by Me" ? priority : "Normal"),
+        category:
+          parsed.category ?? (source === "From Boss" ? category : null),
+        due_date: parsed.due_date,
+        due_time: parsed.due_time,
         assigned_to: source === "Delegated by Me" ? contactId : null,
         assigned_to_name:
           source === "Delegated by Me" && !contactId
             ? freeText.trim() || null
             : null,
       },
+    });
+    toast.success("Task added", {
+      description: parsed.hints.length ? parsed.hints.join(" · ") : undefined,
     });
     setTitle("");
     if (usedFreeText) {
@@ -113,6 +126,12 @@ export function QuickCapture({
     inputRef.current?.focus();
   }
 
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await submitTask();
+  }
+
+
   return (
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
       <div className="mx-auto max-w-2xl px-4 py-3">
@@ -123,11 +142,21 @@ export function QuickCapture({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onFocus={() => setFocused(true)}
+              onKeyDown={(e) => {
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  !(e.nativeEvent as KeyboardEvent).isComposing
+                ) {
+                  e.preventDefault();
+                  if (!m.isPending) void submitTask();
+                }
+              }}
               onBlur={() => {
                 // Delay so pill taps register as source changes, not filter changes.
                 setTimeout(() => setFocused(false), 150);
               }}
-              placeholder="Add a task…"
+              placeholder="Add a task…  (try: tomorrow 9am #travel !urgent)"
               maxLength={200}
               className="h-11 pr-10"
               aria-label="New task"
@@ -138,6 +167,7 @@ export function QuickCapture({
               </span>
             )}
           </div>
+
           <VoiceCapture contacts={contacts} />
           <Button
             type="submit"
@@ -148,6 +178,22 @@ export function QuickCapture({
             <Plus className="h-5 w-5" />
           </Button>
         </form>
+
+        {parsed.hints.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1 text-[11px]">
+            <span className="text-muted-foreground">Detected:</span>
+            {parsed.hints.map((h) => (
+              <span
+                key={h}
+                className="rounded-full bg-sage/25 px-2 py-0.5 text-sage-foreground"
+              >
+                {h}
+              </span>
+            ))}
+          </div>
+        )}
+
+
 
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
