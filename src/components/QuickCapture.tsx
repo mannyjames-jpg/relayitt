@@ -79,9 +79,10 @@ export function QuickCapture({
     inputRef.current?.focus();
   }, []);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = title.trim();
+  const parsed = useMemo(() => parseQuickEntry(title), [title]);
+
+  async function submitTask() {
+    const trimmed = parsed.title.trim() || title.trim();
     if (!trimmed) {
       setShake(true);
       setTimeout(() => setShake(false), 400);
@@ -93,14 +94,22 @@ export function QuickCapture({
       data: {
         title: trimmed,
         source,
-        priority: source === "Delegated by Me" ? priority : "Normal",
-        category: source === "From Boss" ? category : null,
+        priority:
+          parsed.priority ??
+          (source === "Delegated by Me" ? priority : "Normal"),
+        category:
+          parsed.category ?? (source === "From Boss" ? category : null),
+        due_date: parsed.due_date,
+        due_time: parsed.due_time,
         assigned_to: source === "Delegated by Me" ? contactId : null,
         assigned_to_name:
           source === "Delegated by Me" && !contactId
             ? freeText.trim() || null
             : null,
       },
+    });
+    toast.success("Task added", {
+      description: parsed.hints.length ? parsed.hints.join(" · ") : undefined,
     });
     setTitle("");
     if (usedFreeText) {
@@ -116,6 +125,12 @@ export function QuickCapture({
     setCategory(null);
     inputRef.current?.focus();
   }
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await submitTask();
+  }
+
 
   return (
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
