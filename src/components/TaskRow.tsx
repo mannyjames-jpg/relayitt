@@ -350,7 +350,7 @@ export function TaskRow({
           </div>
         </button>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <Select
             value={status}
             onValueChange={async (v) => {
