@@ -350,14 +350,26 @@ export function TaskRow({
             <SelectTrigger
               className="h-8 w-8 border-0 p-0 [&>svg:last-child]:hidden"
               aria-label="Change status"
+              title={`Status: ${status}`}
             >
               <span className="sr-only">{status}</span>
             </SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="Not Started">Not Started</SelectItem>
-              <SelectItem value="In Progress">In Progress</SelectItem>
-              <SelectItem value="Waiting on Someone">Waiting on Someone</SelectItem>
-              <SelectItem value="Done">Done</SelectItem>
+              {(
+                [
+                  "Not Started",
+                  "In Progress",
+                  "Waiting on Someone",
+                  "Done",
+                ] as Task["status"][]
+              ).map((s) => (
+                <SelectItem key={s} value={s}>
+                  <span className="inline-flex items-center gap-2">
+                    {STATUS_ICON[s]}
+                    {s}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -371,12 +383,14 @@ export function TaskRow({
                 setRemindDays(2);
                 setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "reminder");
               }}
-              aria-label="Mark nudge sent"
+              title="Reach out now and set a follow-up reminder"
+              aria-label="Follow up and set a reminder"
             >
               <BellRing className="h-3.5 w-3.5 mr-1" />
-              Nudge
+              Follow up
             </Button>
           )}
+
         </div>
       </div>
 
