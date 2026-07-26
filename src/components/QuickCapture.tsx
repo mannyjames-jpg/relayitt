@@ -26,7 +26,8 @@ const CATEGORIES = [
   "Finance",
   "Other",
 ] as const;
-type Category = (typeof CATEGORIES)[number];
+type Category = QuickCategory;
+
 
 export function QuickCapture({
   filter,
