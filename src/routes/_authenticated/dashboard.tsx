@@ -15,6 +15,12 @@ import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
 import { useAuth } from "@/hooks/use-auth";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const searchSchema = z.object({ google: z.string().optional() });
 
