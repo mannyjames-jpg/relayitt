@@ -535,7 +535,7 @@ export function TaskRow({
               variant="ghost"
               size="sm"
               className="text-destructive hover:text-destructive"
-              onClick={handleDelete}
+              onClick={() => setConfirmDelete(true)}
             >
               <Trash2 className="h-4 w-4 mr-1" />
               Delete
