@@ -179,6 +179,22 @@ export function QuickCapture({
           </Button>
         </form>
 
+        {parsed.hints.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1 text-[11px]">
+            <span className="text-muted-foreground">Detected:</span>
+            {parsed.hints.map((h) => (
+              <span
+                key={h}
+                className="rounded-full bg-sage/25 px-2 py-0.5 text-sage-foreground"
+              >
+                {h}
+              </span>
+            ))}
+          </div>
+        )}
+
+
+
         <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
             {focused ? "Adding as:" : "Showing:"}
