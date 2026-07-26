@@ -95,140 +95,170 @@ function Dashboard() {
     navigate({ to: "/auth" });
   }
 
+  const waitingCount = groups.waitingGroups.reduce(
+    (n, g) => n + g.tasks.length,
+    0,
+  );
+  const upcomingCount = groups.upcoming.reduce((n, g) => n + g.tasks.length, 0);
+  const todayCount = groups.overdue.length + groups.today.length;
+
   return (
     <div className="min-h-screen bg-background">
       <QuickCapture filter={filter} onFilterChange={setFilter} />
 
-      <header className="mx-auto max-w-2xl px-4 pt-3 flex items-center justify-between">
-        <h1 className="font-display text-2xl">
-          {greetingName ? `Good ${partOfDay}, ${greetingName}` : "Relay"}
-        </h1>
-        <div className="flex items-center gap-1">
-          {google && !google.connected && google.configured && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={connectGoogle}
-              className="text-xs h-9"
-              aria-label="Connect Google Calendar"
-            >
-              <CalIcon className="h-4 w-4 mr-1" />
-              Connect Calendar
-            </Button>
-          )}
-          <Link to="/contacts" aria-label="Contacts">
-            <Button variant="ghost" size="icon" className="h-11 w-11">
-              <Users className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Link to="/completed" aria-label="Completed tasks">
-            <Button variant="ghost" size="icon" className="h-11 w-11">
-              <CheckSquare className="h-5 w-5" />
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11"
-            onClick={signOut}
-            aria-label="Sign out"
-          >
-            <LogOut className="h-5 w-5" />
-          </Button>
+      <header className="mx-auto max-w-7xl px-4 pt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate font-display text-2xl">
+            {greetingName ? `Good ${partOfDay}, ${greetingName}` : "Relay"}
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <StatChip label="today" value={todayCount} accent={todayCount > 0} />
+            <StatChip label="overdue" value={groups.overdue.length} accent={groups.overdue.length > 0} />
+            <StatChip label="waiting" value={waitingCount} />
+            <StatChip label="someday" value={groups.someday.length} />
+          </div>
         </div>
+        <TooltipProvider delayDuration={200}>
+          <div className="flex shrink-0 items-center gap-1">
+            {google && !google.connected && google.configured && (
+              <Tip label="Connect Google Calendar">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={connectGoogle}
+                  className="text-xs h-9"
+                  aria-label="Connect Google Calendar"
+                >
+                  <CalIcon className="h-4 w-4 mr-1" />
+                  Connect Calendar
+                </Button>
+              </Tip>
+            )}
+            <Tip label="Contacts">
+              <Link to="/contacts" aria-label="Contacts">
+                <Button variant="ghost" size="icon" className="h-11 w-11">
+                  <Users className="h-5 w-5" />
+                </Button>
+              </Link>
+            </Tip>
+            <Tip label="Completed tasks">
+              <Link to="/completed" aria-label="Completed tasks">
+                <Button variant="ghost" size="icon" className="h-11 w-11">
+                  <CheckSquare className="h-5 w-5" />
+                </Button>
+              </Link>
+            </Tip>
+            <Tip label="Sign out">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11"
+                onClick={signOut}
+                aria-label="Sign out"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </Tip>
+          </div>
+        </TooltipProvider>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 pb-24 pt-4 space-y-6">
-        <Section title="Today" count={groups.overdue.length + groups.today.length}>
-          {groups.overdue.length === 0 && groups.today.length === 0 ? (
-            <EmptyLine>Nothing due today</EmptyLine>
-          ) : (
-            <div className="rounded-lg border border-border bg-card">
-              {groups.overdue.map((t) => (
-                <TaskRow key={t.id} task={t} contacts={contacts} overdue />
-              ))}
-              {groups.today.map((t) => (
-                <TaskRow key={t.id} task={t} contacts={contacts} />
-              ))}
-            </div>
-          )}
-        </Section>
+      <main className="mx-auto max-w-7xl px-4 pb-24 pt-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          <Panel title="Today" count={todayCount}>
+            {todayCount === 0 ? (
+              <EmptyLine>Nothing due today</EmptyLine>
+            ) : (
+              <div className="rounded-lg border border-border bg-card">
+                {groups.overdue.map((t) => (
+                  <TaskRow key={t.id} task={t} contacts={contacts} overdue />
+                ))}
+                {groups.today.map((t) => (
+                  <TaskRow key={t.id} task={t} contacts={contacts} />
+                ))}
+              </div>
+            )}
+          </Panel>
 
-        {groups.waitingGroups.length > 0 && (
-          <Section
-            title="Waiting on Someone"
-            count={groups.waitingGroups.reduce((n, g) => n + g.tasks.length, 0)}
-          >
-            <div className="space-y-3">
-              {groups.waitingGroups.map((g) => {
-                const contact = g.contactId
-                  ? contacts.find((c) => c.id === g.contactId)
-                  : null;
-                const label = contact
-                  ? contact.role
-                    ? `${contact.name} (${contact.role})`
-                    : contact.name
-                  : g.name || "Unassigned";
-                return (
-                  <div key={g.key}>
+          <Panel title="Waiting on Someone" count={waitingCount}>
+            {waitingCount === 0 ? (
+              <EmptyLine>No one to chase</EmptyLine>
+            ) : (
+              <div className="space-y-3">
+                {groups.waitingGroups.map((g) => {
+                  const contact = g.contactId
+                    ? contacts.find((c) => c.id === g.contactId)
+                    : null;
+                  const label = contact
+                    ? contact.role
+                      ? `${contact.name} (${contact.role})`
+                      : contact.name
+                    : g.name || "Unassigned";
+                  return (
+                    <div key={g.key}>
+                      <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">
+                        {label}
+                      </div>
+                      <div className="rounded-lg border border-border bg-card">
+                        {g.tasks.map((t) => (
+                          <TaskRow
+                            key={t.id}
+                            task={t}
+                            contacts={contacts}
+                            showWaitingBadge
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Upcoming" count={upcomingCount}>
+            {upcomingCount === 0 ? (
+              <EmptyLine>Nothing scheduled ahead</EmptyLine>
+            ) : (
+              <div className="space-y-3">
+                {groups.upcoming.map((g) => (
+                  <div key={g.date}>
                     <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">
-                      {label}
+                      {formatDateLabel(g.date)}
                     </div>
                     <div className="rounded-lg border border-border bg-card">
                       {g.tasks.map((t) => (
-                        <TaskRow
-                          key={t.id}
-                          task={t}
-                          contacts={contacts}
-                          showWaitingBadge
-                        />
+                        <TaskRow key={t.id} task={t} contacts={contacts} />
                       ))}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </Section>
-        )}
+                ))}
+              </div>
+            )}
+          </Panel>
 
-
-        {groups.upcoming.length > 0 && (
-          <Section title="Upcoming" count={groups.upcoming.reduce((n, g) => n + g.tasks.length, 0)}>
-            <div className="space-y-3">
-              {groups.upcoming.map((g) => (
-                <div key={g.date}>
-                  <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">
-                    {formatDateLabel(g.date)}
-                  </div>
-                  <div className="rounded-lg border border-border bg-card">
-                    {g.tasks.map((t) => (
-                      <TaskRow key={t.id} task={t} contacts={contacts} />
-                    ))}
-                  </div>
+          <Panel
+            title="Someday"
+            count={groups.someday.length}
+            collapsible
+            open={somedayOpen}
+            onToggle={() => setSomedayOpen((v) => !v)}
+          >
+            {somedayOpen &&
+              (groups.someday.length === 0 ? (
+                <EmptyLine>Nothing parked here</EmptyLine>
+              ) : (
+                <div className="rounded-lg border border-border bg-card">
+                  {groups.someday.map((t) => (
+                    <TaskRow key={t.id} task={t} contacts={contacts} />
+                  ))}
                 </div>
               ))}
-            </div>
-          </Section>
-        )}
-
-        <Section
-          title="Someday"
-          count={groups.someday.length}
-          collapsible
-          open={somedayOpen}
-          onToggle={() => setSomedayOpen((v) => !v)}
-        >
-          {somedayOpen && groups.someday.length > 0 && (
-            <div className="rounded-lg border border-border bg-card">
-              {groups.someday.map((t) => (
-                <TaskRow key={t.id} task={t} contacts={contacts} />
-              ))}
-            </div>
-          )}
-        </Section>
+          </Panel>
+        </div>
 
         {tasks.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground pt-4">
+          <p className="text-center text-sm text-muted-foreground pt-6">
             Add your first task above
           </p>
         )}
@@ -237,7 +267,46 @@ function Dashboard() {
   );
 }
 
-function Section({
+function Tip({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{children}</span>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function StatChip({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent?: boolean;
+}) {
+  return (
+    <span
+      className={
+        accent
+          ? "rounded-full bg-primary/15 px-2 py-0.5 font-medium text-primary"
+          : "rounded-full bg-secondary px-2 py-0.5 text-muted-foreground"
+      }
+    >
+      {value} {label}
+    </span>
+  );
+}
+
+function Panel({
   title,
   count,
   children,
@@ -253,12 +322,12 @@ function Section({
   onToggle?: () => void;
 }) {
   return (
-    <section>
+    <section className="flex min-w-0 flex-col rounded-xl border border-border bg-surface/60 p-3 xl:max-h-[calc(100vh-13rem)]">
       <button
         type="button"
         onClick={onToggle}
         disabled={!collapsible}
-        className="w-full flex items-center gap-2 py-2 text-left"
+        className="flex w-full items-center gap-2 pb-2 text-left"
       >
         {collapsible &&
           (open ? (
@@ -266,12 +335,12 @@ function Section({
           ) : (
             <ChevronRight className="h-4 w-4" />
           ))}
-        <h2 className="font-display text-xl tracking-tight text-foreground/90">
+        <h2 className="truncate font-display text-xl tracking-tight text-foreground/90">
           {title}
         </h2>
         <span className="text-xs text-muted-foreground">({count})</span>
       </button>
-      {children}
+      <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
     </section>
   );
 }
@@ -281,6 +350,7 @@ function EmptyLine({ children }: { children: React.ReactNode }) {
     <p className="text-sm text-muted-foreground px-1 py-2">{children}</p>
   );
 }
+
 
 function groupTasks(tasks: Task[], today: string) {
   const overdue: Task[] = [];
