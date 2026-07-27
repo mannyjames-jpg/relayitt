@@ -109,7 +109,8 @@ export function QuickCapture({
             : null,
       },
     });
-    toast.success("Task added", {
+    toast.success("Added to your list — you'll find it under Today", {
+      duration: 4000,
       description: parsed.hints.length ? parsed.hints.join(" · ") : undefined,
     });
     setTitle("");
