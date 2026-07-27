@@ -180,10 +180,13 @@ export function TaskRow({
   const isUrgent = task.priority === "Urgent";
 
   async function toggleDone() {
+    setBurst(true);
+    setTimeout(() => setBurst(false), 700);
     setCompleting(true);
     setTimeout(async () => {
       await updateM.mutateAsync({ data: { id: task.id, status: "Done" } });
-      toast("Task completed", {
+      toast("Nicely done — one less thing to worry about", {
+        duration: 4000,
         action: {
           label: "Undo",
           onClick: async () => {
@@ -199,7 +202,8 @@ export function TaskRow({
   async function handleDelete() {
     const snapshot = task;
     await deleteM.mutateAsync({ data: { id: task.id } });
-    toast("Task deleted", {
+    toast("Removed from your list", {
+      duration: 4000,
       action: {
         label: "Undo",
         onClick: async () => {
