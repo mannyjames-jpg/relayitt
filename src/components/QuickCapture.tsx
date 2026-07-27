@@ -156,14 +156,14 @@ export function QuickCapture({
                 // Delay so pill taps register as source changes, not filter changes.
                 setTimeout(() => setFocused(false), 150);
               }}
-              placeholder="Add a task…  (try: tomorrow 9am #travel !urgent)"
+              placeholder="What do you need to remember? Just type it naturally…"
               maxLength={200}
-              className="h-11 pr-10"
+              className="h-12 rounded-full border-border bg-card pr-10 pl-4 text-[15px]"
               aria-label="New task"
             />
             {flash && (
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-primary animate-flash">
-                ✓
+                <Check className="h-4 w-4" strokeWidth={2.5} />
               </span>
             )}
           </div>
@@ -171,11 +171,11 @@ export function QuickCapture({
           <VoiceCapture contacts={contacts} />
           <Button
             type="submit"
-            className="h-11 px-4"
+            className="h-12 rounded-full bg-gradient-rose px-5 font-semibold text-primary-foreground hover:opacity-90"
             disabled={!title.trim() || m.isPending}
-            aria-label="Add task"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-5 w-5" strokeWidth={2} />
+            Add task
           </Button>
         </form>
 
