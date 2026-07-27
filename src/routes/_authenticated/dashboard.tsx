@@ -2,7 +2,14 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, LogOut, Users, CheckSquare, Calendar as CalIcon } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  Users,
+  CheckSquare,
+  Calendar as CalIcon,
+} from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { listTasks } from "@/lib/tasks.functions";
@@ -14,6 +21,15 @@ import { Button } from "@/components/ui/button";
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
 import { useAuth } from "@/hooks/use-auth";
 import { TaskRow, type Task } from "@/components/TaskRow";
+import { HeroSummary } from "@/components/HeroSummary";
+import { OnboardingCard } from "@/components/OnboardingCard";
+import {
+  CATEGORY_COLOR,
+  CATEGORY_ICON,
+  CATEGORY_ORDER,
+  CATEGORY_TINT,
+  type TaskCategory,
+} from "@/lib/task-style";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -25,7 +41,22 @@ import {
 const searchSchema = z.object({ google: z.string().optional() });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Relay" }] }),
+  head: () => ({
+    meta: [
+      { title: "Your day — Relay" },
+      {
+        name: "description",
+        content:
+          "Everything you're holding for today, what you're waiting on, and what's coming up — in one calm view.",
+      },
+      { property: "og:title", content: "Your day — Relay" },
+      {
+        property: "og:description",
+        content:
+          "Everything you're holding for today, what you're waiting on, and what's coming up — in one calm view.",
+      },
+    ],
+  }),
   validateSearch: (s) => searchSchema.parse(s),
   component: Dashboard,
 });
@@ -51,11 +82,12 @@ function Dashboard() {
     queryFn: () => gStatus(),
   });
 
-  const [somedayOpen, setSomedayOpen] = useState(false);
+  const [somedayOpen, setSomedayOpen] = useState(true);
 
   useEffect(() => {
     if (!search.google) return;
-    if (search.google === "connected") toast.success("Google Calendar connected");
+    if (search.google === "connected")
+      toast.success("Google Calendar connected");
     else if (search.google.startsWith("error:"))
       toast.error(`Calendar connect failed: ${search.google.slice(6)}`);
     navigate({ to: "/dashboard", search: {}, replace: true });
@@ -69,7 +101,10 @@ function Dashboard() {
     if (filter === "All") return tasks as Task[];
     return (tasks as Task[]).filter((t) => t.source === filter);
   }, [tasks, filter]);
-  const groups = useMemo(() => groupTasks(filteredTasks, today), [filteredTasks, today]);
+  const groups = useMemo(
+    () => groupTasks(filteredTasks, today),
+    [filteredTasks, today],
+  );
 
   const greetingName = useMemo(() => {
     const raw =
@@ -80,14 +115,15 @@ function Dashboard() {
     return raw.split(" ")[0] || "";
   }, [user]);
   const hour = new Date().getHours();
-  const partOfDay =
-    hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+  const partOfDay = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
 
   async function connectGoogle() {
     const res = await gUrl();
     if (!res.ok) {
       if (res.reason === "not_configured") {
-        toast.error("Google Calendar is not set up yet. Ask your builder to add credentials.");
+        toast.error(
+          "Google Calendar is not set up yet. Ask your builder to add credentials.",
+        );
       } else {
         toast.error("Missing app URL configuration.");
       }
@@ -112,45 +148,42 @@ function Dashboard() {
     <div className="min-h-screen bg-background">
       <QuickCapture filter={filter} onFilterChange={setFilter} />
 
-      <header className="mx-auto max-w-7xl px-4 pt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate font-display text-2xl">
-            {greetingName ? `Good ${partOfDay}, ${greetingName}` : "Relay"}
-          </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <StatChip label="today" value={todayCount} accent={todayCount > 0} />
-            <StatChip label="overdue" value={groups.overdue.length} accent={groups.overdue.length > 0} />
-            <StatChip label="waiting" value={waitingCount} />
-            <StatChip label="someday" value={groups.someday.length} />
-          </div>
-        </div>
+      <header className="mx-auto flex max-w-7xl items-center justify-end gap-1 px-4 pt-3">
         <TooltipProvider delayDuration={200}>
           <div className="flex shrink-0 items-center gap-1">
             {google && !google.connected && google.configured && (
-              <Tip label="Connect Google Calendar">
+              <Tip label="Link your calendar">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={connectGoogle}
-                  className="text-xs h-9"
+                  className="h-9 rounded-full text-xs"
                   aria-label="Connect Google Calendar"
                 >
-                  <CalIcon className="h-4 w-4 mr-1" />
+                  <CalIcon className="mr-1 h-4 w-4" strokeWidth={2} />
                   Connect Calendar
                 </Button>
               </Tip>
             )}
-            <Tip label="Contacts">
-              <Link to="/contacts" aria-label="Contacts">
-                <Button variant="ghost" size="icon" className="h-11 w-11">
-                  <Users className="h-5 w-5" />
+            <Tip label="People">
+              <Link to="/contacts" aria-label="People">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 rounded-full"
+                >
+                  <Users className="h-5 w-5" strokeWidth={2} />
                 </Button>
               </Link>
             </Tip>
-            <Tip label="Completed tasks">
-              <Link to="/completed" aria-label="Completed tasks">
-                <Button variant="ghost" size="icon" className="h-11 w-11">
-                  <CheckSquare className="h-5 w-5" />
+            <Tip label="Finished tasks">
+              <Link to="/completed" aria-label="Finished tasks">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 rounded-full"
+                >
+                  <CheckSquare className="h-5 w-5" strokeWidth={2} />
                 </Button>
               </Link>
             </Tip>
@@ -158,24 +191,44 @@ function Dashboard() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11"
+                className="h-11 w-11 rounded-full"
                 onClick={signOut}
                 aria-label="Sign out"
               >
-                <LogOut className="h-5 w-5" />
+                <LogOut className="h-5 w-5" strokeWidth={2} />
               </Button>
             </Tip>
           </div>
         </TooltipProvider>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 pb-24 pt-4">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          <Panel title="Today" count={todayCount}>
+      <main className="mx-auto max-w-7xl space-y-4 px-4 pb-24 pt-3">
+        <HeroSummary
+          greeting={
+            greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"
+          }
+          overdue={groups.overdue.length}
+          dueToday={groups.today.length}
+          waiting={waitingCount}
+          comingUp={upcomingCount}
+          whenever={groups.someday.length}
+          doneToday={0}
+        />
+
+        <OnboardingCard />
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <Panel
+            title="Today"
+            subtitle="Let's get these done first"
+            count={todayCount}
+            tint={CATEGORY_TINT.Finance}
+            className="xl:row-span-2 xl:max-h-[calc(100vh-8rem)]"
+          >
             {todayCount === 0 ? (
-              <EmptyLine>Nothing due today</EmptyLine>
+              <EmptyLine>Nothing due today — lovely.</EmptyLine>
             ) : (
-              <div className="rounded-lg border border-border bg-card">
+              <div className="space-y-2">
                 {groups.overdue.map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} overdue />
                 ))}
@@ -186,9 +239,14 @@ function Dashboard() {
             )}
           </Panel>
 
-          <Panel title="Waiting on Someone" count={waitingCount}>
+          <Panel
+            title="Waiting on Someone"
+            subtitle="Nothing to do here yet — just keeping tabs"
+            count={waitingCount}
+            tint={CATEGORY_TINT.Errands}
+          >
             {waitingCount === 0 ? (
-              <EmptyLine>No one to chase</EmptyLine>
+              <EmptyLine>No one to chase right now.</EmptyLine>
             ) : (
               <div className="space-y-3">
                 {groups.waitingGroups.map((g) => {
@@ -199,13 +257,13 @@ function Dashboard() {
                     ? contact.role
                       ? `${contact.name} (${contact.role})`
                       : contact.name
-                    : g.name || "Unassigned";
+                    : g.name || "Nobody named yet";
                   return (
                     <div key={g.key}>
-                      <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">
+                      <div className="px-1 pb-1.5 text-xs font-semibold text-muted-foreground">
                         {label}
                       </div>
-                      <div className="rounded-lg border border-border bg-card">
+                      <div className="space-y-2">
                         {g.tasks.map((t) => (
                           <TaskRow
                             key={t.id}
@@ -222,17 +280,22 @@ function Dashboard() {
             )}
           </Panel>
 
-          <Panel title="Upcoming" count={upcomingCount}>
+          <Panel
+            title="Coming Up"
+            subtitle="Nothing urgent — just so you're not surprised"
+            count={upcomingCount}
+            tint={CATEGORY_TINT.Travel}
+          >
             {upcomingCount === 0 ? (
-              <EmptyLine>Nothing scheduled ahead</EmptyLine>
+              <EmptyLine>Nothing on the horizon.</EmptyLine>
             ) : (
               <div className="space-y-3">
                 {groups.upcoming.map((g) => (
                   <div key={g.date}>
-                    <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">
+                    <div className="px-1 pb-1.5 text-xs font-semibold text-muted-foreground">
                       {formatDateLabel(g.date)}
                     </div>
-                    <div className="rounded-lg border border-border bg-card">
+                    <div className="space-y-2">
                       {g.tasks.map((t) => (
                         <TaskRow key={t.id} task={t} contacts={contacts} />
                       ))}
@@ -244,28 +307,50 @@ function Dashboard() {
           </Panel>
 
           <Panel
-            title="Someday"
+            title="Whenever You Get To It"
+            subtitle="No date on these — dip in when you have a moment"
             count={groups.someday.length}
+            tint={CATEGORY_TINT["Gifts/Events"]}
+            className="xl:col-span-2"
             collapsible
             open={somedayOpen}
             onToggle={() => setSomedayOpen((v) => !v)}
           >
             {somedayOpen &&
               (groups.someday.length === 0 ? (
-                <EmptyLine>Nothing parked here</EmptyLine>
+                <EmptyLine>Nothing parked here.</EmptyLine>
               ) : (
-                <div className="rounded-lg border border-border bg-card">
-                  {groups.someday.map((t) => (
-                    <TaskRow key={t.id} task={t} contacts={contacts} />
-                  ))}
+                <div className="space-y-4">
+                  {groupByCategory(groups.someday).map((g) => {
+                    const Icon = CATEGORY_ICON[g.category];
+                    return (
+                      <div key={g.category}>
+                        <div className="flex items-center gap-2 px-1 pb-1.5">
+                          <Icon
+                            className="h-4 w-4"
+                            strokeWidth={2}
+                            style={{ color: CATEGORY_COLOR[g.category] }}
+                          />
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            {g.category}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {g.tasks.map((t) => (
+                            <TaskRow key={t.id} task={t} contacts={contacts} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
           </Panel>
         </div>
 
         {tasks.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground pt-6">
-            Add your first task above
+          <p className="pt-2 text-center text-sm text-muted-foreground">
+            Nothing here yet — type your first task up top.
           </p>
         )}
       </main>
@@ -290,61 +375,58 @@ function Tip({
   );
 }
 
-function StatChip({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: number;
-  accent?: boolean;
-}) {
-  return (
-    <span
-      className={
-        accent
-          ? "rounded-full bg-primary/15 px-2 py-0.5 font-medium text-primary"
-          : "rounded-full bg-secondary px-2 py-0.5 text-muted-foreground"
-      }
-    >
-      {value} {label}
-    </span>
-  );
-}
-
 function Panel({
   title,
+  subtitle,
   count,
   children,
+  tint,
+  className,
   collapsible,
   open,
   onToggle,
 }: {
   title: string;
+  subtitle: string;
   count: number;
   children: React.ReactNode;
+  tint: string;
+  className?: string;
   collapsible?: boolean;
   open?: boolean;
   onToggle?: () => void;
 }) {
   return (
-    <section className="flex min-w-0 flex-col rounded-xl border border-border bg-surface/60 p-3 xl:max-h-[calc(100vh-13rem)]">
+    <section
+      className={
+        "panel-wash flex min-w-0 flex-col rounded-[26px] border border-border p-4 " +
+        (className ?? "")
+      }
+      style={{ ["--panel-tint" as string]: tint }}
+    >
       <button
         type="button"
         onClick={onToggle}
         disabled={!collapsible}
-        className="flex w-full items-center gap-2 pb-2 text-left"
+        className="flex w-full items-start gap-2 pb-3 text-left"
       >
         {collapsible &&
           (open ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="mt-1.5 h-4 w-4" strokeWidth={2} />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="mt-1.5 h-4 w-4" strokeWidth={2} />
           ))}
-        <h2 className="truncate font-display text-xl tracking-tight text-foreground/90">
-          {title}
-        </h2>
-        <span className="text-xs text-muted-foreground">({count})</span>
+        <span className="min-w-0">
+          <span className="flex items-baseline gap-2">
+            <h2 className="truncate font-display text-xl text-foreground">
+              {title}
+            </h2>
+            <span className="text-xs text-muted-foreground">({count})</span>
+          </span>
+          <span className="mt-0.5 block text-xs text-muted-foreground">
+            {subtitle}
+          </span>
+        </span>
       </button>
       <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
     </section>
@@ -352,11 +434,22 @@ function Panel({
 }
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-sm text-muted-foreground px-1 py-2">{children}</p>
-  );
+  return <p className="px-1 py-2 text-sm text-muted-foreground">{children}</p>;
 }
 
+function groupByCategory(tasks: Task[]) {
+  const map = new Map<TaskCategory, Task[]>();
+  for (const t of tasks) {
+    const c = (t.category ?? "Other") as TaskCategory;
+    const arr = map.get(c) ?? [];
+    arr.push(t);
+    map.set(c, arr);
+  }
+  return CATEGORY_ORDER.filter((c) => map.has(c)).map((category) => ({
+    category,
+    tasks: map.get(category)!,
+  }));
+}
 
 function groupTasks(tasks: Task[], today: string) {
   const overdue: Task[] = [];
@@ -419,4 +512,3 @@ function groupTasks(tasks: Task[], today: string) {
 
   return { overdue, today: todays, upcoming, someday, waitingGroups };
 }
-
