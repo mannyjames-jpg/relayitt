@@ -134,8 +134,9 @@ export function QuickCapture({
 
 
   return (
-    <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
-      <div className="mx-auto max-w-2xl px-4 py-3">
+    <div className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto max-w-5xl px-4 py-3">
+        <div className="pb-2 font-wordmark text-2xl leading-none text-primary">Relay</div>
         <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
           <div className="relative flex-1">
             <Input
