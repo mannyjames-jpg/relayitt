@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  AlertCircle,
   BellRing,
   Calendar as CalIcon,
   Check,
@@ -13,8 +14,15 @@ import {
   Play,
   PlayCircle,
   Trash2,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PetalBurst } from "@/components/PetalBurst";
+import {
+  CATEGORY_COLOR,
+  CATEGORY_PILL,
+  waitingLabel,
+} from "@/lib/task-style";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
