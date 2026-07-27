@@ -105,16 +105,6 @@ const CATEGORIES: Category[] = [
   "Other",
 ];
 
-const CATEGORY_PILL: Record<Category, string> = {
-  Travel: "pill-cat-travel",
-  Household: "pill-cat-household",
-  Scheduling: "pill-cat-scheduling",
-  Errands: "pill-cat-errands",
-  "Gifts/Events": "pill-cat-gifts",
-  Finance: "pill-cat-finance",
-  Vendors: "pill-cat-vendors",
-  Other: "pill-cat-other",
-};
 
 const STATUS_ICON: Record<Task["status"], React.ReactNode> = {
   "Not Started": <Circle className="h-3.5 w-3.5" />,
