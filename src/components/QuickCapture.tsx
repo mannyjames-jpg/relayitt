@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, X } from "lucide-react";
+import { Check, Plus, X } from "lucide-react";
+import { sourceLabel } from "@/lib/task-style";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,15 @@ export function QuickCapture({
     queryKey: ["contacts"],
     queryFn: () => listC(),
   });
+
+  // Name the person tasks come from, when a contact is marked as such.
+  const bossName = useMemo(() => {
+    const match = contacts.find((c) =>
+      /boss|principal|employer/i.test(c.role ?? ""),
+    );
+    return match?.name.split(" ")[0] ?? null;
+  }, [contacts]);
+
 
   const [title, setTitle] = useState("");
   const [source, setSource] = useState<Source>("Personal Reminder");
@@ -108,7 +118,8 @@ export function QuickCapture({
             : null,
       },
     });
-    toast.success("Task added", {
+    toast.success("Added to your list — you'll find it under Today", {
+      duration: 4000,
       description: parsed.hints.length ? parsed.hints.join(" · ") : undefined,
     });
     setTitle("");
@@ -133,8 +144,9 @@ export function QuickCapture({
 
 
   return (
-    <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border">
-      <div className="mx-auto max-w-2xl px-4 py-3">
+    <div className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto max-w-5xl px-4 py-3">
+        <div className="pb-2 font-wordmark text-2xl leading-none text-primary">Relay</div>
         <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
           <div className="relative flex-1">
             <Input
@@ -156,14 +168,14 @@ export function QuickCapture({
                 // Delay so pill taps register as source changes, not filter changes.
                 setTimeout(() => setFocused(false), 150);
               }}
-              placeholder="Add a task…  (try: tomorrow 9am #travel !urgent)"
+              placeholder="What do you need to remember? Just type it naturally…"
               maxLength={200}
-              className="h-11 pr-10"
+              className="h-12 rounded-full border-border bg-card pr-10 pl-4 text-[15px]"
               aria-label="New task"
             />
             {flash && (
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-primary animate-flash">
-                ✓
+                <Check className="h-4 w-4" strokeWidth={2.5} />
               </span>
             )}
           </div>
@@ -171,11 +183,11 @@ export function QuickCapture({
           <VoiceCapture contacts={contacts} />
           <Button
             type="submit"
-            className="h-11 px-4"
+            className="h-12 rounded-full bg-gradient-rose px-5 font-semibold text-primary-foreground hover:opacity-90"
             disabled={!title.trim() || m.isPending}
-            aria-label="Add task"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-5 w-5" strokeWidth={2} />
+            Add task
           </Button>
         </form>
 
@@ -247,7 +259,7 @@ export function QuickCapture({
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {s === "From Boss" ? "Boss" : s === "Delegated by Me" ? "Delegated" : "Personal"}
+                  {sourceLabel(s, bossName)}
                 </button>
               );
             })}

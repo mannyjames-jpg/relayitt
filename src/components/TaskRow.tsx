@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
+  AlertCircle,
   BellRing,
   Calendar as CalIcon,
   Check,
@@ -13,8 +14,15 @@ import {
   Play,
   PlayCircle,
   Trash2,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PetalBurst } from "@/components/PetalBurst";
+import {
+  CATEGORY_COLOR,
+  CATEGORY_PILL,
+  waitingLabel,
+} from "@/lib/task-style";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -97,16 +105,6 @@ const CATEGORIES: Category[] = [
   "Other",
 ];
 
-const CATEGORY_PILL: Record<Category, string> = {
-  Travel: "pill-cat-travel",
-  Household: "pill-cat-household",
-  Scheduling: "pill-cat-scheduling",
-  Errands: "pill-cat-errands",
-  "Gifts/Events": "pill-cat-gifts",
-  Finance: "pill-cat-finance",
-  Vendors: "pill-cat-vendors",
-  Other: "pill-cat-other",
-};
 
 const STATUS_ICON: Record<Task["status"], React.ReactNode> = {
   "Not Started": <Circle className="h-3.5 w-3.5" />,
@@ -133,6 +131,7 @@ export function TaskRow({
   const getVoice = useServerFn(getVoiceNoteUrl);
 
   const [expanded, setExpanded] = useState(false);
+  const [burst, setBurst] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [nudgeFlash, setNudgeFlash] = useState(false);
   const [nudgeStep, setNudgeStep] = useState<null | "contact" | "reminder">(null);
@@ -181,10 +180,13 @@ export function TaskRow({
   const isUrgent = task.priority === "Urgent";
 
   async function toggleDone() {
+    setBurst(true);
+    setTimeout(() => setBurst(false), 700);
     setCompleting(true);
     setTimeout(async () => {
       await updateM.mutateAsync({ data: { id: task.id, status: "Done" } });
-      toast("Task completed", {
+      toast("Nicely done — one less thing to worry about", {
+        duration: 4000,
         action: {
           label: "Undo",
           onClick: async () => {
@@ -200,7 +202,8 @@ export function TaskRow({
   async function handleDelete() {
     const snapshot = task;
     await deleteM.mutateAsync({ data: { id: task.id } });
-    toast("Task deleted", {
+    toast("Removed from your list", {
+      duration: 4000,
       action: {
         label: "Undo",
         onClick: async () => {
@@ -259,27 +262,47 @@ export function TaskRow({
     new Date(task.next_followup_reminder_at).getTime() < Date.now();
   const nudgeContact = contacts.find((c) => c.id === task.assigned_to) ?? null;
 
+  const accent = CATEGORY_COLOR[task.category ?? "Other"];
+
   return (
     <div
       className={cn(
-        "border-b border-border last:border-b-0",
+        "group relative overflow-hidden rounded-2xl border border-border bg-card shadow-[0_2px_10px_-9px_rgba(61,43,48,0.7)] transition-shadow hover:shadow-[0_10px_24px_-18px_rgba(61,43,48,0.8)]",
         completing && "animate-complete",
-        overdue && "border-l-2 border-l-primary",
       )}
     >
-      <div className="flex flex-wrap items-start gap-x-3 gap-y-1 px-3 py-3 min-h-[56px]">
-        <button
-          type="button"
-          onClick={toggleDone}
-          aria-label={`Mark ${task.title} done`}
-          className="mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 border-muted-foreground/40 hover:border-primary hover:bg-primary/10 flex items-center justify-center transition-colors"
-        >
-          {status === "Done" && <Check className="h-4 w-4 text-primary" />}
-        </button>
+      <span
+        aria-hidden
+        className="absolute left-0 top-0 h-full w-1.5"
+        style={{ background: accent }}
+      />
+
+      <div className="flex items-start gap-3 py-3 pl-5 pr-3">
+        <div className="relative mt-0.5 shrink-0">
+          {burst && <PetalBurst />}
+          <button
+            type="button"
+            onClick={toggleDone}
+            aria-label={`Mark ${task.title} done`}
+            className={cn(
+              "relative flex h-6 w-6 items-center justify-center rounded-full border-2 border-border transition-all hover:border-primary",
+              completing && "border-transparent bg-gradient-rose animate-ring-pop",
+            )}
+          >
+            <Check
+              className={cn(
+                "h-3.5 w-3.5 text-primary-foreground transition-opacity",
+                completing ? "opacity-100" : "opacity-0",
+              )}
+              strokeWidth={3}
+            />
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="min-w-0 flex-1 basis-[10rem] text-left"
+          className="min-w-0 flex-1 text-left"
         >
           <div className="flex items-start gap-2">
             {isUrgent && (
@@ -298,33 +321,39 @@ export function TaskRow({
             </div>
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1">
-              {STATUS_ICON[status]}
-              <span>{status}</span>
-            </span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
             {task.category && (
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
                   CATEGORY_PILL[task.category],
                 )}
               >
                 {task.category}
               </span>
             )}
+            {overdue && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">
+                <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                Past its date
+              </span>
+            )}
             {task.priority === "Important" && (
-              <span className="inline-flex items-center rounded-full bg-rose/20 px-2 py-0.5 text-[11px] font-medium text-rose-foreground">
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold pill-cat-gifts">
                 Important
               </span>
             )}
+            <span className="inline-flex items-center gap-1">
+              {STATUS_ICON[status]}
+              <span>{status}</span>
+            </span>
             {task.due_date && (
               <span className="inline-flex items-center gap-1">
-                <CalIcon className="h-3.5 w-3.5" />
+                <CalIcon className="h-3.5 w-3.5" strokeWidth={2} />
                 {task.due_date}
                 {task.due_time && (
                   <>
-                    <Clock className="ml-1 h-3.5 w-3.5" />
+                    <Clock className="ml-1 h-3.5 w-3.5" strokeWidth={2} />
                     {formatTime(task.due_time)}
                   </>
                 )}
@@ -336,21 +365,25 @@ export function TaskRow({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2 py-0.5",
                   waitDays >= 3
-                    ? "bg-primary/15 text-primary font-medium"
+                    ? "bg-accent font-semibold text-accent-foreground"
                     : "bg-secondary text-muted-foreground",
-                  followupOverdue && "ring-2 ring-primary/60 ring-offset-1 ring-offset-background",
+                  followupOverdue &&
+                    "ring-2 ring-primary/50 ring-offset-1 ring-offset-card",
                   nudgeFlash && "animate-flash",
                 )}
-                title={followupOverdue ? "Your follow-up reminder is past due" : undefined}
+                title={
+                  followupOverdue
+                    ? "You asked to be reminded about this — that time has passed"
+                    : undefined
+                }
               >
-                waiting {waitDays}d
-                {followupOverdue && <span className="ml-0.5">!</span>}
+                {waitingLabel(waitDays)}
               </span>
             )}
           </div>
         </button>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Select
             value={status}
             onValueChange={async (v) => {
@@ -360,7 +393,7 @@ export function TaskRow({
             }}
           >
             <SelectTrigger
-              className="h-8 w-8 border-0 p-0 [&>svg:last-child]:hidden"
+              className="h-8 w-8 border-0 bg-transparent p-0 shadow-none [&>svg:last-child]:hidden"
               aria-label="Change status"
               title={`Status: ${status}`}
             >
@@ -385,26 +418,39 @@ export function TaskRow({
             </SelectContent>
           </Select>
 
-          {showWaitingBadge && (
-            <Button
+          {/* Quick actions slide in from the right on hover / keyboard focus */}
+          <div className="flex items-center gap-1 translate-x-3 opacity-0 transition-all duration-200 focus-within:translate-x-0 focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100">
+            {showWaitingBadge && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRemindDays(2);
+                  setNudgeStep(
+                    nudgeContact?.phone || nudgeContact?.email
+                      ? "contact"
+                      : "reminder",
+                  );
+                }}
+                title="Nudge them and set a reminder"
+                aria-label="Follow up and set a reminder"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-primary transition-colors hover:bg-accent"
+              >
+                <BellRing className="h-4 w-4" strokeWidth={2} />
+              </button>
+            )}
+            <button
               type="button"
-              size="sm"
-              variant="ghost"
-              className="h-8 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
-              onClick={() => {
-                setRemindDays(2);
-                setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "reminder");
-              }}
-              title="Reach out now and set a follow-up reminder"
-              aria-label="Follow up and set a reminder"
+              onClick={() => setConfirmDelete(true)}
+              title="Remove this task"
+              aria-label={`Delete ${task.title}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
             >
-              <BellRing className="h-3.5 w-3.5 mr-1" />
-              Follow up
-            </Button>
-          )}
-
+              <X className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </div>
         </div>
       </div>
+
 
       {expanded && (
         <div className="px-3 pb-4 space-y-3 bg-surface border-t border-border">
