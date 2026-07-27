@@ -133,6 +133,7 @@ export function TaskRow({
   const getVoice = useServerFn(getVoiceNoteUrl);
 
   const [expanded, setExpanded] = useState(false);
+  const [burst, setBurst] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [nudgeFlash, setNudgeFlash] = useState(false);
   const [nudgeStep, setNudgeStep] = useState<null | "contact" | "reminder">(null);
