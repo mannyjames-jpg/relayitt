@@ -50,6 +50,15 @@ export function QuickCapture({
     queryFn: () => listC(),
   });
 
+  // Name the person tasks come from, when a contact is marked as such.
+  const bossName = useMemo(() => {
+    const match = contacts.find((c) =>
+      /boss|principal|employer/i.test(c.role ?? ""),
+    );
+    return match?.name.split(" ")[0] ?? null;
+  }, [contacts]);
+
+
   const [title, setTitle] = useState("");
   const [source, setSource] = useState<Source>("Personal Reminder");
   const [contactId, setContactId] = useState<string | null>(null);
