@@ -247,7 +247,7 @@ export function QuickCapture({
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {s === "From Boss" ? "Boss" : s === "Delegated by Me" ? "Delegated" : "Personal"}
+                  {sourceLabel(s, bossName)}
                 </button>
               );
             })}
