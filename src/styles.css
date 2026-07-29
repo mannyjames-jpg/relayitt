@@ -117,6 +117,22 @@
   --cat-clay-tint: #eee9e3;
   --cat-ash-tint: #ebeae8;
 
+  /* Dashboard status groups — the one intentional splash of hue.
+     Each foreground is AA (>= 4.5:1) on both white and its own tint. */
+  --grp-overdue: #8a4232;   /* muted terracotta */
+  --grp-today: #75561a;     /* warm amber/gold */
+  --grp-waiting: #435770;   /* dusty slate blue */
+  --grp-upcoming: #3f5c46;  /* muted sage */
+  --grp-whenever: #5b4d68;  /* soft mauve */
+
+  --grp-overdue-tint: #f6e9e5;
+  --grp-today-tint: #f6efdf;
+  --grp-waiting-tint: #e8edf4;
+  --grp-upcoming-tint: #e7efe9;
+  --grp-whenever-tint: #eeebf2;
+
+
+
   --destructive: #7a3c34;
   --destructive-foreground: #ffffff;
 
