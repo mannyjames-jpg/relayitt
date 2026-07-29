@@ -217,7 +217,7 @@ export function QuickCapture({
 
 
         {/* Key fields stay visible — no hunting behind focus states. */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5">
           <Field label="Created by / From" help={SOURCE_HELP[source]}>
             <Select value={source} onValueChange={(v) => setSource(v as Source)}>
               <SelectTrigger
