@@ -50,14 +50,14 @@ export function HeroSummary({
             : `${remaining} things left today — you've got this.`;
 
   return (
-    <section className="rounded-[26px] border border-border bg-white/70 p-5 shadow-[0_10px_30px_-24px_rgba(61,43,48,0.6)] sm:p-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <div className="relative h-[104px] w-[104px] shrink-0">
+    <section className="rounded-[22px] border border-border bg-card p-4 sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative h-[92px] w-[92px] shrink-0">
           <svg viewBox="0 0 96 96" className="h-full w-full -rotate-90">
             <defs>
               <linearGradient id="relay-ring" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#EFA0B2" />
-                <stop offset="100%" stopColor="#C25777" />
+                <stop offset="0%" stopColor="var(--ring-from)" />
+                <stop offset="100%" stopColor="var(--ring-to)" />
               </linearGradient>
             </defs>
             <circle
@@ -65,7 +65,7 @@ export function HeroSummary({
               cy="48"
               r={r}
               fill="none"
-              stroke="var(--rose-tint)"
+              stroke="var(--muted)"
               strokeWidth="8"
             />
             <circle
@@ -92,7 +92,7 @@ export function HeroSummary({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-[28px] italic leading-tight text-foreground sm:text-[32px]">
+          <h1 className="font-display text-[24px] leading-tight text-foreground sm:text-[28px]">
             {greeting}
           </h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">

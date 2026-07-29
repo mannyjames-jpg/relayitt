@@ -77,6 +77,30 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          font_choice: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          font_choice?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          font_choice?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           assigned_to: string | null
@@ -91,12 +115,14 @@ export type Database = {
           id: string
           last_followup_at: string | null
           next_followup_reminder_at: string | null
+          next_step: string | null
           notes: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           raw_transcript: string | null
           source: Database["public"]["Enums"]["task_source"]
           source_type: Database["public"]["Enums"]["task_source_type"]
           status: Database["public"]["Enums"]["task_status"]
+          status_updated_at: string
           title: string
           updated_at: string
           user_id: string
@@ -115,12 +141,14 @@ export type Database = {
           id?: string
           last_followup_at?: string | null
           next_followup_reminder_at?: string | null
+          next_step?: string | null
           notes?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           raw_transcript?: string | null
           source?: Database["public"]["Enums"]["task_source"]
           source_type?: Database["public"]["Enums"]["task_source_type"]
           status?: Database["public"]["Enums"]["task_status"]
+          status_updated_at?: string
           title: string
           updated_at?: string
           user_id: string
@@ -139,12 +167,14 @@ export type Database = {
           id?: string
           last_followup_at?: string | null
           next_followup_reminder_at?: string | null
+          next_step?: string | null
           notes?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           raw_transcript?: string | null
           source?: Database["public"]["Enums"]["task_source"]
           source_type?: Database["public"]["Enums"]["task_source_type"]
           status?: Database["public"]["Enums"]["task_status"]
+          status_updated_at?: string
           title?: string
           updated_at?: string
           user_id?: string
@@ -187,7 +217,11 @@ export type Database = {
       task_priority: "Normal" | "Important" | "Urgent"
       task_source: "From Boss" | "Delegated by Me" | "Personal Reminder"
       task_source_type: "Typed" | "Voice"
-      task_status: "Not Started" | "In Progress" | "Waiting on Someone" | "Done"
+      task_status:
+        | "Not Started"
+        | "In Progress"
+        | "Waiting on Someone"
+        | "Complete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -328,7 +362,12 @@ export const Constants = {
       task_priority: ["Normal", "Important", "Urgent"],
       task_source: ["From Boss", "Delegated by Me", "Personal Reminder"],
       task_source_type: ["Typed", "Voice"],
-      task_status: ["Not Started", "In Progress", "Waiting on Someone", "Done"],
+      task_status: [
+        "Not Started",
+        "In Progress",
+        "Waiting on Someone",
+        "Complete",
+      ],
     },
   },
 } as const

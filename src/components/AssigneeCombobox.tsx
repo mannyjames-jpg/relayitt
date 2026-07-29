@@ -56,9 +56,10 @@ export function AssigneeCombobox({
           size={compact ? "sm" : "default"}
           className={cn(
             "justify-between font-normal",
-            compact ? "h-9" : "h-11 w-full",
+            compact ? "h-8 w-[150px] text-xs" : "h-11 w-full",
             !label && "text-muted-foreground",
           )}
+
         >
           <span className="truncate">{label || placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

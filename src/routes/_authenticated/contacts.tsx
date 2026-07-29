@@ -39,7 +39,7 @@ function ContactsPage() {
 
   const counts = new Map<string, number>();
   for (const t of tasks) {
-    if (t.assigned_to && t.status !== "Done") {
+    if (t.assigned_to && t.status !== "Complete") {
       counts.set(t.assigned_to, (counts.get(t.assigned_to) ?? 0) + 1);
     }
   }

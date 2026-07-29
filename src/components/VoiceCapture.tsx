@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Square, Trash2, X } from "lucide-react";
+import { Loader2, Mic, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { transcribeVoiceNote } from "@/lib/voice.functions";
-import { createTask } from "@/lib/tasks.functions";
+import { createTask, deleteTask } from "@/lib/tasks.functions";
 import { cn } from "@/lib/utils";
 import type { ContactOption } from "./AssigneeCombobox";
 
@@ -48,7 +48,12 @@ type Draft = {
   assigned_to_name: string | null;
   due_date: string | null;
   due_time: string | null;
+  /** Checked drafts are the ones that get imported. */
+  selected: boolean;
+  /** What the AI inferred, so we can mark unchanged values as suggested. */
+  ai: { category: Category | null; priority: Priority | null };
 };
+
 
 const CATEGORIES: Category[] = [
   "Travel",
@@ -96,6 +101,7 @@ export function VoiceCapture({
   const qc = useQueryClient();
   const transcribe = useServerFn(transcribeVoiceNote);
   const create = useServerFn(createTask);
+  const removeTask = useServerFn(deleteTask);
 
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<
@@ -114,6 +120,7 @@ export function VoiceCapture({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const structureM = useMutation({ mutationFn: transcribe });
+  const selectedCount = drafts.filter((d) => d.selected).length;
 
   function stopTimer() {
     if (timerRef.current) {
@@ -172,8 +179,14 @@ export function VoiceCapture({
               assigned_to_name: d.assigned_to_name ?? null,
               due_date: d.due_date ?? null,
               due_time: d.due_time ?? null,
+              selected: true,
+              ai: {
+                category: (d.category ?? null) as Category | null,
+                priority: d.priority ?? null,
+              },
             })),
           );
+
           setPhase("review");
         } catch (e) {
           toast.error(e instanceof Error ? e.message : "Voice processing failed");
@@ -220,7 +233,8 @@ export function VoiceCapture({
   }
 
   async function confirmAll() {
-    if (drafts.length === 0) return;
+    const chosen = drafts.filter((d) => d.selected);
+    if (chosen.length === 0) return;
     setSaving(true);
     try {
       // Upload audio once (all drafts from this note share the same audio + transcript).
@@ -245,8 +259,9 @@ export function VoiceCapture({
         }
       }
 
-      for (const d of drafts) {
-        await create({
+      const createdIds: string[] = [];
+      for (const d of chosen) {
+        const row = await create({
           data: {
             title: d.title.trim() || "Untitled",
             source: d.source,
@@ -262,12 +277,26 @@ export function VoiceCapture({
             raw_transcript: transcript || null,
           },
         });
+        if (row?.id) createdIds.push(row.id as string);
       }
       qc.invalidateQueries({ queryKey: ["tasks"] });
       toast.success(
-        drafts.length === 1
+        chosen.length === 1
           ? "Task added from voice note"
-          : `${drafts.length} tasks added`,
+          : `${chosen.length} tasks added`,
+        {
+          duration: 6000,
+          action: {
+            label: "Undo",
+            onClick: async () => {
+              for (const id of createdIds) {
+                await removeTask({ data: { id } });
+              }
+              qc.invalidateQueries({ queryKey: ["tasks"] });
+              toast("Import undone");
+            },
+          },
+        },
       );
       cancelAll();
     } catch (e) {
@@ -280,9 +309,7 @@ export function VoiceCapture({
   function updateDraft(i: number, patch: Partial<Draft>) {
     setDrafts((prev) => prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
   }
-  function removeDraft(i: number) {
-    setDrafts((prev) => prev.filter((_, idx) => idx !== i));
-  }
+
 
   return (
     <>
@@ -347,62 +374,61 @@ export function VoiceCapture({
           )}
 
           {phase === "review" && (
-            <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+            <div className="max-h-[70vh] space-y-2.5 overflow-y-auto pr-1">
               {transcript && (
-                <div className="rounded-md bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
-                  <div className="mb-1 font-medium text-foreground/80">
-                    Transcript
-                  </div>
-                  <p className="italic">"{transcript}"</p>
+                <div className="rounded-md bg-secondary/60 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                  <span className="font-medium text-foreground/80">
+                    Transcript:{" "}
+                  </span>
+                  <span className="italic">"{transcript}"</span>
                 </div>
               )}
 
+              <p className="text-xs text-muted-foreground">
+                Tick the ones you want to import.
+              </p>
+
               {drafts.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Nothing left to save.
+                  No tasks were found in that note.
                 </p>
               )}
 
               {drafts.map((d, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-border bg-card p-3 space-y-2 shadow-sm"
+                  className={cn(
+                    "rounded-lg border p-2.5",
+                    d.selected
+                      ? "border-border bg-card"
+                      : "border-border/60 bg-muted/40 opacity-70",
+                  )}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={d.selected}
+                      onCheckedChange={(v) =>
+                        updateDraft(i, { selected: v === true })
+                      }
+                      aria-label={`Import "${d.title}"`}
+                      className="shrink-0"
+                    />
                     <Input
                       value={d.title}
                       onChange={(e) => updateDraft(i, { title: e.target.value })}
-                      className="flex-1"
+                      className="h-8 flex-1 text-sm"
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-muted-foreground"
-                      aria-label="Discard draft"
-                      onClick={() => removeDraft(i)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
-                  <Textarea
-                    value={d.notes ?? ""}
-                    placeholder="Notes"
-                    rows={2}
-                    onChange={(e) =>
-                      updateDraft(i, { notes: e.target.value || null })
-                    }
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Source</Label>
+
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <CompactField label="Source">
                       <Select
                         value={d.source}
                         onValueChange={(v) =>
                           updateDraft(i, { source: v as Source })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -415,16 +441,21 @@ export function VoiceCapture({
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Priority</Label>
+                    </CompactField>
+
+                    <CompactField
+                      label="Priority"
+                      suggested={
+                        !!d.ai.priority && d.priority === d.ai.priority
+                      }
+                    >
                       <Select
                         value={d.priority}
                         onValueChange={(v) =>
                           updateDraft(i, { priority: v as Priority })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -433,21 +464,23 @@ export function VoiceCapture({
                           <SelectItem value="Urgent">Urgent</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Category</Label>
+                    </CompactField>
+
+                    <CompactField
+                      label="Category"
+                      suggested={
+                        !!d.ai.category && d.category === d.ai.category
+                      }
+                    >
                       <Select
                         value={d.category ?? "__none"}
                         onValueChange={(v) =>
                           updateDraft(i, {
-                            category:
-                              v === "__none" ? null : (v as Category),
+                            category: v === "__none" ? null : (v as Category),
                           })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue placeholder="None" />
                         </SelectTrigger>
                         <SelectContent>
@@ -459,21 +492,20 @@ export function VoiceCapture({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Assign to</Label>
+                    </CompactField>
+
+                    <CompactField label="Assigned to">
                       <Select
                         value={d.assigned_contact_id ?? "__none"}
                         onValueChange={(v) =>
                           updateDraft(i, {
-                            assigned_contact_id:
-                              v === "__none" ? null : v,
+                            assigned_contact_id: v === "__none" ? null : v,
                             assigned_to_name:
                               v === "__none" ? d.assigned_to_name : null,
                           })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue
                             placeholder={d.assigned_to_name ?? "None"}
                           />
@@ -491,13 +523,12 @@ export function VoiceCapture({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Due date</Label>
+                    </CompactField>
+
+                    <CompactField label="Due date">
                       <Input
                         type="date"
+                        className="h-8 text-xs"
                         value={d.due_date ?? ""}
                         onChange={(e) =>
                           updateDraft(i, {
@@ -505,45 +536,84 @@ export function VoiceCapture({
                             due_time: e.target.value ? d.due_time : null,
                           })
                         }
-                        className="mt-1"
                       />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Time</Label>
+                    </CompactField>
+
+                    <CompactField label="Time">
                       <Input
                         type="time"
+                        className="h-8 text-xs"
                         disabled={!d.due_date}
                         value={d.due_time ?? ""}
                         onChange={(e) =>
                           updateDraft(i, { due_time: e.target.value || null })
                         }
-                        className="mt-1"
                       />
+                    </CompactField>
+
+                    <div className="col-span-2">
+                      <CompactField label="Notes">
+                        <Input
+                          value={d.notes ?? ""}
+                          placeholder="Optional"
+                          className="h-8 text-xs"
+                          onChange={(e) =>
+                            updateDraft(i, { notes: e.target.value || null })
+                          }
+                        />
+                      </CompactField>
                     </div>
                   </div>
                 </div>
               ))}
 
-              <div className={cn("flex items-center justify-end gap-2 pt-2")}>
+              <div className="flex items-center justify-end gap-2 pt-1">
                 <Button variant="ghost" onClick={cancelAll} disabled={saving}>
                   <X className="mr-1 h-4 w-4" />
                   Cancel
                 </Button>
-                <Button
-                  onClick={confirmAll}
-                  disabled={saving || drafts.length === 0}
-                >
+                <Button onClick={confirmAll} disabled={saving || selectedCount === 0}>
                   {saving
                     ? "Saving…"
-                    : drafts.length === 1
-                      ? "Save task"
-                      : `Save ${drafts.length} tasks`}
+                    : selectedCount === 1
+                      ? "Import 1 task"
+                      : `Import ${selectedCount} tasks`}
                 </Button>
               </div>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function CompactField({
+  label,
+  suggested,
+  children,
+}: {
+  label: string;
+  suggested?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-0.5 flex items-center gap-1">
+        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          {label}
+        </Label>
+        {suggested && (
+          <span
+            title="Inferred from your voice note"
+            className="rounded-full bg-secondary px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            AI suggested
+          </span>
+        )}
+      </div>
+      {children}
+    </div>
   );
 }

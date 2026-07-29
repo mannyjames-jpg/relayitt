@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertCircle,
+  ArrowRight,
   BellRing,
   Calendar as CalIcon,
   Check,
@@ -21,7 +22,11 @@ import { PetalBurst } from "@/components/PetalBurst";
 import {
   CATEGORY_COLOR,
   CATEGORY_PILL,
+  STATUS_BADGE,
+  STATUS_HELP,
+  STATUS_ORDER,
   waitingLabel,
+  type TaskStatus,
 } from "@/lib/task-style";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +56,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import {
   deleteTask,
@@ -66,8 +76,10 @@ export type Task = {
   id: string;
   title: string;
   notes: string | null;
+  next_step?: string | null;
   source: "From Boss" | "Delegated by Me" | "Personal Reminder";
-  status: "Not Started" | "In Progress" | "Waiting on Someone" | "Done";
+  status: TaskStatus;
+  status_updated_at?: string | null;
   category:
     | "Travel"
     | "Household"
@@ -105,12 +117,11 @@ const CATEGORIES: Category[] = [
   "Other",
 ];
 
-
-const STATUS_ICON: Record<Task["status"], React.ReactNode> = {
-  "Not Started": <Circle className="h-3.5 w-3.5" />,
-  "In Progress": <Play className="h-3.5 w-3.5" />,
-  "Waiting on Someone": <MessageCircleQuestion className="h-3.5 w-3.5" />,
-  Done: <Check className="h-3.5 w-3.5" />,
+const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
+  "Not Started": <Circle className="h-3 w-3" />,
+  "In Progress": <Play className="h-3 w-3" />,
+  "Waiting on Someone": <MessageCircleQuestion className="h-3 w-3" />,
+  Complete: <Check className="h-3 w-3" />,
 };
 
 export function TaskRow({
@@ -134,13 +145,16 @@ export function TaskRow({
   const [burst, setBurst] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [nudgeFlash, setNudgeFlash] = useState(false);
-  const [nudgeStep, setNudgeStep] = useState<null | "contact" | "reminder">(null);
+  const [nudgeStep, setNudgeStep] = useState<
+    null | "contact" | "status" | "reminder"
+  >(null);
   const [remindDays, setRemindDays] = useState<number>(2);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
-  const [status, setStatus] = useState<Task["status"]>(task.status);
+  const [nextStep, setNextStep] = useState(task.next_step ?? "");
+  const [status, setStatus] = useState<TaskStatus>(task.status);
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
   const [dueTime, setDueTime] = useState(task.due_time?.slice(0, 5) ?? "");
   const [contactId, setContactId] = useState<string | null>(task.assigned_to);
@@ -151,6 +165,7 @@ export function TaskRow({
   useEffect(() => {
     setTitle(task.title);
     setNotes(task.notes ?? "");
+    setNextStep(task.next_step ?? "");
     setStatus(task.status);
     setDueDate(task.due_date ?? "");
     setDueTime(task.due_time?.slice(0, 5) ?? "");
@@ -179,12 +194,17 @@ export function TaskRow({
 
   const isUrgent = task.priority === "Urgent";
 
+  async function setStatusTo(next: TaskStatus) {
+    setStatus(next);
+    await updateM.mutateAsync({ data: { id: task.id, status: next } });
+  }
+
   async function toggleDone() {
     setBurst(true);
     setTimeout(() => setBurst(false), 700);
     setCompleting(true);
     setTimeout(async () => {
-      await updateM.mutateAsync({ data: { id: task.id, status: "Done" } });
+      await updateM.mutateAsync({ data: { id: task.id, status: "Complete" } });
       toast("Nicely done — one less thing to worry about", {
         duration: 4000,
         action: {
@@ -213,6 +233,7 @@ export function TaskRow({
               title: snapshot.title,
               source: snapshot.source,
               notes: snapshot.notes,
+              next_step: snapshot.next_step ?? null,
               category: snapshot.category,
               priority: snapshot.priority,
               assigned_to: snapshot.assigned_to,
@@ -233,6 +254,7 @@ export function TaskRow({
         id: task.id,
         title: title.trim() || task.title,
         notes: notes || null,
+        next_step: nextStep.trim() || null,
         status,
         category,
         priority,
@@ -267,31 +289,31 @@ export function TaskRow({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border bg-card shadow-[0_2px_10px_-9px_rgba(61,43,48,0.7)] transition-shadow hover:shadow-[0_10px_24px_-18px_rgba(61,43,48,0.8)]",
+        "group relative overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-[0_6px_16px_-14px_rgba(31,30,27,0.9)]",
         completing && "animate-complete",
       )}
     >
       <span
         aria-hidden
-        className="absolute left-0 top-0 h-full w-1.5"
+        className="absolute left-0 top-0 h-full w-1"
         style={{ background: accent }}
       />
 
-      <div className="flex items-start gap-3 py-3 pl-5 pr-3">
+      <div className="flex items-start gap-2 py-2 pl-3.5 pr-2">
         <div className="relative mt-0.5 shrink-0">
           {burst && <PetalBurst />}
           <button
             type="button"
             onClick={toggleDone}
-            aria-label={`Mark ${task.title} done`}
+            aria-label={`Mark ${task.title} complete`}
             className={cn(
-              "relative flex h-6 w-6 items-center justify-center rounded-full border-2 border-border transition-all hover:border-primary",
-              completing && "border-transparent bg-gradient-rose animate-ring-pop",
+              "relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-border transition-all hover:border-primary",
+              completing && "border-transparent bg-primary animate-ring-pop",
             )}
           >
             <Check
               className={cn(
-                "h-3.5 w-3.5 text-primary-foreground transition-opacity",
+                "h-3 w-3 text-primary-foreground transition-opacity",
                 completing ? "opacity-100" : "opacity-0",
               )}
               strokeWidth={3}
@@ -299,33 +321,70 @@ export function TaskRow({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="min-w-0 flex-1 text-left"
-        >
-          <div className="flex items-start gap-2">
-            {isUrgent && (
-              <span
-                aria-label="Urgent"
-                className="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-primary"
-              />
-            )}
-            <div
-              className={cn(
-                "min-w-0 break-words text-[15px] leading-snug text-foreground",
-                isUrgent && "font-semibold",
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="w-full text-left"
+          >
+            <div className="flex items-start gap-1.5">
+              {isUrgent && (
+                <span
+                  aria-label="Urgent"
+                  className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-foreground"
+                />
               )}
-            >
-              {task.title}
+              <div
+                className={cn(
+                  "min-w-0 break-words text-[14px] leading-snug text-foreground",
+                  isUrgent && "font-semibold",
+                )}
+              >
+                {task.title}
+              </div>
             </div>
-          </div>
+          </button>
 
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+            {/* Status badge doubles as the status picker — always editable
+                without touching the task body. */}
+            <Select
+              value={status}
+              onValueChange={(v) => void setStatusTo(v as TaskStatus)}
+            >
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SelectTrigger
+                    aria-label="Change status"
+                    className={cn(
+                      "h-6 w-auto gap-1 rounded-full border-0 px-2 py-0 text-[11px] font-semibold shadow-none focus:ring-1 [&>svg:last-child]:h-3 [&>svg:last-child]:w-3 [&>svg:last-child]:opacity-60",
+                      STATUS_BADGE[status],
+                    )}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {STATUS_ICON[status]}
+                      {status}
+                    </span>
+                  </SelectTrigger>
+                </TooltipTrigger>
+                <TooltipContent>{STATUS_HELP[status]}</TooltipContent>
+              </Tooltip>
+              <SelectContent align="start">
+                {STATUS_ORDER.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    <span className="inline-flex items-center gap-2">
+                      {STATUS_ICON[s]}
+                      {s}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {task.category && (
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  "inline-flex items-center rounded-full px-2 py-0.5 font-semibold",
                   CATEGORY_PILL[task.category],
                 )}
               >
@@ -333,27 +392,23 @@ export function TaskRow({
               </span>
             )}
             {overdue && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-semibold text-accent-foreground">
                 <AlertCircle className="h-3 w-3" strokeWidth={2} />
                 Past its date
               </span>
             )}
             {task.priority === "Important" && (
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold pill-cat-gifts">
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 font-semibold pill-cat-gifts">
                 Important
               </span>
             )}
-            <span className="inline-flex items-center gap-1">
-              {STATUS_ICON[status]}
-              <span>{status}</span>
-            </span>
             {task.due_date && (
               <span className="inline-flex items-center gap-1">
-                <CalIcon className="h-3.5 w-3.5" strokeWidth={2} />
+                <CalIcon className="h-3 w-3" strokeWidth={2} />
                 {task.due_date}
                 {task.due_time && (
                   <>
-                    <Clock className="ml-1 h-3.5 w-3.5" strokeWidth={2} />
+                    <Clock className="ml-1 h-3 w-3" strokeWidth={2} />
                     {formatTime(task.due_time)}
                   </>
                 )}
@@ -368,7 +423,7 @@ export function TaskRow({
                     ? "bg-accent font-semibold text-accent-foreground"
                     : "bg-secondary text-muted-foreground",
                   followupOverdue &&
-                    "ring-2 ring-primary/50 ring-offset-1 ring-offset-card",
+                    "ring-2 ring-ring/60 ring-offset-1 ring-offset-card",
                   nudgeFlash && "animate-flash",
                 )}
                 title={
@@ -381,79 +436,59 @@ export function TaskRow({
               </span>
             )}
           </div>
-        </button>
 
-        <div className="flex shrink-0 items-center gap-1">
-          <Select
-            value={status}
-            onValueChange={async (v) => {
-              const next = v as Task["status"];
-              setStatus(next);
-              await updateM.mutateAsync({ data: { id: task.id, status: next } });
-            }}
-          >
-            <SelectTrigger
-              className="h-8 w-8 border-0 bg-transparent p-0 shadow-none [&>svg:last-child]:hidden"
-              aria-label="Change status"
-              title={`Status: ${status}`}
-            >
-              <span className="sr-only">{status}</span>
-            </SelectTrigger>
-            <SelectContent align="end">
-              {(
-                [
-                  "Not Started",
-                  "In Progress",
-                  "Waiting on Someone",
-                  "Done",
-                ] as Task["status"][]
-              ).map((s) => (
-                <SelectItem key={s} value={s}>
-                  <span className="inline-flex items-center gap-2">
-                    {STATUS_ICON[s]}
-                    {s}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Quick actions slide in from the right on hover / keyboard focus */}
-          <div className="flex items-center gap-1 translate-x-3 opacity-0 transition-all duration-200 focus-within:translate-x-0 focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100">
-            {showWaitingBadge && (
-              <button
-                type="button"
-                onClick={() => {
-                  setRemindDays(2);
-                  setNudgeStep(
-                    nudgeContact?.phone || nudgeContact?.email
-                      ? "contact"
-                      : "reminder",
-                  );
-                }}
-                title="Nudge them and set a reminder"
-                aria-label="Follow up and set a reminder"
-                className="flex h-8 w-8 items-center justify-center rounded-full text-primary transition-colors hover:bg-accent"
-              >
-                <BellRing className="h-4 w-4" strokeWidth={2} />
-              </button>
-            )}
+          {/* Next step — the immediate action, visible without expanding. */}
+          {task.next_step ? (
+            <div className="mt-1 flex items-start gap-1 text-[12px] text-foreground/80">
+              <ArrowRight className="mt-[3px] h-3 w-3 shrink-0" strokeWidth={2} />
+              <span className="min-w-0 break-words">
+                <span className="font-medium">Next:</span> {task.next_step}
+              </span>
+            </div>
+          ) : (
             <button
               type="button"
-              onClick={() => setConfirmDelete(true)}
-              title="Remove this task"
-              aria-label={`Delete ${task.title}`}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
+              onClick={() => setExpanded(true)}
+              className="mt-1 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
             >
-              <X className="h-4 w-4" strokeWidth={2} />
+              + Add next step
             </button>
-          </div>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1 translate-x-2 opacity-0 transition-all duration-200 focus-within:translate-x-0 focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100">
+          {showWaitingBadge && (
+            <button
+              type="button"
+              onClick={() => {
+                setRemindDays(2);
+                setNudgeStep(
+                  nudgeContact?.phone || nudgeContact?.email
+                    ? "contact"
+                    : "status",
+                );
+              }}
+              title="Reach out, then update the status"
+              aria-label="Follow up and set a reminder"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent"
+            >
+              <BellRing className="h-4 w-4" strokeWidth={2} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            title="Remove this task"
+            aria-label={`Delete ${task.title}`}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <X className="h-4 w-4" strokeWidth={2} />
+          </button>
         </div>
       </div>
 
-
       {expanded && (
-        <div className="px-3 pb-4 space-y-3 bg-surface border-t border-border">
+        <div className="space-y-3 border-t border-border bg-surface px-3 pb-4">
           <div className="pt-3">
             <Label htmlFor={`t-${task.id}`} className="text-xs">
               Title
@@ -467,9 +502,36 @@ export function TaskRow({
             />
           </div>
           <div>
-            <Label htmlFor={`n-${task.id}`} className="text-xs">
-              Notes
-            </Label>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label htmlFor={`ns-${task.id}`} className="text-xs">
+                  Next step
+                </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                The single immediate action — separate from general notes.
+              </TooltipContent>
+            </Tooltip>
+            <Input
+              id={`ns-${task.id}`}
+              value={nextStep}
+              maxLength={200}
+              placeholder="e.g. Call the caterer back Thursday"
+              onChange={(e) => setNextStep(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label htmlFor={`n-${task.id}`} className="text-xs">
+                  Notes
+                </Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                Background and context you may need later.
+              </TooltipContent>
+            </Tooltip>
             <Textarea
               id={`n-${task.id}`}
               value={notes}
@@ -548,7 +610,14 @@ export function TaskRow({
             </div>
           </div>
           <div>
-            <Label className="text-xs">Assigned to</Label>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Label className="text-xs">Assigned to</Label>
+              </TooltipTrigger>
+              <TooltipContent>
+                The person actually doing this — leave empty if it's you.
+              </TooltipContent>
+            </Tooltip>
             <div className="mt-1">
               <AssigneeCombobox
                 contacts={contacts}
@@ -562,8 +631,15 @@ export function TaskRow({
             </div>
           </div>
 
+          {task.status_updated_at && (
+            <p className="text-[11px] text-muted-foreground">
+              Status last changed{" "}
+              {new Date(task.status_updated_at).toLocaleString()}
+            </p>
+          )}
+
           {task.source_type === "Voice" && (
-            <div className="rounded-md bg-secondary/70 px-3 py-2 text-xs text-muted-foreground space-y-2">
+            <div className="space-y-2 rounded-md bg-secondary/70 px-3 py-2 text-xs text-muted-foreground">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-foreground/80">
                   From voice note
@@ -595,7 +671,7 @@ export function TaskRow({
               className="text-destructive hover:text-destructive"
               onClick={() => setConfirmDelete(true)}
             >
-              <Trash2 className="h-4 w-4 mr-1" />
+              <Trash2 className="mr-1 h-4 w-4" />
               Delete
             </Button>
             <div className="flex gap-2">
@@ -634,23 +710,23 @@ export function TaskRow({
                   <>
                     <Button
                       asChild
-                      className="w-full justify-start h-11"
+                      className="h-11 w-full justify-start"
                       variant="secondary"
-                      onClick={() => setNudgeStep("reminder")}
+                      onClick={() => setNudgeStep("status")}
                     >
                       <a href={`tel:${nudgeContact.phone}`}>
-                        <Phone className="h-4 w-4 mr-2" />
+                        <Phone className="mr-2 h-4 w-4" />
                         Call {nudgeContact.phone}
                       </a>
                     </Button>
                     <Button
                       asChild
-                      className="w-full justify-start h-11"
+                      className="h-11 w-full justify-start"
                       variant="secondary"
-                      onClick={() => setNudgeStep("reminder")}
+                      onClick={() => setNudgeStep("status")}
                     >
                       <a href={`sms:${nudgeContact.phone}`}>
-                        <MessageSquare className="h-4 w-4 mr-2" />
+                        <MessageSquare className="mr-2 h-4 w-4" />
                         Text {nudgeContact.phone}
                       </a>
                     </Button>
@@ -658,12 +734,12 @@ export function TaskRow({
                 ) : nudgeContact?.email ? (
                   <Button
                     asChild
-                    className="w-full justify-start h-11"
+                    className="h-11 w-full justify-start"
                     variant="secondary"
-                    onClick={() => setNudgeStep("reminder")}
+                    onClick={() => setNudgeStep("status")}
                   >
                     <a href={`mailto:${nudgeContact.email}`}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
+                      <MessageSquare className="mr-2 h-4 w-4" />
                       Email {nudgeContact.email}
                     </a>
                   </Button>
@@ -672,7 +748,7 @@ export function TaskRow({
                     No phone number saved for this contact.{" "}
                     <a
                       href={`/contacts/${nudgeContact?.id ?? ""}`}
-                      className="text-primary underline"
+                      className="underline"
                     >
                       Add phone number
                     </a>
@@ -680,8 +756,45 @@ export function TaskRow({
                 )}
               </div>
               <DialogFooter className="gap-2 sm:gap-2">
-                <Button variant="ghost" onClick={() => setNudgeStep("reminder")}>
+                <Button variant="ghost" onClick={() => setNudgeStep("status")}>
                   Skip
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {nudgeStep === "status" && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-display">
+                  Update the status?
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 py-1">
+                <p className="text-sm text-muted-foreground">
+                  You just reached out — where does this stand now?
+                </p>
+                {(
+                  ["In Progress", "Waiting on Someone", "Complete"] as TaskStatus[]
+                ).map((s) => (
+                  <Button
+                    key={s}
+                    variant="secondary"
+                    className="h-10 w-full justify-start"
+                    onClick={async () => {
+                      await setStatusTo(s);
+                      setNudgeStep(s === "Complete" ? null : "reminder");
+                      if (s === "Complete") toast.success("Marked Complete");
+                    }}
+                  >
+                    <span className="mr-2 inline-flex">{STATUS_ICON[s]}</span>
+                    Mark as {s}
+                  </Button>
+                ))}
+              </div>
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button variant="ghost" onClick={() => setNudgeStep("reminder")}>
+                  Leave as is
                 </Button>
               </DialogFooter>
             </>
@@ -774,7 +887,5 @@ export function TaskRow({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-
   );
 }
-

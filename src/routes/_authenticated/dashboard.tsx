@@ -8,28 +8,31 @@ import {
   LogOut,
   Users,
   CheckSquare,
+  Settings as SettingsIcon,
   Calendar as CalIcon,
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { listTasks } from "@/lib/tasks.functions";
 import { listContacts } from "@/lib/contacts.functions";
+import { getProfile } from "@/lib/profile.functions";
 import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { todayISO } from "@/lib/date-utils";
 import { formatDateLabel } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
-import { useAuth } from "@/hooks/use-auth";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { HeroSummary } from "@/components/HeroSummary";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import {
+  byPriority,
   CATEGORY_COLOR,
   CATEGORY_ICON,
   CATEGORY_ORDER,
   CATEGORY_TINT,
   type TaskCategory,
 } from "@/lib/task-style";
+
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -61,6 +64,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
+type PanelKey = "today" | "waiting" | "upcoming" | "someday";
+
 function Dashboard() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/_authenticated/dashboard" });
@@ -68,6 +73,7 @@ function Dashboard() {
   const listC = useServerFn(listContacts);
   const gStatus = useServerFn(getGoogleStatus);
   const gUrl = useServerFn(getGoogleAuthUrl);
+  const getProf = useServerFn(getProfile);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks"],
@@ -81,8 +87,18 @@ function Dashboard() {
     queryKey: ["google-status"],
     queryFn: () => gStatus(),
   });
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => getProf(),
+  });
 
-  const [somedayOpen, setSomedayOpen] = useState(true);
+  const [open, setOpen] = useState<Record<PanelKey, boolean>>({
+    today: true,
+    waiting: true,
+    upcoming: true,
+    someday: false,
+  });
+  const toggle = (k: PanelKey) => setOpen((p) => ({ ...p, [k]: !p[k] }));
 
   useEffect(() => {
     if (!search.google) return;
@@ -94,7 +110,6 @@ function Dashboard() {
   }, [search.google, navigate]);
 
   const today = todayISO();
-  const { user } = useAuth();
   const [filter, setFilter] = useState<FilterSource>("All");
 
   const filteredTasks = useMemo(() => {
@@ -107,13 +122,9 @@ function Dashboard() {
   );
 
   const greetingName = useMemo(() => {
-    const raw =
-      (user?.user_metadata?.full_name as string | undefined) ??
-      (user?.user_metadata?.name as string | undefined) ??
-      user?.email?.split("@")[0] ??
-      "";
+    const raw = profile?.display_name ?? "";
     return raw.split(" ")[0] || "";
-  }, [user]);
+  }, [profile]);
   const hour = new Date().getHours();
   const partOfDay = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
 
@@ -145,64 +156,62 @@ function Dashboard() {
   const todayCount = groups.overdue.length + groups.today.length;
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="min-h-screen bg-background">
       <QuickCapture filter={filter} onFilterChange={setFilter} />
 
-      <header className="mx-auto flex max-w-7xl items-center justify-end gap-1 px-4 pt-3">
-        <TooltipProvider delayDuration={200}>
-          <div className="flex shrink-0 items-center gap-1">
-            {google && !google.connected && google.configured && (
-              <Tip label="Link your calendar">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={connectGoogle}
-                  className="h-9 rounded-full text-xs"
-                  aria-label="Connect Google Calendar"
-                >
-                  <CalIcon className="mr-1 h-4 w-4" strokeWidth={2} />
-                  Connect Calendar
-                </Button>
-              </Tip>
-            )}
-            <Tip label="People">
-              <Link to="/contacts" aria-label="People">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 rounded-full"
-                >
-                  <Users className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Finished tasks">
-              <Link to="/completed" aria-label="Finished tasks">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-11 w-11 rounded-full"
-                >
-                  <CheckSquare className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Sign out">
+      <header className="mx-auto flex max-w-7xl items-center justify-end gap-1 px-4 pt-2">
+        <div className="flex shrink-0 items-center gap-1">
+          {google && !google.connected && google.configured && (
+            <Tip label="Link your calendar">
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-11 w-11 rounded-full"
-                onClick={signOut}
-                aria-label="Sign out"
+                size="sm"
+                onClick={connectGoogle}
+                className="h-9 rounded-full text-xs"
+                aria-label="Connect Google Calendar"
               >
-                <LogOut className="h-5 w-5" strokeWidth={2} />
+                <CalIcon className="mr-1 h-4 w-4" strokeWidth={2} />
+                Connect Calendar
               </Button>
             </Tip>
-          </div>
-        </TooltipProvider>
+          )}
+          <Tip label="People">
+            <Link to="/contacts" aria-label="People">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                <Users className="h-5 w-5" strokeWidth={2} />
+              </Button>
+            </Link>
+          </Tip>
+          <Tip label="Completed tasks">
+            <Link to="/completed" aria-label="Completed tasks">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                <CheckSquare className="h-5 w-5" strokeWidth={2} />
+              </Button>
+            </Link>
+          </Tip>
+          <Tip label="Settings">
+            <Link to="/settings" aria-label="Settings">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                <SettingsIcon className="h-5 w-5" strokeWidth={2} />
+              </Button>
+            </Link>
+          </Tip>
+          <Tip label="Sign out">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full"
+              onClick={signOut}
+              aria-label="Sign out"
+            >
+              <LogOut className="h-5 w-5" strokeWidth={2} />
+            </Button>
+          </Tip>
+        </div>
       </header>
 
-      <main className="mx-auto max-w-7xl space-y-4 px-4 pb-24 pt-3">
+      <main className="mx-auto max-w-7xl space-y-3 px-4 pb-16 pt-2">
         <HeroSummary
           greeting={
             greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"
@@ -217,22 +226,24 @@ function Dashboard() {
 
         <OnboardingCard />
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <Panel
             title="Today"
             subtitle="Let's get these done first"
             count={todayCount}
             tint={CATEGORY_TINT.Finance}
-            className="xl:row-span-2 xl:max-h-[calc(100vh-8rem)]"
+            className="sm:col-span-2 xl:col-span-1 xl:row-span-2 xl:max-h-[calc(100vh-9rem)]"
+            open={open.today}
+            onToggle={() => toggle("today")}
           >
             {todayCount === 0 ? (
               <EmptyLine>Nothing due today — lovely.</EmptyLine>
             ) : (
-              <div className="space-y-2">
-                {groups.overdue.map((t) => (
+              <div className="space-y-1.5">
+                {byPriority(groups.overdue).map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} overdue />
                 ))}
-                {groups.today.map((t) => (
+                {byPriority(groups.today).map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} />
                 ))}
               </div>
@@ -244,11 +255,13 @@ function Dashboard() {
             subtitle="Nothing to do here yet — just keeping tabs"
             count={waitingCount}
             tint={CATEGORY_TINT.Errands}
+            open={open.waiting}
+            onToggle={() => toggle("waiting")}
           >
             {waitingCount === 0 ? (
               <EmptyLine>No one to chase right now.</EmptyLine>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {groups.waitingGroups.map((g) => {
                   const contact = g.contactId
                     ? contacts.find((c) => c.id === g.contactId)
@@ -260,11 +273,11 @@ function Dashboard() {
                     : g.name || "Nobody named yet";
                   return (
                     <div key={g.key}>
-                      <div className="px-1 pb-1.5 text-xs font-semibold text-muted-foreground">
+                      <div className="px-1 pb-1 text-xs font-semibold text-muted-foreground">
                         {label}
                       </div>
-                      <div className="space-y-2">
-                        {g.tasks.map((t) => (
+                      <div className="space-y-1.5">
+                        {byPriority(g.tasks).map((t) => (
                           <TaskRow
                             key={t.id}
                             task={t}
@@ -285,18 +298,20 @@ function Dashboard() {
             subtitle="Nothing urgent — just so you're not surprised"
             count={upcomingCount}
             tint={CATEGORY_TINT.Travel}
+            open={open.upcoming}
+            onToggle={() => toggle("upcoming")}
           >
             {upcomingCount === 0 ? (
               <EmptyLine>Nothing on the horizon.</EmptyLine>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {groups.upcoming.map((g) => (
                   <div key={g.date}>
-                    <div className="px-1 pb-1.5 text-xs font-semibold text-muted-foreground">
+                    <div className="px-1 pb-1 text-xs font-semibold text-muted-foreground">
                       {formatDateLabel(g.date)}
                     </div>
-                    <div className="space-y-2">
-                      {g.tasks.map((t) => (
+                    <div className="space-y-1.5">
+                      {byPriority(g.tasks).map((t) => (
                         <TaskRow key={t.id} task={t} contacts={contacts} />
                       ))}
                     </div>
@@ -311,40 +326,38 @@ function Dashboard() {
             subtitle="No date on these — dip in when you have a moment"
             count={groups.someday.length}
             tint={CATEGORY_TINT["Gifts/Events"]}
-            className="xl:col-span-2"
-            collapsible
-            open={somedayOpen}
-            onToggle={() => setSomedayOpen((v) => !v)}
+            className="sm:col-span-2"
+            open={open.someday}
+            onToggle={() => toggle("someday")}
           >
-            {somedayOpen &&
-              (groups.someday.length === 0 ? (
-                <EmptyLine>Nothing parked here.</EmptyLine>
-              ) : (
-                <div className="space-y-4">
-                  {groupByCategory(groups.someday).map((g) => {
-                    const Icon = CATEGORY_ICON[g.category];
-                    return (
-                      <div key={g.category}>
-                        <div className="flex items-center gap-2 px-1 pb-1.5">
-                          <Icon
-                            className="h-4 w-4"
-                            strokeWidth={2}
-                            style={{ color: CATEGORY_COLOR[g.category] }}
-                          />
-                          <span className="text-xs font-semibold text-muted-foreground">
-                            {g.category}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {g.tasks.map((t) => (
-                            <TaskRow key={t.id} task={t} contacts={contacts} />
-                          ))}
-                        </div>
+            {groups.someday.length === 0 ? (
+              <EmptyLine>Nothing parked here.</EmptyLine>
+            ) : (
+              <div className="space-y-3">
+                {groupByCategory(groups.someday).map((g) => {
+                  const Icon = CATEGORY_ICON[g.category];
+                  return (
+                    <div key={g.category}>
+                      <div className="flex items-center gap-2 px-1 pb-1">
+                        <Icon
+                          className="h-4 w-4"
+                          strokeWidth={2}
+                          style={{ color: CATEGORY_COLOR[g.category] }}
+                        />
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          {g.category}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              ))}
+                      <div className="space-y-1.5">
+                        {byPriority(g.tasks).map((t) => (
+                          <TaskRow key={t.id} task={t} contacts={contacts} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </Panel>
         </div>
 
@@ -355,8 +368,10 @@ function Dashboard() {
         )}
       </main>
     </div>
+    </TooltipProvider>
   );
 }
+
 
 function Tip({
   label,
@@ -382,8 +397,7 @@ function Panel({
   children,
   tint,
   className,
-  collapsible,
-  open,
+  open = true,
   onToggle,
 }: {
   title: string;
@@ -392,14 +406,13 @@ function Panel({
   children: React.ReactNode;
   tint: string;
   className?: string;
-  collapsible?: boolean;
   open?: boolean;
   onToggle?: () => void;
 }) {
   return (
     <section
       className={
-        "panel-wash flex min-w-0 flex-col rounded-[26px] border border-border p-4 " +
+        "panel-wash flex min-w-0 flex-col rounded-[22px] border border-border p-3.5 " +
         (className ?? "")
       }
       style={{ ["--panel-tint" as string]: tint }}
@@ -407,18 +420,17 @@ function Panel({
       <button
         type="button"
         onClick={onToggle}
-        disabled={!collapsible}
-        className="flex w-full items-start gap-2 pb-3 text-left"
+        aria-expanded={open}
+        className="flex w-full items-start gap-2 pb-2 text-left"
       >
-        {collapsible &&
-          (open ? (
-            <ChevronDown className="mt-1.5 h-4 w-4" strokeWidth={2} />
-          ) : (
-            <ChevronRight className="mt-1.5 h-4 w-4" strokeWidth={2} />
-          ))}
+        {open ? (
+          <ChevronDown className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+        ) : (
+          <ChevronRight className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+        )}
         <span className="min-w-0">
           <span className="flex items-baseline gap-2">
-            <h2 className="truncate font-display text-xl text-foreground">
+            <h2 className="truncate font-display text-lg text-foreground">
               {title}
             </h2>
             <span className="text-xs text-muted-foreground">({count})</span>
@@ -428,10 +440,13 @@ function Panel({
           </span>
         </span>
       </button>
-      <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
+      {open && (
+        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
+      )}
     </section>
   );
 }
+
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
   return <p className="px-1 py-2 text-sm text-muted-foreground">{children}</p>;

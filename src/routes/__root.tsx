@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { FontPreference } from "@/components/FontPreference";
+
 
 
 function NotFoundComponent() {
@@ -104,8 +106,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Parisienne&family=Inter:wght@400..800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400..800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap",
       },
+
       {
         rel: "stylesheet",
         href: appCss,
@@ -160,9 +163,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <FontPreference />
       <Outlet />
       <Toaster position="bottom-center" />
     </QueryClientProvider>
   );
+
 }
 
