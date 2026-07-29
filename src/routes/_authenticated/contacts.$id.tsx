@@ -74,7 +74,7 @@ function ContactDetail() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="font-display text-2xl flex-1 truncate">
+          <h1 className="font-hero text-2xl flex-1 truncate">
             {form.name || "Contact"}
           </h1>
         </div>
@@ -153,7 +153,7 @@ function ContactDetail() {
         </section>
 
         <section>
-          <h2 className="font-display text-lg text-foreground/90 mb-2">
+          <h2 className="font-display text-foreground/90 mb-2">
             Active tasks ({active.length})
           </h2>
           {active.length === 0 ? (
@@ -176,7 +176,7 @@ function ContactDetail() {
 
         {done.length > 0 && (
           <section>
-            <h2 className="font-display text-lg text-foreground/90 mb-2">
+            <h2 className="font-display text-foreground/90 mb-2">
               Recently completed
             </h2>
             <ul className="rounded-lg border border-border bg-card divide-y divide-border">

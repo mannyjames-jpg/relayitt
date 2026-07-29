@@ -337,7 +337,7 @@ export function VoiceCapture({
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">
+            <DialogTitle className="font-hero text-xl">
               {phase === "review" ? "Review voice tasks" : "Voice note"}
             </DialogTitle>
           </DialogHeader>

@@ -790,7 +790,7 @@ export function TaskRow({
           {nudgeStep === "contact" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display">
+                <DialogTitle className="font-hero text-lg">
                   Reach out to {nudgeContact?.name}
                 </DialogTitle>
               </DialogHeader>
@@ -855,7 +855,7 @@ export function TaskRow({
           {nudgeStep === "status" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display">
+                <DialogTitle className="font-hero text-lg">
                   Update the status?
                 </DialogTitle>
               </DialogHeader>
@@ -892,7 +892,7 @@ export function TaskRow({
           {nudgeStep === "reminder" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display">
+                <DialogTitle className="font-hero text-lg">
                   Remind you again?
                 </DialogTitle>
               </DialogHeader>
@@ -955,7 +955,7 @@ export function TaskRow({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">
+            <AlertDialogTitle className="font-hero text-lg">
               Delete this task?
             </AlertDialogTitle>
             <AlertDialogDescription>
