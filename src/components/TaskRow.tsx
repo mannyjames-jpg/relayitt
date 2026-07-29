@@ -480,12 +480,17 @@ export function TaskRow({
 
           {/* Most recent entry from the step log, visible without expanding. */}
           {latestStep ? (
-            <div className="mt-1 flex items-start gap-1 text-[12px] text-foreground/80">
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="mt-1 flex items-start gap-1 text-left text-[12px] text-foreground/80 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+            >
               <ArrowRight className="mt-[3px] h-3 w-3 shrink-0" strokeWidth={2} />
               <span className="min-w-0 break-words">
                 <span className="font-medium">Next:</span> {latestStep.body}
               </span>
-            </div>
+              <span className="mt-[1px] shrink-0 text-[11px] text-muted-foreground">+</span>
+            </button>
           ) : (
             <button
               type="button"
