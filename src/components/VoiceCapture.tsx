@@ -372,62 +372,61 @@ export function VoiceCapture({
           )}
 
           {phase === "review" && (
-            <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+            <div className="max-h-[70vh] space-y-2.5 overflow-y-auto pr-1">
               {transcript && (
-                <div className="rounded-md bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">
-                  <div className="mb-1 font-medium text-foreground/80">
-                    Transcript
-                  </div>
-                  <p className="italic">"{transcript}"</p>
+                <div className="rounded-md bg-secondary/60 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                  <span className="font-medium text-foreground/80">
+                    Transcript:{" "}
+                  </span>
+                  <span className="italic">"{transcript}"</span>
                 </div>
               )}
 
+              <p className="text-xs text-muted-foreground">
+                Tick the ones you want to import.
+              </p>
+
               {drafts.length === 0 && (
                 <p className="text-sm text-muted-foreground">
-                  Nothing left to save.
+                  No tasks were found in that note.
                 </p>
               )}
 
               {drafts.map((d, i) => (
                 <div
                   key={i}
-                  className="rounded-lg border border-border bg-card p-3 space-y-2 shadow-sm"
+                  className={cn(
+                    "rounded-lg border p-2.5",
+                    d.selected
+                      ? "border-border bg-card"
+                      : "border-border/60 bg-muted/40 opacity-70",
+                  )}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={d.selected}
+                      onCheckedChange={(v) =>
+                        updateDraft(i, { selected: v === true })
+                      }
+                      aria-label={`Import "${d.title}"`}
+                      className="shrink-0"
+                    />
                     <Input
                       value={d.title}
                       onChange={(e) => updateDraft(i, { title: e.target.value })}
-                      className="flex-1"
+                      className="h-8 flex-1 text-sm"
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-muted-foreground"
-                      aria-label="Discard draft"
-                      onClick={() => removeDraft(i)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
-                  <Textarea
-                    value={d.notes ?? ""}
-                    placeholder="Notes"
-                    rows={2}
-                    onChange={(e) =>
-                      updateDraft(i, { notes: e.target.value || null })
-                    }
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Source</Label>
+
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <CompactField label="Source">
                       <Select
                         value={d.source}
                         onValueChange={(v) =>
                           updateDraft(i, { source: v as Source })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -440,16 +439,21 @@ export function VoiceCapture({
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Priority</Label>
+                    </CompactField>
+
+                    <CompactField
+                      label="Priority"
+                      suggested={
+                        !!d.ai.priority && d.priority === d.ai.priority
+                      }
+                    >
                       <Select
                         value={d.priority}
                         onValueChange={(v) =>
                           updateDraft(i, { priority: v as Priority })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -458,21 +462,23 @@ export function VoiceCapture({
                           <SelectItem value="Urgent">Urgent</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Category</Label>
+                    </CompactField>
+
+                    <CompactField
+                      label="Category"
+                      suggested={
+                        !!d.ai.category && d.category === d.ai.category
+                      }
+                    >
                       <Select
                         value={d.category ?? "__none"}
                         onValueChange={(v) =>
                           updateDraft(i, {
-                            category:
-                              v === "__none" ? null : (v as Category),
+                            category: v === "__none" ? null : (v as Category),
                           })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue placeholder="None" />
                         </SelectTrigger>
                         <SelectContent>
@@ -484,21 +490,20 @@ export function VoiceCapture({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div>
-                      <Label className="text-xs">Assign to</Label>
+                    </CompactField>
+
+                    <CompactField label="Assigned to">
                       <Select
                         value={d.assigned_contact_id ?? "__none"}
                         onValueChange={(v) =>
                           updateDraft(i, {
-                            assigned_contact_id:
-                              v === "__none" ? null : v,
+                            assigned_contact_id: v === "__none" ? null : v,
                             assigned_to_name:
                               v === "__none" ? d.assigned_to_name : null,
                           })
                         }
                       >
-                        <SelectTrigger className="mt-1 h-9">
+                        <SelectTrigger className="h-8 text-xs">
                           <SelectValue
                             placeholder={d.assigned_to_name ?? "None"}
                           />
@@ -516,13 +521,12 @@ export function VoiceCapture({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Due date</Label>
+                    </CompactField>
+
+                    <CompactField label="Due date">
                       <Input
                         type="date"
+                        className="h-8 text-xs"
                         value={d.due_date ?? ""}
                         onChange={(e) =>
                           updateDraft(i, {
@@ -530,43 +534,53 @@ export function VoiceCapture({
                             due_time: e.target.value ? d.due_time : null,
                           })
                         }
-                        className="mt-1"
                       />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Time</Label>
+                    </CompactField>
+
+                    <CompactField label="Time">
                       <Input
                         type="time"
+                        className="h-8 text-xs"
                         disabled={!d.due_date}
                         value={d.due_time ?? ""}
                         onChange={(e) =>
                           updateDraft(i, { due_time: e.target.value || null })
                         }
-                        className="mt-1"
                       />
+                    </CompactField>
+
+                    <div className="col-span-2">
+                      <CompactField label="Notes">
+                        <Input
+                          value={d.notes ?? ""}
+                          placeholder="Optional"
+                          className="h-8 text-xs"
+                          onChange={(e) =>
+                            updateDraft(i, { notes: e.target.value || null })
+                          }
+                        />
+                      </CompactField>
                     </div>
                   </div>
                 </div>
               ))}
 
-              <div className={cn("flex items-center justify-end gap-2 pt-2")}>
+              <div className="flex items-center justify-end gap-2 pt-1">
                 <Button variant="ghost" onClick={cancelAll} disabled={saving}>
                   <X className="mr-1 h-4 w-4" />
                   Cancel
                 </Button>
-                <Button
-                  onClick={confirmAll}
-                  disabled={saving || drafts.length === 0}
-                >
+                <Button onClick={confirmAll} disabled={saving || selectedCount === 0}>
                   {saving
                     ? "Saving…"
-                    : drafts.length === 1
-                      ? "Save task"
-                      : `Save ${drafts.length} tasks`}
+                    : selectedCount === 1
+                      ? "Import 1 task"
+                      : `Import ${selectedCount} tasks`}
                 </Button>
               </div>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
     </>
