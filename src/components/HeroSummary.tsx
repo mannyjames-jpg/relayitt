@@ -31,11 +31,11 @@ export function HeroSummary({
   const circumference = 2 * Math.PI * r;
 
   const stats: Stat[] = [
-    { label: "Overdue", value: overdue, color: CATEGORY_COLOR.Finance },
-    { label: "Due today", value: dueToday, color: CATEGORY_COLOR["Gifts/Events"] },
-    { label: "Waiting on someone", value: waiting, color: CATEGORY_COLOR.Errands },
-    { label: "Coming up", value: comingUp, color: CATEGORY_COLOR.Travel },
-    { label: "Whenever", value: whenever, color: CATEGORY_COLOR.Scheduling },
+    { label: "Overdue", value: overdue, color: GROUP_COLOR.overdue },
+    { label: "Due today", value: dueToday, color: GROUP_COLOR.today },
+    { label: "Waiting on someone", value: waiting, color: GROUP_COLOR.waiting },
+    { label: "Coming up", value: comingUp, color: GROUP_COLOR.upcoming },
+    { label: "Whenever", value: whenever, color: GROUP_COLOR.whenever },
   ];
 
   const message =
