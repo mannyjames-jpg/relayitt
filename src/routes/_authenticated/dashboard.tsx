@@ -417,39 +417,72 @@ function Panel({
   onToggle,
 }: {
   title: string;
+function Panel({
+  title,
+  subtitle,
+  count,
+  children,
+  group,
+  className,
+  open,
+  onToggle,
+}: {
+  title: string;
   subtitle: string;
   count: number;
   children: React.ReactNode;
-  tint: string;
+  group: GroupKey;
   className?: string;
   open?: boolean;
   onToggle?: () => void;
 }) {
+  const color = GROUP_COLOR[group];
   return (
     <section
       className={
-        "panel-wash flex min-w-0 flex-col rounded-[22px] border border-border p-3.5 " +
+        "panel-wash relative flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-border p-3.5 " +
         (className ?? "")
       }
-      style={{ ["--panel-tint" as string]: tint }}
+      style={{ ["--panel-tint" as string]: GROUP_TINT[group] }}
     >
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1.5"
+        style={{ background: color }}
+      />
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-start gap-2 pb-2 text-left"
+        className="flex w-full items-start gap-2 pb-2 pl-1.5 text-left"
       >
         {open ? (
-          <ChevronDown className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+          <ChevronDown
+            className="mt-1 h-4 w-4 shrink-0"
+            strokeWidth={2}
+            style={{ color }}
+          />
         ) : (
-          <ChevronRight className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+          <ChevronRight
+            className="mt-1 h-4 w-4 shrink-0"
+            strokeWidth={2}
+            style={{ color }}
+          />
         )}
         <span className="min-w-0">
           <span className="flex items-baseline gap-2">
-            <h2 className="truncate font-display text-lg text-foreground">
+            <h2
+              className="truncate font-display text-lg"
+              style={{ color }}
+            >
               {title}
             </h2>
-            <span className="text-xs text-muted-foreground">({count})</span>
+            <span
+              className="rounded-full px-2 py-0.5 text-xs font-semibold"
+              style={{ background: GROUP_TINT[group], color }}
+            >
+              {count}
+            </span>
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
             {subtitle}
@@ -457,11 +490,14 @@ function Panel({
         </span>
       </button>
       {open && (
-        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto pl-1.5 pr-0.5">
+          {children}
+        </div>
       )}
     </section>
   );
 }
+
 
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
