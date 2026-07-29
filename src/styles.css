@@ -177,6 +177,18 @@
   --ring-from: #b3afa7;
   --ring-to: #6d6a63;
 
+  --grp-overdue: #e0a293;
+  --grp-today: #d8b877;
+  --grp-waiting: #a3bad6;
+  --grp-upcoming: #9ec2a7;
+  --grp-whenever: #bdaecb;
+
+  --grp-overdue-tint: #3a2b27;
+  --grp-today-tint: #372f1f;
+  --grp-waiting-tint: #262d36;
+  --grp-upcoming-tint: #26302a;
+  --grp-whenever-tint: #2f2a35;
+
   --sidebar: #24231f;
   --sidebar-foreground: #f2f1ee;
   --sidebar-primary: #d8d4cc;
