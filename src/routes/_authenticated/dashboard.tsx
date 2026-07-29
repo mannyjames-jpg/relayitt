@@ -29,8 +29,7 @@ import {
   CATEGORY_COLOR,
   CATEGORY_ICON,
   CATEGORY_ORDER,
-  GROUP_COLOR,
-  GROUP_TINT,
+  GROUP_RULE,
   type GroupKey,
   type TaskCategory,
 } from "@/lib/task-style";
@@ -171,7 +170,7 @@ function Dashboard() {
                 variant="ghost"
                 size="sm"
                 onClick={connectGoogle}
-                className="h-9 rounded-full text-xs"
+                className="h-9 rounded-none text-xs"
                 aria-label="Connect Google Calendar"
               >
                 <CalIcon className="mr-1 h-4 w-4" strokeWidth={2} />
@@ -181,21 +180,21 @@ function Dashboard() {
           )}
           <Tip label="People">
             <Link to="/contacts" aria-label="People">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
                 <Users className="h-5 w-5" strokeWidth={2} />
               </Button>
             </Link>
           </Tip>
           <Tip label="Completed tasks">
             <Link to="/completed" aria-label="Completed tasks">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
                 <CheckSquare className="h-5 w-5" strokeWidth={2} />
               </Button>
             </Link>
           </Tip>
           <Tip label="Settings">
             <Link to="/settings" aria-label="Settings">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
                 <SettingsIcon className="h-5 w-5" strokeWidth={2} />
               </Button>
             </Link>
@@ -204,7 +203,7 @@ function Dashboard() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full"
+              className="h-10 w-10 rounded-none"
               onClick={signOut}
               aria-label="Sign out"
             >
@@ -292,7 +291,7 @@ function Dashboard() {
                     : g.name || "Nobody named yet";
                   return (
                     <div key={g.key}>
-                      <div className="px-1 pb-1 text-xs font-semibold text-muted-foreground">
+                      <div className="micro-label px-0.5 pb-1.5">
                         {label}
                       </div>
                       <div className="space-y-1.5">
@@ -326,7 +325,7 @@ function Dashboard() {
               <div className="space-y-2.5">
                 {groups.upcoming.map((g) => (
                   <div key={g.date}>
-                    <div className="px-1 pb-1 text-xs font-semibold text-muted-foreground">
+                    <div className="micro-label px-0.5 pb-1.5">
                       {formatDateLabel(g.date)}
                     </div>
                     <div className="space-y-1.5">
@@ -363,7 +362,7 @@ function Dashboard() {
                           strokeWidth={2}
                           style={{ color: CATEGORY_COLOR[g.category] }}
                         />
-                        <span className="text-xs font-semibold text-muted-foreground">
+                        <span className="micro-label">
                           {g.category}
                         </span>
                       </div>
@@ -428,63 +427,39 @@ function Panel({
   open?: boolean;
   onToggle?: () => void;
 }) {
-  const color = GROUP_COLOR[group];
   return (
     <section
       className={
-        "panel-wash relative flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-border p-3.5 " +
+        "relative flex min-w-0 flex-col overflow-hidden border border-border bg-card p-4 " +
         (className ?? "")
       }
-      style={{ ["--panel-tint" as string]: GROUP_TINT[group] }}
     >
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-1.5"
-        style={{ background: color }}
-      />
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-start gap-2 pb-2 pl-1.5 text-left"
+        className="flex w-full items-start gap-2 pb-2.5 text-left"
+        style={{ borderBottom: GROUP_RULE[group] }}
       >
         {open ? (
-          <ChevronDown
-            className="mt-1 h-4 w-4 shrink-0"
-            strokeWidth={2}
-            style={{ color }}
-          />
+          <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
         ) : (
-          <ChevronRight
-            className="mt-1 h-4 w-4 shrink-0"
-            strokeWidth={2}
-            style={{ color }}
-          />
+          <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
         )}
-        <span className="min-w-0">
-          <span className="flex items-baseline gap-2">
-            <h2
-              className="truncate font-display text-lg"
-              style={{ color }}
-            >
-              {title}
-            </h2>
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-semibold"
-              style={{ background: GROUP_TINT[group], color }}
-            >
+        <span className="min-w-0 flex-1">
+          <span className="flex items-baseline justify-between gap-2">
+            <h2 className="truncate font-display text-foreground">{title}</h2>
+            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
               {count}
             </span>
           </span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
+          <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
             {subtitle}
           </span>
         </span>
       </button>
       {open && (
-        <div className="min-h-0 flex-1 overflow-y-auto pl-1.5 pr-0.5">
-          {children}
-        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto pt-3">{children}</div>
       )}
     </section>
   );

@@ -22,7 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import { PetalBurst } from "@/components/PetalBurst";
 import {
-  CATEGORY_COLOR,
   CATEGORY_PILL,
   STATUS_BADGE,
   STATUS_HELP,
@@ -325,22 +324,15 @@ export function TaskRow({
     new Date(task.next_followup_reminder_at).getTime() < Date.now();
   const nudgeContact = contacts.find((c) => c.id === task.assigned_to) ?? null;
 
-  const accent = CATEGORY_COLOR[task.category ?? "Other"];
-
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-[0_6px_16px_-14px_rgba(31,30,27,0.9)]",
+        "group relative overflow-hidden border border-border bg-card transition-colors hover:border-border-strong",
         completing && "animate-complete",
       )}
     >
-      <span
-        aria-hidden
-        className="absolute left-0 top-0 h-full w-1"
-        style={{ background: accent }}
-      />
+      <div className="flex items-start gap-2.5 px-3 py-2.5">
 
-      <div className="flex items-start gap-2 py-2 pl-3.5 pr-2">
         <div className="relative mt-0.5 shrink-0">
           {burst && <PetalBurst />}
           <button
@@ -348,8 +340,8 @@ export function TaskRow({
             onClick={toggleDone}
             aria-label={`Mark ${task.title} complete`}
             className={cn(
-              "relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-border transition-all hover:border-primary",
-              completing && "border-transparent bg-primary animate-ring-pop",
+              "relative flex h-[18px] w-[18px] items-center justify-center rounded-none border border-border-strong transition-all hover:border-foreground",
+              completing && "border-foreground bg-primary animate-ring-pop",
             )}
           >
             <Check
@@ -372,13 +364,13 @@ export function TaskRow({
               {isUrgent && (
                 <span
                   aria-label="Urgent"
-                  className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-foreground"
+                  className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 bg-foreground"
                 />
               )}
               <div
                 className={cn(
                   "min-w-0 break-words text-[14px] leading-snug text-foreground",
-                  isUrgent && "font-semibold",
+                  isUrgent ? "font-bold" : "font-normal",
                 )}
               >
                 {task.title}
@@ -386,7 +378,7 @@ export function TaskRow({
             </div>
           </button>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
             {/* Status badge doubles as the status picker — always editable
                 without touching the task body. */}
             <Select
@@ -398,7 +390,7 @@ export function TaskRow({
                   <SelectTrigger
                     aria-label="Change status"
                     className={cn(
-                      "h-6 w-auto gap-1 rounded-full border-0 px-2 py-0 text-[11px] font-semibold shadow-none focus:ring-1 [&>svg:last-child]:h-3 [&>svg:last-child]:w-3 [&>svg:last-child]:opacity-60",
+                      "h-[18px] w-auto gap-1 px-1.5 py-0 shadow-none focus:ring-1 [&>svg:last-child]:h-2.5 [&>svg:last-child]:w-2.5 [&>svg:last-child]:opacity-60",
                       STATUS_BADGE[status],
                     )}
                   >
@@ -423,25 +415,19 @@ export function TaskRow({
             </Select>
 
             {task.category && (
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 font-semibold",
-                  CATEGORY_PILL[task.category],
-                )}
-              >
+              <span className={CATEGORY_PILL[task.category]}>
                 {task.category}
               </span>
             )}
             {overdue && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-semibold text-accent-foreground">
-                <AlertCircle className="h-3 w-3" strokeWidth={2} />
+              <span className="tag-emphasis">
+                <AlertCircle className="h-2.5 w-2.5" strokeWidth={2.5} />
                 Past its date
               </span>
             )}
+            {isUrgent && <span className="tag-emphasis">Urgent</span>}
             {task.priority === "Important" && (
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 font-semibold pill-cat-gifts">
-                Important
-              </span>
+              <span className="tag-emphasis">Important</span>
             )}
             {task.due_date && (
               <span className="inline-flex items-center gap-1">
@@ -459,12 +445,7 @@ export function TaskRow({
             {showWaitingBadge && (
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5",
-                  waitDays >= 3
-                    ? "bg-accent font-semibold text-accent-foreground"
-                    : "bg-secondary text-muted-foreground",
-                  followupOverdue &&
-                    "ring-2 ring-ring/60 ring-offset-1 ring-offset-card",
+                  waitDays >= 3 || followupOverdue ? "tag-emphasis" : "tag-quiet",
                   nudgeFlash && "animate-flash",
                 )}
                 title={
@@ -483,19 +464,21 @@ export function TaskRow({
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="mt-1 flex items-start gap-1 text-left text-[12px] text-foreground/80 underline-offset-2 transition-colors hover:text-foreground hover:underline"
+              className="mt-1.5 flex items-start gap-1.5 border-l-2 border-tan pl-2 text-left text-[12px] text-tan-ink underline-offset-2 transition-colors hover:underline"
             >
-              <ArrowRight className="mt-[3px] h-3 w-3 shrink-0" strokeWidth={2} />
               <span className="min-w-0 break-words">
-                <span className="font-medium">Next:</span> {latestStep.body}
+                <span className="font-semibold uppercase tracking-[0.08em] text-[10px]">
+                  Next
+                </span>{" "}
+                {latestStep.body}
               </span>
-              <span className="mt-[1px] shrink-0 text-[11px] text-muted-foreground">+</span>
+              <span className="mt-[1px] shrink-0 text-[11px]">+</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={() => setExpanded(true)}
-              className="mt-1 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+              className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
               + Add step
             </button>
@@ -516,7 +499,7 @@ export function TaskRow({
               }}
               title="Reach out, then update the status"
               aria-label="Follow up and set a reminder"
-              className="flex h-7 w-7 items-center justify-center rounded-full text-foreground transition-colors hover:bg-accent"
+              className="flex h-7 w-7 items-center justify-center rounded-none text-foreground transition-colors hover:bg-accent"
             >
               <BellRing className="h-4 w-4" strokeWidth={2} />
             </button>
@@ -526,7 +509,7 @@ export function TaskRow({
             onClick={() => setConfirmDelete(true)}
             title="Remove this task"
             aria-label={`Delete ${task.title}`}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="flex h-7 w-7 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <X className="h-4 w-4" strokeWidth={2} />
           </button>
@@ -807,7 +790,7 @@ export function TaskRow({
           {nudgeStep === "contact" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display">
+                <DialogTitle className="font-hero text-lg">
                   Reach out to {nudgeContact?.name}
                 </DialogTitle>
               </DialogHeader>
@@ -872,7 +855,7 @@ export function TaskRow({
           {nudgeStep === "status" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display">
+                <DialogTitle className="font-hero text-lg">
                   Update the status?
                 </DialogTitle>
               </DialogHeader>
@@ -909,7 +892,7 @@ export function TaskRow({
           {nudgeStep === "reminder" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display">
+                <DialogTitle className="font-hero text-lg">
                   Remind you again?
                 </DialogTitle>
               </DialogHeader>
@@ -972,7 +955,7 @@ export function TaskRow({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">
+            <AlertDialogTitle className="font-hero text-lg">
               Delete this task?
             </AlertDialogTitle>
             <AlertDialogDescription>

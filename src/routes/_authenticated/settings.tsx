@@ -85,13 +85,13 @@ function Settings() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="font-display text-2xl">Settings</h1>
+          <h1 className="font-hero text-2xl">Settings</h1>
         </div>
       </header>
 
       <main className="mx-auto max-w-2xl space-y-6 px-4 py-6">
         <section className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="font-display text-lg">Profile</h2>
+          <h2 className="font-display">Profile</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             The name Relay greets you with on the dashboard.
           </p>
@@ -111,7 +111,7 @@ function Settings() {
         </section>
 
         <section className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="font-display text-lg">Typeface</h2>
+          <h2 className="font-display">Typeface</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Applied everywhere in the app.
           </p>

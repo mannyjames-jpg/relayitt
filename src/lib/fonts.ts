@@ -2,7 +2,7 @@ export type FontChoice = "system" | "inter" | "plex";
 
 export const FONT_STACKS: Record<FontChoice, string> = {
   system:
-    'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    '"Helvetica Neue", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   inter: '"Inter", ui-sans-serif, system-ui, sans-serif',
   plex: '"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif',
 };

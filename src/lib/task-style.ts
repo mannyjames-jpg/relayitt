@@ -20,39 +20,42 @@ export type TaskCategory =
   | "Vendors"
   | "Other";
 
-/** One neutral shade per category, used everywhere: accent bar + pill + dots. */
+/**
+ * No colour anywhere. Category is routine information, so it always uses the
+ * "quiet" tag style — light hairline border, muted text.
+ */
 export const CATEGORY_PILL: Record<TaskCategory, string> = {
-  Travel: "pill-cat-travel",
-  Household: "pill-cat-household",
-  Scheduling: "pill-cat-scheduling",
-  Errands: "pill-cat-errands",
-  "Gifts/Events": "pill-cat-gifts",
-  Finance: "pill-cat-finance",
-  Vendors: "pill-cat-vendors",
-  Other: "pill-cat-other",
+  Travel: "tag-quiet",
+  Household: "tag-quiet",
+  Scheduling: "tag-quiet",
+  Errands: "tag-quiet",
+  "Gifts/Events": "tag-quiet",
+  Finance: "tag-quiet",
+  Vendors: "tag-quiet",
+  Other: "tag-quiet",
 };
 
-/** CSS colour value for the card's left accent bar / dots. */
+/** Icons/marks sit on the neutral ink ramp — never a hue. */
 export const CATEGORY_COLOR: Record<TaskCategory, string> = {
-  Travel: "var(--cat-slate)",
-  Household: "var(--cat-taupe)",
-  Scheduling: "var(--cat-moss)",
-  Errands: "var(--cat-sand)",
-  "Gifts/Events": "var(--cat-mauve)",
-  Finance: "var(--cat-ink)",
-  Vendors: "var(--cat-clay)",
-  Other: "var(--cat-ash)",
+  Travel: "var(--muted-foreground)",
+  Household: "var(--muted-foreground)",
+  Scheduling: "var(--muted-foreground)",
+  Errands: "var(--muted-foreground)",
+  "Gifts/Events": "var(--muted-foreground)",
+  Finance: "var(--muted-foreground)",
+  Vendors: "var(--muted-foreground)",
+  Other: "var(--muted-foreground)",
 };
 
 export const CATEGORY_TINT: Record<TaskCategory, string> = {
-  Travel: "var(--cat-slate-tint)",
-  Household: "var(--cat-taupe-tint)",
-  Scheduling: "var(--cat-moss-tint)",
-  Errands: "var(--cat-sand-tint)",
-  "Gifts/Events": "var(--cat-mauve-tint)",
-  Finance: "var(--cat-ink-tint)",
-  Vendors: "var(--cat-clay-tint)",
-  Other: "var(--cat-ash-tint)",
+  Travel: "var(--surface)",
+  Household: "var(--surface)",
+  Scheduling: "var(--surface)",
+  Errands: "var(--surface)",
+  "Gifts/Events": "var(--surface)",
+  Finance: "var(--surface)",
+  Vendors: "var(--surface)",
+  Other: "var(--surface)",
 };
 
 export const CATEGORY_ICON: Record<TaskCategory, LucideIcon> = {
@@ -67,8 +70,8 @@ export const CATEGORY_ICON: Record<TaskCategory, LucideIcon> = {
 };
 
 /**
- * The five dashboard status groups are the one place we allow hue.
- * Everything else stays on the neutral stone palette.
+ * The five dashboard groups are distinguished WITHOUT colour: the rule under
+ * each panel header gets heavier and darker as urgency rises.
  */
 export type GroupKey =
   | "overdue"
@@ -77,21 +80,26 @@ export type GroupKey =
   | "upcoming"
   | "whenever";
 
-export const GROUP_COLOR: Record<GroupKey, string> = {
-  overdue: "var(--grp-overdue)",
-  today: "var(--grp-today)",
-  waiting: "var(--grp-waiting)",
-  upcoming: "var(--grp-upcoming)",
-  whenever: "var(--grp-whenever)",
+/** Border shorthand for the rule beneath a panel header. */
+export const GROUP_RULE: Record<GroupKey, string> = {
+  overdue: "2px solid var(--ink-900)",
+  today: "1.5px solid var(--ink-700)",
+  waiting: "1.25px solid var(--ink-400)",
+  upcoming: "1px solid var(--border-strong)",
+  whenever: "1px solid var(--border)",
 };
 
-export const GROUP_TINT: Record<GroupKey, string> = {
-  overdue: "var(--grp-overdue-tint)",
-  today: "var(--grp-today-tint)",
-  waiting: "var(--grp-waiting-tint)",
-  upcoming: "var(--grp-upcoming-tint)",
-  whenever: "var(--grp-whenever-tint)",
+/** Neutral ink shade for the small stat dot beside each group in the hero. */
+export const GROUP_DOT: Record<GroupKey, string> = {
+  overdue: "var(--ink-900)",
+  today: "var(--ink-700)",
+  waiting: "var(--ink-500)",
+  upcoming: "var(--ink-400)",
+  whenever: "var(--ink-300)",
 };
+
+/** Kept for compatibility — everything reads as ink now. */
+export const GROUP_COLOR: Record<GroupKey, string> = GROUP_DOT;
 
 export const CATEGORY_ORDER: TaskCategory[] = [
 
@@ -147,12 +155,12 @@ export const STATUS_HELP: Record<TaskStatus, string> = {
   Complete: "Finished. It leaves your active list.",
 };
 
-/** Neutral badge styling per status. */
+/** Status is routine information — always the quiet tag style. */
 export const STATUS_BADGE: Record<TaskStatus, string> = {
-  "Not Started": "bg-[var(--cat-ash-tint)] text-[var(--cat-ash)]",
-  "In Progress": "bg-[var(--cat-slate-tint)] text-[var(--cat-slate)]",
-  "Waiting on Someone": "bg-[var(--cat-sand-tint)] text-[var(--cat-sand)]",
-  Complete: "bg-[var(--cat-moss-tint)] text-[var(--cat-moss)]",
+  "Not Started": "tag-quiet",
+  "In Progress": "tag-quiet",
+  "Waiting on Someone": "tag-quiet",
+  Complete: "tag-quiet",
 };
 
 /** "Just asked, waiting" / "Waiting 3 days" — never abbreviated. */
@@ -163,12 +171,12 @@ export function waitingLabel(days: number) {
 }
 
 export const PETAL_COLORS = [
-  "#6d6157",
-  "#5d666e",
-  "#57614f",
-  "#6e6046",
-  "#665a63",
-  "#8a857b",
+  "#1c1a17",
+  "#3d3934",
+  "#6f6a62",
+  "#8d877d",
+  "#ab9a83",
+  "#b3aca1",
 ];
 
 /** Urgent first, then Important, then everything else — stable otherwise. */

@@ -337,7 +337,7 @@ export function VoiceCapture({
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">
+            <DialogTitle className="font-hero text-xl">
               {phase === "review" ? "Review voice tasks" : "Voice note"}
             </DialogTitle>
           </DialogHeader>
@@ -350,7 +350,7 @@ export function VoiceCapture({
                   <Mic className="h-6 w-6" />
                 </span>
               </div>
-              <div className="font-display text-3xl tabular-nums">
+              <div className="font-hero text-3xl tabular-nums">
                 {String(Math.floor(elapsed / 60)).padStart(2, "0")}:
                 {String(elapsed % 60).padStart(2, "0")}
               </div>

@@ -145,20 +145,18 @@ export function QuickCapture({
   }
 
   return (
-    <div className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 py-2.5">
-        <div className="flex items-center justify-between pb-2">
-          <span className="font-wordmark text-xl leading-none text-foreground">
-            Relay
-          </span>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="uppercase tracking-wide">Showing</span>
+    <div className="sticky top-0 z-20 border-b border-border-strong bg-background/95 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-4 py-3">
+        <div className="flex items-center justify-between pb-3">
+          <span className="font-wordmark text-foreground">Relay</span>
+          <div className="flex items-center gap-2">
+            <span className="micro-label">Showing</span>
             <Select
               value={filter}
               onValueChange={(v) => onFilterChange(v as FilterSource)}
             >
               <SelectTrigger
-                className="h-7 w-auto gap-1 rounded-full border-border bg-card px-2.5 text-[11px]"
+                className="h-7 w-auto gap-1.5 border-border-strong bg-card px-2 text-[11px]"
                 aria-label="Filter tasks by source"
               >
                 <SelectValue />
@@ -196,7 +194,7 @@ export function QuickCapture({
               }}
               placeholder="What do you need to remember? Just type it naturally…"
               maxLength={200}
-              className="h-11 rounded-full border-border bg-card pl-4 pr-10 text-[15px]"
+              className="h-11 border-border-strong bg-card pl-3.5 pr-10 text-[15px]"
               aria-label="New task"
             />
             {flash && (
@@ -209,16 +207,17 @@ export function QuickCapture({
           <VoiceCapture contacts={contacts} />
           <Button
             type="submit"
-            className="h-11 rounded-full px-5 font-semibold"
+            className="h-11 px-5"
             disabled={!title.trim() || m.isPending}
           >
-            <Plus className="h-5 w-5" strokeWidth={2} />
+            <Plus className="h-4 w-4" strokeWidth={2} />
             Add task
           </Button>
         </form>
 
+
         {/* Key fields stay visible — no hunting behind focus states. */}
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5">
           <Field label="Created by / From" help={SOURCE_HELP[source]}>
             <Select value={source} onValueChange={(v) => setSource(v as Source)}>
               <SelectTrigger
@@ -301,13 +300,10 @@ export function QuickCapture({
         </div>
 
         {parsed.hints.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
-            <span className="text-muted-foreground">Detected:</span>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="micro-label">Detected</span>
             {parsed.hints.map((h) => (
-              <span
-                key={h}
-                className="rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground"
-              >
+              <span key={h} className="tag-quiet">
                 {h}
               </span>
             ))}
@@ -315,7 +311,8 @@ export function QuickCapture({
         )}
 
         {savePrompt && (
-          <div className="mt-2 flex items-center justify-between rounded-md bg-secondary px-3 py-2 text-sm">
+          <div className="mt-2 flex items-center justify-between border border-border-strong bg-card px-3 py-2 text-sm">
+
             <span>
               Save <span className="font-medium">{savePrompt.name}</span> as a
               contact?
@@ -365,12 +362,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex items-center gap-1.5">
+    <label className="flex flex-col gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">
-            {label}
-          </span>
+          <span className="micro-label whitespace-nowrap">{label}</span>
         </TooltipTrigger>
         <TooltipContent>{help}</TooltipContent>
       </Tooltip>
