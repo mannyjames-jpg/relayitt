@@ -66,7 +66,35 @@ export const CATEGORY_ICON: Record<TaskCategory, LucideIcon> = {
   Other: Tag,
 };
 
+/**
+ * The five dashboard status groups are the one place we allow hue.
+ * Everything else stays on the neutral stone palette.
+ */
+export type GroupKey =
+  | "overdue"
+  | "today"
+  | "waiting"
+  | "upcoming"
+  | "whenever";
+
+export const GROUP_COLOR: Record<GroupKey, string> = {
+  overdue: "var(--grp-overdue)",
+  today: "var(--grp-today)",
+  waiting: "var(--grp-waiting)",
+  upcoming: "var(--grp-upcoming)",
+  whenever: "var(--grp-whenever)",
+};
+
+export const GROUP_TINT: Record<GroupKey, string> = {
+  overdue: "var(--grp-overdue-tint)",
+  today: "var(--grp-today-tint)",
+  waiting: "var(--grp-waiting-tint)",
+  upcoming: "var(--grp-upcoming-tint)",
+  whenever: "var(--grp-whenever-tint)",
+};
+
 export const CATEGORY_ORDER: TaskCategory[] = [
+
   "Finance",
   "Travel",
   "Scheduling",
