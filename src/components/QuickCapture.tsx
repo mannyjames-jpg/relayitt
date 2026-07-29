@@ -2,17 +2,29 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Plus, X } from "lucide-react";
-import { sourceLabel } from "@/lib/task-style";
+import { Link } from "@tanstack/react-router";
+import { sourceLabel, SOURCE_HELP } from "@/lib/task-style";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { createTask } from "@/lib/tasks.functions";
 import { createContact, listContacts } from "@/lib/contacts.functions";
 import { AssigneeCombobox } from "./AssigneeCombobox";
 import { VoiceCapture } from "./VoiceCapture";
 import { toast } from "sonner";
 import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
-
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
@@ -28,10 +40,10 @@ const CATEGORIES = [
   "Errands",
   "Gifts/Events",
   "Finance",
+  "Vendors",
   "Other",
 ] as const;
 type Category = QuickCategory;
-
 
 export function QuickCapture({
   filter,
@@ -58,7 +70,6 @@ export function QuickCapture({
     return match?.name.split(" ")[0] ?? null;
   }, [contacts]);
 
-
   const [title, setTitle] = useState("");
   const [source, setSource] = useState<Source>("Personal Reminder");
   const [contactId, setContactId] = useState<string | null>(null);
@@ -67,7 +78,6 @@ export function QuickCapture({
   const [category, setCategory] = useState<Category | null>(null);
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
-  const [focused, setFocused] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -98,24 +108,17 @@ export function QuickCapture({
       setTimeout(() => setShake(false), 400);
       return;
     }
-    const usedFreeText =
-      source === "Delegated by Me" && !contactId && freeText.trim();
+    const usedFreeText = !contactId && freeText.trim();
     await m.mutateAsync({
       data: {
         title: trimmed,
         source,
-        priority:
-          parsed.priority ??
-          (source === "Delegated by Me" ? priority : "Normal"),
-        category:
-          parsed.category ?? (source === "From Boss" ? category : null),
+        priority: parsed.priority ?? priority,
+        category: parsed.category ?? category,
         due_date: parsed.due_date,
         due_time: parsed.due_time,
-        assigned_to: source === "Delegated by Me" ? contactId : null,
-        assigned_to_name:
-          source === "Delegated by Me" && !contactId
-            ? freeText.trim() || null
-            : null,
+        assigned_to: contactId,
+        assigned_to_name: contactId ? null : freeText.trim() || null,
       },
     });
     toast.success("Added to your list — you'll find it under Today", {
@@ -129,7 +132,6 @@ export function QuickCapture({
         setSavePrompt({ name: nm });
       }
     }
-    // Collapse contextual fields back to defaults after each capture.
     setContactId(null);
     setFreeText("");
     setPriority("Normal");
@@ -142,18 +144,46 @@ export function QuickCapture({
     await submitTask();
   }
 
-
   return (
     <div className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto max-w-5xl px-4 py-3">
-        <div className="pb-2 font-wordmark text-2xl leading-none text-primary">Relay</div>
-        <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
+      <div className="mx-auto max-w-7xl px-4 py-2.5">
+        <div className="flex items-center justify-between pb-2">
+          <span className="font-wordmark text-xl leading-none text-foreground">
+            Relay
+          </span>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="uppercase tracking-wide">Showing</span>
+            <Select
+              value={filter}
+              onValueChange={(v) => onFilterChange(v as FilterSource)}
+            >
+              <SelectTrigger
+                className="h-7 w-auto gap-1 rounded-full border-border bg-card px-2.5 text-[11px]"
+                aria-label="Filter tasks by source"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="All">All tasks</SelectItem>
+                {SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {sourceLabel(s, bossName)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          className={cn("flex gap-2", shake && "animate-shake")}
+        >
           <div className="relative flex-1">
             <Input
               ref={inputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              onFocus={() => setFocused(true)}
               onKeyDown={(e) => {
                 if (
                   e.key === "Enter" &&
@@ -164,17 +194,13 @@ export function QuickCapture({
                   if (!m.isPending) void submitTask();
                 }
               }}
-              onBlur={() => {
-                // Delay so pill taps register as source changes, not filter changes.
-                setTimeout(() => setFocused(false), 150);
-              }}
               placeholder="What do you need to remember? Just type it naturally…"
               maxLength={200}
-              className="h-12 rounded-full border-border bg-card pr-10 pl-4 text-[15px]"
+              className="h-11 rounded-full border-border bg-card pl-4 pr-10 text-[15px]"
               aria-label="New task"
             />
             {flash && (
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-primary animate-flash">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 animate-flash text-foreground">
                 <Check className="h-4 w-4" strokeWidth={2.5} />
               </span>
             )}
@@ -183,7 +209,7 @@ export function QuickCapture({
           <VoiceCapture contacts={contacts} />
           <Button
             type="submit"
-            className="h-12 rounded-full bg-gradient-rose px-5 font-semibold text-primary-foreground hover:opacity-90"
+            className="h-11 rounded-full px-5 font-semibold"
             disabled={!title.trim() || m.isPending}
           >
             <Plus className="h-5 w-5" strokeWidth={2} />
@@ -191,13 +217,96 @@ export function QuickCapture({
           </Button>
         </form>
 
+        {/* Key fields stay visible — no hunting behind focus states. */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <Field label="Created by / From" help={SOURCE_HELP[source]}>
+            <Select value={source} onValueChange={(v) => setSource(v as Source)}>
+              <SelectTrigger
+                className="h-8 w-[168px] text-xs"
+                aria-label="Created by or from"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field
+            label="Assigned to"
+            help="Who will actually do this. Leave empty if it's you."
+          >
+            <AssigneeCombobox
+              compact
+              contacts={contacts}
+              contactId={contactId}
+              freeText={freeText}
+              onChange={({ contactId: id, freeText: t }) => {
+                setContactId(id);
+                setFreeText(t);
+              }}
+            />
+          </Field>
+
+          <Field label="Priority" help="Urgent tasks pin to the top of a list.">
+            <Select
+              value={priority}
+              onValueChange={(v) => setPriority(v as Priority)}
+            >
+              <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="Priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORITIES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field label="Category" help="Used to group and colour-code tasks.">
+            <Select
+              value={category ?? "__none"}
+              onValueChange={(v) =>
+                setCategory(v === "__none" ? null : (v as Category))
+              }
+            >
+              <SelectTrigger className="h-8 w-[130px] text-xs" aria-label="Category">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">None</SelectItem>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Link
+            to="/settings"
+            className="ml-auto text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+          >
+            Settings
+          </Link>
+        </div>
+
         {parsed.hints.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center gap-1 text-[11px]">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
             <span className="text-muted-foreground">Detected:</span>
             {parsed.hints.map((h) => (
               <span
                 key={h}
-                className="rounded-full bg-sage/25 px-2 py-0.5 text-sage-foreground"
+                className="rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground"
               >
                 {h}
               </span>
@@ -205,141 +314,11 @@ export function QuickCapture({
           </div>
         )}
 
-
-
-        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            {focused ? "Adding as:" : "Showing:"}
-          </span>
-          <div
-            role="tablist"
-            aria-label={focused ? "Task source" : "Filter tasks by source"}
-            className={cn(
-              "inline-flex rounded-md border border-border bg-secondary p-0.5 text-xs",
-              focused && "border-primary/40 bg-primary/5",
-            )}
-          >
-            {!focused && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={filter === "All"}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => onFilterChange("All")}
-                className={cn(
-                  "px-2.5 py-1.5 rounded-sm transition-colors min-h-[32px]",
-                  filter === "All"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                All
-              </button>
-            )}
-            {SOURCES.map((s) => {
-              const selected = focused ? source === s : filter === s;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onMouseDown={(e) => {
-                    // Prevent input blur when clicking so focus stays and we set source.
-                    if (focused) e.preventDefault();
-                  }}
-                  onClick={() => {
-                    if (focused) setSource(s);
-                    else onFilterChange(s);
-                  }}
-                  className={cn(
-                    "px-2.5 py-1.5 rounded-sm transition-colors min-h-[32px]",
-                    selected
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {sourceLabel(s, bossName)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {focused && (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-
-
-          {source === "Delegated by Me" && (
-            <>
-              <AssigneeCombobox
-                compact
-                contacts={contacts}
-                contactId={contactId}
-                freeText={freeText}
-                onChange={({ contactId: id, freeText: t }) => {
-                  setContactId(id);
-                  setFreeText(t);
-                }}
-              />
-              <div
-                role="tablist"
-                aria-label="Priority"
-                className="inline-flex rounded-md border border-border bg-secondary p-0.5 text-xs"
-              >
-                {PRIORITIES.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    role="tab"
-                    aria-selected={priority === p}
-                    onClick={() => setPriority(p)}
-                    className={cn(
-                      "px-2.5 py-1.5 rounded-sm transition-colors min-h-[32px]",
-                      priority === p
-                        ? p === "Urgent"
-                          ? "bg-primary/15 text-primary shadow-sm font-medium"
-                          : "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          {source === "From Boss" && (
-            <div className="flex flex-wrap items-center gap-1">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  aria-pressed={category === c}
-                  onClick={() =>
-                    setCategory((prev) => (prev === c ? null : c))
-                  }
-                  className={cn(
-                    "rounded-full border px-2.5 py-1 text-xs transition-colors min-h-[32px]",
-                    category === c
-                      ? "border-transparent bg-sage/25 text-sage-foreground"
-                      : "border-border bg-secondary text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
-          </div>
-        )}
-
-
         {savePrompt && (
           <div className="mt-2 flex items-center justify-between rounded-md bg-secondary px-3 py-2 text-sm">
             <span>
-              Save <span className="font-medium">{savePrompt.name}</span> as a contact?
+              Save <span className="font-medium">{savePrompt.name}</span> as a
+              contact?
             </span>
             <div className="flex items-center gap-1">
               <Button
@@ -373,5 +352,29 @@ export function QuickCapture({
         )}
       </div>
     </div>
+  );
+}
+
+function Field({
+  label,
+  help,
+  children,
+}: {
+  label: string;
+  help: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex items-center gap-1.5">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">
+            {label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{help}</TooltipContent>
+      </Tooltip>
+      {children}
+    </label>
   );
 }
