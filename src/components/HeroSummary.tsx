@@ -1,10 +1,10 @@
-import { GROUP_COLOR } from "@/lib/task-style";
+import { GROUP_DOT } from "@/lib/task-style";
 
 type Stat = { label: string; value: number; color: string };
 
 /**
- * Hero: circular progress ring for what's left today, a colour-dotted stat
- * row, and a short encouraging line. Presentation only.
+ * Hero: circular progress ring for what's left today, a stat row keyed by
+ * neutral ink shades, and a short encouraging line. Presentation only.
  */
 export function HeroSummary({
   greeting,
@@ -31,11 +31,11 @@ export function HeroSummary({
   const circumference = 2 * Math.PI * r;
 
   const stats: Stat[] = [
-    { label: "Overdue", value: overdue, color: GROUP_COLOR.overdue },
-    { label: "Due today", value: dueToday, color: GROUP_COLOR.today },
-    { label: "Waiting on someone", value: waiting, color: GROUP_COLOR.waiting },
-    { label: "Coming up", value: comingUp, color: GROUP_COLOR.upcoming },
-    { label: "Whenever", value: whenever, color: GROUP_COLOR.whenever },
+    { label: "Overdue", value: overdue, color: GROUP_DOT.overdue },
+    { label: "Due today", value: dueToday, color: GROUP_DOT.today },
+    { label: "Waiting on someone", value: waiting, color: GROUP_DOT.waiting },
+    { label: "Coming up", value: comingUp, color: GROUP_DOT.upcoming },
+    { label: "Whenever", value: whenever, color: GROUP_DOT.whenever },
   ];
 
   const message =
@@ -50,60 +50,51 @@ export function HeroSummary({
             : `${remaining} things left today — you've got this.`;
 
   return (
-    <section className="rounded-[22px] border border-border bg-card p-4 sm:p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+    <section className="border border-border bg-card p-5 sm:p-6">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <div className="relative h-[92px] w-[92px] shrink-0">
           <svg viewBox="0 0 96 96" className="h-full w-full -rotate-90">
-            <defs>
-              <linearGradient id="relay-ring" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="var(--ring-from)" />
-                <stop offset="100%" stopColor="var(--ring-to)" />
-              </linearGradient>
-            </defs>
             <circle
               cx="48"
               cy="48"
               r={r}
               fill="none"
-              stroke="var(--muted)"
-              strokeWidth="8"
+              stroke="var(--border)"
+              strokeWidth="1.5"
             />
             <circle
               cx="48"
               cy="48"
               r={r}
               fill="none"
-              stroke="url(#relay-ring)"
-              strokeWidth="8"
-              strokeLinecap="round"
+              stroke="var(--foreground)"
+              strokeWidth="1.5"
               strokeDasharray={circumference}
               strokeDashoffset={circumference * (1 - pct)}
               className="transition-[stroke-dashoffset] duration-700 ease-out"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-display text-2xl leading-none text-foreground">
+            <span className="font-hero text-3xl leading-none text-foreground">
               {remaining}
             </span>
-            <span className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              left today
-            </span>
+            <span className="micro-label mt-1.5">left today</span>
           </div>
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-[24px] leading-tight text-foreground sm:text-[28px]">
+          <h1 className="font-hero text-[30px] leading-tight text-foreground sm:text-[36px]">
             {greeting}
           </h1>
-          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3">
             {stats.map((s) => (
               <div key={s.label} className="flex items-center gap-2">
                 <span
                   aria-hidden
-                  className="h-2 w-2 rounded-full"
+                  className="h-1.5 w-1.5"
                   style={{ background: s.color }}
                 />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
                   <span className="font-semibold text-foreground">{s.value}</span>{" "}
                   {s.label}
                 </span>
