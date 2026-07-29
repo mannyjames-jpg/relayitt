@@ -123,6 +123,8 @@
   --border: #e0ddd6;
   --input: #d6d2ca;
   --ring: #8a857b;
+  --ring-from: #8a857b;
+  --ring-to: #44403a;
 
   --sidebar: #ffffff;
   --sidebar-foreground: #1f1e1b;
