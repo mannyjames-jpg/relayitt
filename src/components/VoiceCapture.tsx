@@ -231,7 +231,8 @@ export function VoiceCapture({
   }
 
   async function confirmAll() {
-    if (drafts.length === 0) return;
+    const chosen = drafts.filter((d) => d.selected);
+    if (chosen.length === 0) return;
     setSaving(true);
     try {
       // Upload audio once (all drafts from this note share the same audio + transcript).
@@ -256,8 +257,9 @@ export function VoiceCapture({
         }
       }
 
-      for (const d of drafts) {
-        await create({
+      const createdIds: string[] = [];
+      for (const d of chosen) {
+        const row = await create({
           data: {
             title: d.title.trim() || "Untitled",
             source: d.source,
@@ -273,12 +275,26 @@ export function VoiceCapture({
             raw_transcript: transcript || null,
           },
         });
+        if (row?.id) createdIds.push(row.id as string);
       }
       qc.invalidateQueries({ queryKey: ["tasks"] });
       toast.success(
-        drafts.length === 1
+        chosen.length === 1
           ? "Task added from voice note"
-          : `${drafts.length} tasks added`,
+          : `${chosen.length} tasks added`,
+        {
+          duration: 6000,
+          action: {
+            label: "Undo",
+            onClick: async () => {
+              for (const id of createdIds) {
+                await removeTask({ data: { id } });
+              }
+              qc.invalidateQueries({ queryKey: ["tasks"] });
+              toast("Import undone");
+            },
+          },
+        },
       );
       cancelAll();
     } catch (e) {
@@ -291,9 +307,7 @@ export function VoiceCapture({
   function updateDraft(i: number, patch: Partial<Draft>) {
     setDrafts((prev) => prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
   }
-  function removeDraft(i: number) {
-    setDrafts((prev) => prev.filter((_, idx) => idx !== i));
-  }
+
 
   return (
     <>
