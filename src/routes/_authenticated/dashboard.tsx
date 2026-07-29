@@ -395,8 +395,7 @@ function Panel({
   children,
   tint,
   className,
-  collapsible,
-  open,
+  open = true,
   onToggle,
 }: {
   title: string;
@@ -405,14 +404,13 @@ function Panel({
   children: React.ReactNode;
   tint: string;
   className?: string;
-  collapsible?: boolean;
   open?: boolean;
   onToggle?: () => void;
 }) {
   return (
     <section
       className={
-        "panel-wash flex min-w-0 flex-col rounded-[26px] border border-border p-4 " +
+        "panel-wash flex min-w-0 flex-col rounded-[22px] border border-border p-3.5 " +
         (className ?? "")
       }
       style={{ ["--panel-tint" as string]: tint }}
@@ -420,18 +418,17 @@ function Panel({
       <button
         type="button"
         onClick={onToggle}
-        disabled={!collapsible}
-        className="flex w-full items-start gap-2 pb-3 text-left"
+        aria-expanded={open}
+        className="flex w-full items-start gap-2 pb-2 text-left"
       >
-        {collapsible &&
-          (open ? (
-            <ChevronDown className="mt-1.5 h-4 w-4" strokeWidth={2} />
-          ) : (
-            <ChevronRight className="mt-1.5 h-4 w-4" strokeWidth={2} />
-          ))}
+        {open ? (
+          <ChevronDown className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+        ) : (
+          <ChevronRight className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+        )}
         <span className="min-w-0">
           <span className="flex items-baseline gap-2">
-            <h2 className="truncate font-display text-xl text-foreground">
+            <h2 className="truncate font-display text-lg text-foreground">
               {title}
             </h2>
             <span className="text-xs text-muted-foreground">({count})</span>
@@ -441,10 +438,13 @@ function Panel({
           </span>
         </span>
       </button>
-      <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
+      {open && (
+        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
+      )}
     </section>
   );
 }
+
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
   return <p className="px-1 py-2 text-sm text-muted-foreground">{children}</p>;
