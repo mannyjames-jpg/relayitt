@@ -22,7 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import { PetalBurst } from "@/components/PetalBurst";
 import {
-  CATEGORY_COLOR,
   CATEGORY_PILL,
   STATUS_BADGE,
   STATUS_HELP,
