@@ -20,7 +20,7 @@ export type TaskCategory =
   | "Vendors"
   | "Other";
 
-/** One hue per category, used everywhere: left accent bar + pill + dots. */
+/** One neutral shade per category, used everywhere: accent bar + pill + dots. */
 export const CATEGORY_PILL: Record<TaskCategory, string> = {
   Travel: "pill-cat-travel",
   Household: "pill-cat-household",
@@ -34,25 +34,25 @@ export const CATEGORY_PILL: Record<TaskCategory, string> = {
 
 /** CSS colour value for the card's left accent bar / dots. */
 export const CATEGORY_COLOR: Record<TaskCategory, string> = {
-  Travel: "var(--lavender)",
-  Household: "var(--coral)",
-  Scheduling: "var(--sage)",
-  Errands: "var(--gold)",
-  "Gifts/Events": "var(--plum)",
-  Finance: "var(--rose)",
-  Vendors: "var(--gold)",
-  Other: "#d8c6c8",
+  Travel: "var(--cat-slate)",
+  Household: "var(--cat-taupe)",
+  Scheduling: "var(--cat-moss)",
+  Errands: "var(--cat-sand)",
+  "Gifts/Events": "var(--cat-mauve)",
+  Finance: "var(--cat-ink)",
+  Vendors: "var(--cat-clay)",
+  Other: "var(--cat-ash)",
 };
 
 export const CATEGORY_TINT: Record<TaskCategory, string> = {
-  Travel: "var(--lavender-tint)",
-  Household: "var(--coral-tint)",
-  Scheduling: "var(--sage-tint)",
-  Errands: "var(--gold-tint)",
-  "Gifts/Events": "var(--plum-tint)",
-  Finance: "var(--rose-tint)",
-  Vendors: "var(--gold-tint)",
-  Other: "#f3eceb",
+  Travel: "var(--cat-slate-tint)",
+  Household: "var(--cat-taupe-tint)",
+  Scheduling: "var(--cat-moss-tint)",
+  Errands: "var(--cat-sand-tint)",
+  "Gifts/Events": "var(--cat-mauve-tint)",
+  Finance: "var(--cat-ink-tint)",
+  Vendors: "var(--cat-clay-tint)",
+  Other: "var(--cat-ash-tint)",
 };
 
 export const CATEGORY_ICON: Record<TaskCategory, LucideIcon> = {
@@ -77,7 +77,7 @@ export const CATEGORY_ORDER: TaskCategory[] = [
   "Other",
 ];
 
-/** Warm, plain-language labels for the three task sources. */
+/** Plain-language labels for the three task sources. */
 export function sourceLabel(
   source: "From Boss" | "Delegated by Me" | "Personal Reminder",
   bossName?: string | null,
@@ -88,6 +88,45 @@ export function sourceLabel(
   return "Just for me";
 }
 
+/** Short explanation of each source, shown in tooltips. */
+export const SOURCE_HELP: Record<
+  "From Boss" | "Delegated by Me" | "Personal Reminder",
+  string
+> = {
+  "From Boss": "Your principal asked you to handle this.",
+  "Delegated by Me": "You handed this to someone else and are tracking it.",
+  "Personal Reminder": "Something you're doing yourself, for yourself.",
+};
+
+export type TaskStatus =
+  | "Not Started"
+  | "In Progress"
+  | "Waiting on Someone"
+  | "Complete";
+
+export const STATUS_ORDER: TaskStatus[] = [
+  "Not Started",
+  "In Progress",
+  "Waiting on Someone",
+  "Complete",
+];
+
+export const STATUS_HELP: Record<TaskStatus, string> = {
+  "Not Started": "Nothing has happened on this yet.",
+  "In Progress": "You've started and it's actively moving.",
+  "Waiting on Someone":
+    "You've done your part — you're waiting on another person to respond or act.",
+  Complete: "Finished. It leaves your active list.",
+};
+
+/** Neutral badge styling per status. */
+export const STATUS_BADGE: Record<TaskStatus, string> = {
+  "Not Started": "bg-[var(--cat-ash-tint)] text-[var(--cat-ash)]",
+  "In Progress": "bg-[var(--cat-slate-tint)] text-[var(--cat-slate)]",
+  "Waiting on Someone": "bg-[var(--cat-sand-tint)] text-[var(--cat-sand)]",
+  Complete: "bg-[var(--cat-moss-tint)] text-[var(--cat-moss)]",
+};
+
 /** "Just asked, waiting" / "Waiting 3 days" — never abbreviated. */
 export function waitingLabel(days: number) {
   if (days <= 0) return "Just asked, waiting";
@@ -96,10 +135,18 @@ export function waitingLabel(days: number) {
 }
 
 export const PETAL_COLORS = [
-  "#D9748E",
-  "#9A82B8",
-  "#E88C7D",
-  "#C89A5B",
-  "#A45D77",
-  "#EFA0B2",
+  "#6d6157",
+  "#5d666e",
+  "#57614f",
+  "#6e6046",
+  "#665a63",
+  "#8a857b",
 ];
+
+/** Urgent first, then Important, then everything else — stable otherwise. */
+export function byPriority<T extends { priority: "Normal" | "Important" | "Urgent" }>(
+  tasks: T[],
+): T[] {
+  const rank = { Urgent: 0, Important: 1, Normal: 2 } as const;
+  return [...tasks].sort((a, b) => rank[a.priority] - rank[b.priority]);
+}
