@@ -156,6 +156,7 @@ function Dashboard() {
   const todayCount = groups.overdue.length + groups.today.length;
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="min-h-screen bg-background">
       <QuickCapture filter={filter} onFilterChange={setFilter} />
 
@@ -367,6 +368,7 @@ function Dashboard() {
         )}
       </main>
     </div>
+    </TooltipProvider>
   );
 }
 
