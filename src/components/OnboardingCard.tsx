@@ -56,12 +56,12 @@ export function OnboardingCard() {
           <div key={title} className="flex gap-3">
             <span
               className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-              style={{ background: "var(--rose-tint)" }}
+              style={{ background: "var(--cat-ink-tint)" }}
             >
               <Icon
                 className="h-4 w-4"
                 strokeWidth={2}
-                style={{ color: "var(--rose-deep)" }}
+                style={{ color: "var(--cat-ink)" }}
               />
             </span>
             <div className="min-w-0">
