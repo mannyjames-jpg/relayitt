@@ -8,28 +8,31 @@ import {
   LogOut,
   Users,
   CheckSquare,
+  Settings as SettingsIcon,
   Calendar as CalIcon,
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { listTasks } from "@/lib/tasks.functions";
 import { listContacts } from "@/lib/contacts.functions";
+import { getProfile } from "@/lib/profile.functions";
 import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { todayISO } from "@/lib/date-utils";
 import { formatDateLabel } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
-import { useAuth } from "@/hooks/use-auth";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { HeroSummary } from "@/components/HeroSummary";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import {
+  byPriority,
   CATEGORY_COLOR,
   CATEGORY_ICON,
   CATEGORY_ORDER,
   CATEGORY_TINT,
   type TaskCategory,
 } from "@/lib/task-style";
+
 import { toast } from "sonner";
 import {
   Tooltip,
