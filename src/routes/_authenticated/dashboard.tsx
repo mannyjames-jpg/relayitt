@@ -170,7 +170,7 @@ function Dashboard() {
                 variant="ghost"
                 size="sm"
                 onClick={connectGoogle}
-                className="h-9 rounded-full text-xs"
+                className="h-9 rounded-none text-xs"
                 aria-label="Connect Google Calendar"
               >
                 <CalIcon className="mr-1 h-4 w-4" strokeWidth={2} />
@@ -180,21 +180,21 @@ function Dashboard() {
           )}
           <Tip label="People">
             <Link to="/contacts" aria-label="People">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
                 <Users className="h-5 w-5" strokeWidth={2} />
               </Button>
             </Link>
           </Tip>
           <Tip label="Completed tasks">
             <Link to="/completed" aria-label="Completed tasks">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
                 <CheckSquare className="h-5 w-5" strokeWidth={2} />
               </Button>
             </Link>
           </Tip>
           <Tip label="Settings">
             <Link to="/settings" aria-label="Settings">
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
                 <SettingsIcon className="h-5 w-5" strokeWidth={2} />
               </Button>
             </Link>
@@ -203,7 +203,7 @@ function Dashboard() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full"
+              className="h-10 w-10 rounded-none"
               onClick={signOut}
               aria-label="Sign out"
             >
@@ -291,7 +291,7 @@ function Dashboard() {
                     : g.name || "Nobody named yet";
                   return (
                     <div key={g.key}>
-                      <div className="px-1 pb-1 text-xs font-semibold text-muted-foreground">
+                      <div className="micro-label px-0.5 pb-1.5">
                         {label}
                       </div>
                       <div className="space-y-1.5">
@@ -325,7 +325,7 @@ function Dashboard() {
               <div className="space-y-2.5">
                 {groups.upcoming.map((g) => (
                   <div key={g.date}>
-                    <div className="px-1 pb-1 text-xs font-semibold text-muted-foreground">
+                    <div className="micro-label px-0.5 pb-1.5">
                       {formatDateLabel(g.date)}
                     </div>
                     <div className="space-y-1.5">
@@ -362,7 +362,7 @@ function Dashboard() {
                           strokeWidth={2}
                           style={{ color: CATEGORY_COLOR[g.category] }}
                         />
-                        <span className="text-xs font-semibold text-muted-foreground">
+                        <span className="micro-label">
                           {g.category}
                         </span>
                       </div>
