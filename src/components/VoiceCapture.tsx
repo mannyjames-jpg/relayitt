@@ -48,7 +48,12 @@ type Draft = {
   assigned_to_name: string | null;
   due_date: string | null;
   due_time: string | null;
+  /** Checked drafts are the ones that get imported. */
+  selected: boolean;
+  /** What the AI inferred, so we can mark unchanged values as suggested. */
+  ai: { category: Category | null; priority: Priority | null };
 };
+
 
 const CATEGORIES: Category[] = [
   "Travel",
@@ -172,8 +177,14 @@ export function VoiceCapture({
               assigned_to_name: d.assigned_to_name ?? null,
               due_date: d.due_date ?? null,
               due_time: d.due_time ?? null,
+              selected: true,
+              ai: {
+                category: (d.category ?? null) as Category | null,
+                priority: d.priority ?? null,
+              },
             })),
           );
+
           setPhase("review");
         } catch (e) {
           toast.error(e instanceof Error ? e.message : "Voice processing failed");
