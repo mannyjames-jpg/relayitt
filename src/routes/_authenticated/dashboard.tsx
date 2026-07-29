@@ -411,17 +411,6 @@ function Panel({
   subtitle,
   count,
   children,
-  tint,
-  className,
-  open = true,
-  onToggle,
-}: {
-  title: string;
-function Panel({
-  title,
-  subtitle,
-  count,
-  children,
   group,
   className,
   open,
