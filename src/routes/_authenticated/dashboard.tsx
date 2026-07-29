@@ -29,7 +29,9 @@ import {
   CATEGORY_COLOR,
   CATEGORY_ICON,
   CATEGORY_ORDER,
-  CATEGORY_TINT,
+  GROUP_COLOR,
+  GROUP_TINT,
+  type GroupKey,
   type TaskCategory,
 } from "@/lib/task-style";
 
@@ -64,7 +66,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-type PanelKey = "today" | "waiting" | "upcoming" | "someday";
+type PanelKey = "overdue" | "today" | "waiting" | "upcoming" | "someday";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -93,6 +95,7 @@ function Dashboard() {
   });
 
   const [open, setOpen] = useState<Record<PanelKey, boolean>>({
+    overdue: true,
     today: true,
     waiting: true,
     upcoming: true,
@@ -270,7 +273,7 @@ function Dashboard() {
             title="Waiting on Someone"
             subtitle="Nothing to do here yet — just keeping tabs"
             count={waitingCount}
-            tint={CATEGORY_TINT.Errands}
+            group="waiting"
             open={open.waiting}
             onToggle={() => toggle("waiting")}
           >
@@ -313,7 +316,7 @@ function Dashboard() {
             title="Coming Up"
             subtitle="Nothing urgent — just so you're not surprised"
             count={upcomingCount}
-            tint={CATEGORY_TINT.Travel}
+            group="upcoming"
             open={open.upcoming}
             onToggle={() => toggle("upcoming")}
           >
@@ -341,7 +344,7 @@ function Dashboard() {
             title="Whenever You Get To It"
             subtitle="No date on these — dip in when you have a moment"
             count={groups.someday.length}
-            tint={CATEGORY_TINT["Gifts/Events"]}
+            group="whenever"
             className="sm:col-span-2"
             open={open.someday}
             onToggle={() => toggle("someday")}
