@@ -325,22 +325,15 @@ export function TaskRow({
     new Date(task.next_followup_reminder_at).getTime() < Date.now();
   const nudgeContact = contacts.find((c) => c.id === task.assigned_to) ?? null;
 
-  const accent = CATEGORY_COLOR[task.category ?? "Other"];
-
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-[0_6px_16px_-14px_rgba(31,30,27,0.9)]",
+        "group relative overflow-hidden border border-border bg-card transition-colors hover:border-border-strong",
         completing && "animate-complete",
       )}
     >
-      <span
-        aria-hidden
-        className="absolute left-0 top-0 h-full w-1"
-        style={{ background: accent }}
-      />
+      <div className="flex items-start gap-2.5 px-3 py-2.5">
 
-      <div className="flex items-start gap-2 py-2 pl-3.5 pr-2">
         <div className="relative mt-0.5 shrink-0">
           {burst && <PetalBurst />}
           <button
