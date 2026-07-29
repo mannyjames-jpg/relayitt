@@ -1,4 +1,4 @@
-import { CATEGORY_COLOR } from "@/lib/task-style";
+import { GROUP_COLOR } from "@/lib/task-style";
 
 type Stat = { label: string; value: number; color: string };
 
