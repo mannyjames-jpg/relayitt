@@ -5,11 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Relay — blush boutique design system.
- * Palette: blush canvas + espresso ink, rose gradient primary,
- * category hues (rose / lavender / coral / gold / plum / sage).
- * Headings: Fraunces (italic for the greeting). Wordmark: Parisienne.
- * Body & UI: Inter.
+ * Relay — minimal stone design system.
+ * Palette: warm neutral greys, beiges and nudes. No saturated hues.
+ * Typography: one clean sans-serif family everywhere (user-selectable).
  */
 
 @theme inline {
@@ -21,9 +19,9 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  --font-serif: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
-  --font-script: "Parisienne", ui-serif, cursive;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--app-font);
+  --font-serif: var(--app-font);
+  --font-script: var(--app-font);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -47,28 +45,21 @@
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
 
-  /* Category hues — consistent across every screen */
-  --color-rose: var(--rose);
-  --color-rose-deep: var(--rose-deep);
-  --color-rose-tint: var(--rose-tint);
-  --color-lavender: var(--lavender);
-  --color-lavender-tint: var(--lavender-tint);
-  --color-coral: var(--coral);
-  --color-coral-tint: var(--coral-tint);
-  --color-gold: var(--gold);
-  --color-gold-tint: var(--gold-tint);
-  --color-plum: var(--plum);
-  --color-plum-tint: var(--plum-tint);
-  --color-sage: var(--sage);
-  --color-sage-tint: var(--sage-tint);
-  --color-rose-foreground: var(--rose-deep);
-  --color-sage-foreground: var(--sage);
+  /* Category shades — all neutral, distinguished by warmth/darkness */
+  --color-stone-slate: var(--cat-slate);
+  --color-stone-taupe: var(--cat-taupe);
+  --color-stone-moss: var(--cat-moss);
+  --color-stone-sand: var(--cat-sand);
+  --color-stone-mauve: var(--cat-mauve);
+  --color-stone-ink: var(--cat-ink);
+  --color-stone-clay: var(--cat-clay);
+  --color-stone-ash: var(--cat-ash);
 
-  --color-chart-1: var(--rose);
-  --color-chart-2: var(--lavender);
-  --color-chart-3: var(--coral);
-  --color-chart-4: var(--gold);
-  --color-chart-5: var(--plum);
+  --color-chart-1: var(--cat-ink);
+  --color-chart-2: var(--cat-slate);
+  --color-chart-3: var(--cat-taupe);
+  --color-chart-4: var(--cat-sand);
+  --color-chart-5: var(--cat-mauve);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -80,90 +71,99 @@
 }
 
 :root {
-  --radius: 0.85rem;
+  --radius: 0.7rem;
 
-  --background: #fdf3f1;        /* blush */
-  --background-deep: #f9e7e3;   /* panel base */
-  --foreground: #3d2b30;        /* ink */
+  /* Font preference (overridden at runtime from Settings) */
+  --app-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
 
-  --surface: #f9e7e3;
+  --background: #f6f5f2;
+  --background-deep: #eeece7;
+  --foreground: #1f1e1b;
+
+  --surface: #eeece7;
   --card: #ffffff;
-  --card-foreground: #3d2b30;
+  --card-foreground: #1f1e1b;
   --popover: #ffffff;
-  --popover-foreground: #3d2b30;
+  --popover-foreground: #1f1e1b;
 
-  --primary: #c25777;
+  --primary: #44403a;
   --primary-foreground: #ffffff;
-  --gradient-primary: linear-gradient(135deg, #efa0b2, #c25777);
+  --gradient-primary: linear-gradient(135deg, #5c574f, #34312c);
 
-  --secondary: #f9e7e3;
-  --secondary-foreground: #3d2b30;
-  --muted: #f9e7e3;
-  --muted-foreground: #8a6e74;  /* ink soft */
-  --accent: #fbe7ec;
-  --accent-foreground: #c25777;
+  --secondary: #eeece7;
+  --secondary-foreground: #2b2924;
+  --muted: #eeece7;
+  --muted-foreground: #63605a;
+  --accent: #e6e3dc;
+  --accent-foreground: #2b2924;
 
-  --rose: #d9748e;
-  --rose-deep: #c25777;
-  --rose-tint: #fbe7ec;
-  --lavender: #9a82b8;
-  --lavender-tint: #eee7f5;
-  --coral: #e88c7d;
-  --coral-tint: #fceae5;
-  --gold: #c89a5b;
-  --gold-tint: #f6eddc;
-  --plum: #a45d77;
-  --plum-tint: #f3e2e9;
-  --sage: #7fa08a;
-  --sage-tint: #e8f0ea;
+  /* Neutral category shades (AA against white/tints) */
+  --cat-slate: #5d666e;
+  --cat-taupe: #6d6157;
+  --cat-moss: #57614f;
+  --cat-sand: #6e6046;
+  --cat-mauve: #665a63;
+  --cat-ink: #3f3d38;
+  --cat-clay: #6b5c4d;
+  --cat-ash: #6a6763;
 
-  --destructive: #c25777;
+  --cat-slate-tint: #e9ebed;
+  --cat-taupe-tint: #edeae5;
+  --cat-moss-tint: #e9ece7;
+  --cat-sand-tint: #efeae0;
+  --cat-mauve-tint: #ece9ea;
+  --cat-ink-tint: #e7e6e3;
+  --cat-clay-tint: #eee9e3;
+  --cat-ash-tint: #ebeae8;
+
+  --destructive: #7a3c34;
   --destructive-foreground: #ffffff;
 
-  --border: #f2dcd8;
-  --input: #f0d8d4;
-  --ring: #d9748e;
+  --border: #e0ddd6;
+  --input: #d6d2ca;
+  --ring: #8a857b;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #3d2b30;
-  --sidebar-primary: #c25777;
+  --sidebar-foreground: #1f1e1b;
+  --sidebar-primary: #44403a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fbe7ec;
-  --sidebar-accent-foreground: #c25777;
-  --sidebar-border: #f2dcd8;
-  --sidebar-ring: #d9748e;
+  --sidebar-accent: #eeece7;
+  --sidebar-accent-foreground: #2b2924;
+  --sidebar-border: #e0ddd6;
+  --sidebar-ring: #8a857b;
 }
 
 .dark {
-  --background: #241a1d;
-  --background-deep: #2c2023;
-  --foreground: #f7ebe9;
-  --surface: #2c2023;
-  --card: #2c2023;
-  --card-foreground: #f7ebe9;
-  --popover: #2c2023;
-  --popover-foreground: #f7ebe9;
-  --primary: #d9748e;
-  --primary-foreground: #241a1d;
-  --secondary: #34262a;
-  --secondary-foreground: #f7ebe9;
-  --muted: #34262a;
-  --muted-foreground: #c5a9af;
-  --accent: #3a2a2f;
-  --accent-foreground: #f7ebe9;
-  --destructive: #d9748e;
-  --destructive-foreground: #241a1d;
+  --background: #1c1b19;
+  --background-deep: #24231f;
+  --foreground: #f2f1ee;
+  --surface: #24231f;
+  --card: #24231f;
+  --card-foreground: #f2f1ee;
+  --popover: #24231f;
+  --popover-foreground: #f2f1ee;
+  --primary: #d8d4cc;
+  --primary-foreground: #1c1b19;
+  --secondary: #2c2b27;
+  --secondary-foreground: #f2f1ee;
+  --muted: #2c2b27;
+  --muted-foreground: #b3afa7;
+  --accent: #32302c;
+  --accent-foreground: #f2f1ee;
+  --destructive: #c98a80;
+  --destructive-foreground: #1c1b19;
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: #d9748e;
-  --sidebar: #2c2023;
-  --sidebar-foreground: #f7ebe9;
-  --sidebar-primary: #d9748e;
-  --sidebar-primary-foreground: #241a1d;
-  --sidebar-accent: #34262a;
-  --sidebar-accent-foreground: #f7ebe9;
+  --ring: #b3afa7;
+  --sidebar: #24231f;
+  --sidebar-foreground: #f2f1ee;
+  --sidebar-primary: #d8d4cc;
+  --sidebar-primary-foreground: #1c1b19;
+  --sidebar-accent: #2c2b27;
+  --sidebar-accent-foreground: #f2f1ee;
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: #d9748e;
+  --sidebar-ring: #b3afa7;
 }
 
 @layer base {
@@ -172,7 +172,7 @@
   }
 
   html, body {
-    font-family: var(--font-sans);
+    font-family: var(--app-font);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -183,45 +183,43 @@
   }
 }
 
-/* Fraunces for headings. */
+/* Headings: same sans family, differentiated by weight and tracking only. */
 @utility font-display {
-  font-family: var(--font-serif);
-  font-optical-sizing: auto;
-  font-variation-settings: "SOFT" 60, "WONK" 0;
+  font-family: var(--app-font);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
-/* Decorative wordmark only — never for functional/data text. */
+/* Wordmark: plain sans, tight tracking. Never cursive. */
 @utility font-wordmark {
-  font-family: var(--font-script);
-  font-weight: 400;
-  letter-spacing: 0.01em;
+  font-family: var(--app-font);
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 @utility bg-gradient-rose {
   background-image: var(--gradient-primary);
 }
 
-/* Soft panel wash: category tint fading to white. */
+/* Soft panel wash: neutral tint fading to white. */
 @utility panel-wash {
   background-image: linear-gradient(
     160deg,
-    var(--panel-tint, var(--rose-tint)) 0%,
-    color-mix(in srgb, var(--panel-tint, var(--rose-tint)) 35%, #ffffff) 45%,
+    var(--panel-tint, var(--cat-ink-tint)) 0%,
+    color-mix(in srgb, var(--panel-tint, var(--cat-ink-tint)) 35%, #ffffff) 45%,
     #ffffff 100%
   );
 }
 
-/* Category pill palette — one hue per category, everywhere. */
-@utility pill-cat-travel      { background: var(--lavender-tint); color: var(--lavender); }
-@utility pill-cat-household   { background: var(--coral-tint);    color: #b9604f; }
-@utility pill-cat-scheduling  { background: var(--sage-tint);     color: #4f7361; }
-@utility pill-cat-errands     { background: var(--gold-tint);     color: #96702f; }
-@utility pill-cat-gifts       { background: var(--plum-tint);     color: var(--plum); }
-@utility pill-cat-finance     { background: var(--rose-tint);     color: var(--rose-deep); }
-@utility pill-cat-vendors     { background: var(--gold-tint);     color: #96702f; }
-@utility pill-cat-other       { background: #f3eceb;              color: var(--muted-foreground); }
+/* Category pill palette — one neutral shade per category. */
+@utility pill-cat-travel      { background: var(--cat-slate-tint); color: var(--cat-slate); }
+@utility pill-cat-household   { background: var(--cat-taupe-tint); color: var(--cat-taupe); }
+@utility pill-cat-scheduling  { background: var(--cat-moss-tint);  color: var(--cat-moss); }
+@utility pill-cat-errands     { background: var(--cat-sand-tint);  color: var(--cat-sand); }
+@utility pill-cat-gifts       { background: var(--cat-mauve-tint); color: var(--cat-mauve); }
+@utility pill-cat-finance     { background: var(--cat-ink-tint);   color: var(--cat-ink); }
+@utility pill-cat-vendors     { background: var(--cat-clay-tint);  color: var(--cat-clay); }
+@utility pill-cat-other       { background: var(--cat-ash-tint);   color: var(--cat-ash); }
 
 @keyframes shake {
   0%,100% { transform: translateX(0); }
@@ -250,7 +248,7 @@
 }
 .animate-rec-pulse { animation: rec-pulse 1s ease-in-out infinite; }
 
-/* Petal burst — small colored dots scatter outward from the checkbox. */
+/* Subtle confetti dots on completion. */
 @keyframes petal-fly {
   0%   { opacity: 1; transform: translate(0, 0) scale(1); }
   100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0.4); }
@@ -263,3 +261,4 @@
   100% { transform: scale(1); }
 }
 .animate-ring-pop { animation: ring-pop 0.4s ease-out; }
+
