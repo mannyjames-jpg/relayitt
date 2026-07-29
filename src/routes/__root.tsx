@@ -161,9 +161,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <FontPreference />
       <Outlet />
       <Toaster position="bottom-center" />
     </QueryClientProvider>
   );
+
 }
 
