@@ -300,13 +300,10 @@ export function QuickCapture({
         </div>
 
         {parsed.hints.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11px]">
-            <span className="text-muted-foreground">Detected:</span>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="micro-label">Detected</span>
             {parsed.hints.map((h) => (
-              <span
-                key={h}
-                className="rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground"
-              >
+              <span key={h} className="tag-quiet">
                 {h}
               </span>
             ))}
@@ -314,7 +311,8 @@ export function QuickCapture({
         )}
 
         {savePrompt && (
-          <div className="mt-2 flex items-center justify-between rounded-md bg-secondary px-3 py-2 text-sm">
+          <div className="mt-2 flex items-center justify-between border border-border-strong bg-card px-3 py-2 text-sm">
+
             <span>
               Save <span className="font-medium">{savePrompt.name}</span> as a
               contact?
@@ -364,12 +362,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex items-center gap-1.5">
+    <label className="flex flex-col gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="whitespace-nowrap text-[11px] uppercase tracking-wide text-muted-foreground">
-            {label}
-          </span>
+          <span className="micro-label whitespace-nowrap">{label}</span>
         </TooltipTrigger>
         <TooltipContent>{help}</TooltipContent>
       </Tooltip>
