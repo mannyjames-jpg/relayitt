@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Mic, Square, Trash2, X } from "lucide-react";
+import { Loader2, Mic, Square, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { transcribeVoiceNote } from "@/lib/voice.functions";
-import { createTask } from "@/lib/tasks.functions";
+import { createTask, deleteTask } from "@/lib/tasks.functions";
 import { cn } from "@/lib/utils";
 import type { ContactOption } from "./AssigneeCombobox";
 
@@ -101,6 +101,7 @@ export function VoiceCapture({
   const qc = useQueryClient();
   const transcribe = useServerFn(transcribeVoiceNote);
   const create = useServerFn(createTask);
+  const removeTask = useServerFn(deleteTask);
 
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<
@@ -119,6 +120,7 @@ export function VoiceCapture({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const structureM = useMutation({ mutationFn: transcribe });
+  const selectedCount = drafts.filter((d) => d.selected).length;
 
   function stopTimer() {
     if (timerRef.current) {
@@ -584,5 +586,34 @@ export function VoiceCapture({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function CompactField({
+  label,
+  suggested,
+  children,
+}: {
+  label: string;
+  suggested?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-0.5 flex items-center gap-1">
+        <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          {label}
+        </Label>
+        {suggested && (
+          <span
+            title="Inferred from your voice note"
+            className="rounded-full bg-secondary px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-muted-foreground"
+          >
+            AI suggested
+          </span>
+        )}
+      </div>
+      {children}
+    </div>
   );
 }
