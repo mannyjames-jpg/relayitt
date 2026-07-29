@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   AlertCircle,
   ArrowRight,
+  ChevronDown,
+  ChevronRight,
   BellRing,
   Calendar as CalIcon,
   Check,
@@ -68,6 +70,7 @@ import {
   nudgeTask,
   updateTask,
 } from "@/lib/tasks.functions";
+import { addStep, deleteStep, listSteps } from "@/lib/steps.functions";
 import { formatTime, daysSince } from "@/lib/date-utils";
 import type { ContactOption } from "./AssigneeCombobox";
 import { AssigneeCombobox } from "./AssigneeCombobox";
@@ -153,7 +156,8 @@ export function TaskRow({
 
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
-  const [nextStep, setNextStep] = useState(task.next_step ?? "");
+  const [stepDraft, setStepDraft] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
   const [dueTime, setDueTime] = useState(task.due_time?.slice(0, 5) ?? "");
@@ -165,7 +169,6 @@ export function TaskRow({
   useEffect(() => {
     setTitle(task.title);
     setNotes(task.notes ?? "");
-    setNextStep(task.next_step ?? "");
     setStatus(task.status);
     setDueDate(task.due_date ?? "");
     setDueTime(task.due_time?.slice(0, 5) ?? "");
@@ -174,6 +177,45 @@ export function TaskRow({
     setCategory(task.category);
     setPriority(task.priority);
   }, [task]);
+
+  const fetchSteps = useServerFn(listSteps);
+  const createStep = useServerFn(addStep);
+  const removeStep = useServerFn(deleteStep);
+
+  const { data: allSteps = [] } = useQuery({
+    queryKey: ["task-steps"],
+    queryFn: () => fetchSteps(),
+    staleTime: 30_000,
+  });
+  const steps = allSteps.filter((s) => s.task_id === task.id);
+  const latestStep = steps[0] ?? null;
+
+  const invalidateSteps = () =>
+    qc.invalidateQueries({ queryKey: ["task-steps"] });
+  const addStepM = useMutation({
+    mutationFn: createStep,
+    onSuccess: invalidateSteps,
+  });
+  const deleteStepM = useMutation({
+    mutationFn: removeStep,
+    onSuccess: invalidateSteps,
+  });
+
+  async function submitStep() {
+    const body = stepDraft.trim();
+    if (!body) return;
+    setStepDraft("");
+    const row = await addStepM.mutateAsync({ data: { task_id: task.id, body } });
+    toast("Step logged", {
+      duration: 4000,
+      action: {
+        label: "Undo",
+        onClick: async () => {
+          await deleteStepM.mutateAsync({ data: { id: row.id } });
+        },
+      },
+    });
+  }
 
   const updateM = useMutation({
     mutationFn: update,
@@ -254,7 +296,6 @@ export function TaskRow({
         id: task.id,
         title: title.trim() || task.title,
         notes: notes || null,
-        next_step: nextStep.trim() || null,
         status,
         category,
         priority,
@@ -437,12 +478,12 @@ export function TaskRow({
             )}
           </div>
 
-          {/* Next step — the immediate action, visible without expanding. */}
-          {task.next_step ? (
+          {/* Most recent entry from the step log, visible without expanding. */}
+          {latestStep ? (
             <div className="mt-1 flex items-start gap-1 text-[12px] text-foreground/80">
               <ArrowRight className="mt-[3px] h-3 w-3 shrink-0" strokeWidth={2} />
               <span className="min-w-0 break-words">
-                <span className="font-medium">Next:</span> {task.next_step}
+                <span className="font-medium">Next:</span> {latestStep.body}
               </span>
             </div>
           ) : (
@@ -451,7 +492,7 @@ export function TaskRow({
               onClick={() => setExpanded(true)}
               className="mt-1 text-[11px] text-muted-foreground underline-offset-2 hover:underline"
             >
-              + Add next step
+              + Add step
             </button>
           )}
         </div>
@@ -505,21 +546,81 @@ export function TaskRow({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Label htmlFor={`ns-${task.id}`} className="text-xs">
-                  Next step
+                  Step log
                 </Label>
               </TooltipTrigger>
               <TooltipContent>
-                The single immediate action — separate from general notes.
+                A running record of what's happened — newest first. Separate
+                from notes and from the task's status.
               </TooltipContent>
             </Tooltip>
-            <Input
-              id={`ns-${task.id}`}
-              value={nextStep}
-              maxLength={200}
-              placeholder="e.g. Call the caterer back Thursday"
-              onChange={(e) => setNextStep(e.target.value)}
-              className="mt-1"
-            />
+            <div className="mt-1 flex gap-2">
+              <Input
+                id={`ns-${task.id}`}
+                value={stepDraft}
+                maxLength={300}
+                placeholder="e.g. Called the caterer, waiting on a quote"
+                onChange={(e) => setStepDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void submitStep();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void submitStep()}
+                disabled={!stepDraft.trim() || addStepM.isPending}
+              >
+                Add step
+              </Button>
+            </div>
+
+            {steps.length > 0 && (
+              <div className="mt-2 space-y-1.5">
+                <StepEntry
+                  body={steps[0].body}
+                  at={steps[0].created_at}
+                  onDelete={() =>
+                    void deleteStepM.mutateAsync({ data: { id: steps[0].id } })
+                  }
+                  latest
+                />
+                {steps.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryOpen((v) => !v)}
+                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      {historyOpen ? (
+                        <ChevronDown className="h-3 w-3" strokeWidth={2} />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" strokeWidth={2} />
+                      )}
+                      {historyOpen
+                        ? "Hide earlier steps"
+                        : `${steps.length - 1} earlier step${steps.length > 2 ? "s" : ""}`}
+                    </button>
+                    {historyOpen &&
+                      steps.slice(1).map((st) => (
+                        <StepEntry
+                          key={st.id}
+                          body={st.body}
+                          at={st.created_at}
+                          onDelete={() =>
+                            void deleteStepM.mutateAsync({
+                              data: { id: st.id },
+                            })
+                          }
+                        />
+                      ))}
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <Tooltip>
@@ -886,6 +987,50 @@ export function TaskRow({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/** One timestamped entry in a task's step log. */
+function StepEntry({
+  body,
+  at,
+  onDelete,
+  latest,
+}: {
+  body: string;
+  at: string;
+  onDelete: () => void;
+  latest?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "group/step flex items-start gap-2 rounded-lg border border-border px-2 py-1.5",
+        latest ? "bg-card" : "bg-surface",
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="break-words text-[12px] leading-snug text-foreground">
+          {body}
+        </p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground">
+          {new Date(at).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="Delete this step"
+        className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/step:opacity-100"
+      >
+        <X className="h-3 w-3" strokeWidth={2} />
+      </button>
     </div>
   );
 }

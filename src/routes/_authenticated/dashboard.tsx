@@ -29,7 +29,9 @@ import {
   CATEGORY_COLOR,
   CATEGORY_ICON,
   CATEGORY_ORDER,
-  CATEGORY_TINT,
+  GROUP_COLOR,
+  GROUP_TINT,
+  type GroupKey,
   type TaskCategory,
 } from "@/lib/task-style";
 
@@ -64,7 +66,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-type PanelKey = "today" | "waiting" | "upcoming" | "someday";
+type PanelKey = "overdue" | "today" | "waiting" | "upcoming" | "someday";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -93,6 +95,7 @@ function Dashboard() {
   });
 
   const [open, setOpen] = useState<Record<PanelKey, boolean>>({
+    overdue: true,
     today: true,
     waiting: true,
     upcoming: true,
@@ -227,22 +230,37 @@ function Dashboard() {
         <OnboardingCard />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <Panel
-            title="Today"
-            subtitle="Let's get these done first"
-            count={todayCount}
-            tint={CATEGORY_TINT.Finance}
-            className="sm:col-span-2 xl:col-span-1 xl:row-span-2 xl:max-h-[calc(100vh-9rem)]"
-            open={open.today}
-            onToggle={() => toggle("today")}
-          >
-            {todayCount === 0 ? (
-              <EmptyLine>Nothing due today — lovely.</EmptyLine>
-            ) : (
+          {groups.overdue.length > 0 && (
+            <Panel
+              title="Overdue"
+              subtitle="These slipped past their date"
+              count={groups.overdue.length}
+              group="overdue"
+              className="sm:col-span-2 xl:col-span-1"
+              open={open.overdue}
+              onToggle={() => toggle("overdue")}
+            >
               <div className="space-y-1.5">
                 {byPriority(groups.overdue).map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} overdue />
                 ))}
+              </div>
+            </Panel>
+          )}
+
+          <Panel
+            title="Due Today"
+            subtitle="Let's get these done first"
+            count={groups.today.length}
+            group="today"
+            className="sm:col-span-2 xl:col-span-1 xl:max-h-[calc(100vh-9rem)]"
+            open={open.today}
+            onToggle={() => toggle("today")}
+          >
+            {groups.today.length === 0 ? (
+              <EmptyLine>Nothing due today — lovely.</EmptyLine>
+            ) : (
+              <div className="space-y-1.5">
                 {byPriority(groups.today).map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} />
                 ))}
@@ -250,11 +268,12 @@ function Dashboard() {
             )}
           </Panel>
 
+
           <Panel
             title="Waiting on Someone"
             subtitle="Nothing to do here yet — just keeping tabs"
             count={waitingCount}
-            tint={CATEGORY_TINT.Errands}
+            group="waiting"
             open={open.waiting}
             onToggle={() => toggle("waiting")}
           >
@@ -297,7 +316,7 @@ function Dashboard() {
             title="Coming Up"
             subtitle="Nothing urgent — just so you're not surprised"
             count={upcomingCount}
-            tint={CATEGORY_TINT.Travel}
+            group="upcoming"
             open={open.upcoming}
             onToggle={() => toggle("upcoming")}
           >
@@ -325,7 +344,7 @@ function Dashboard() {
             title="Whenever You Get To It"
             subtitle="No date on these — dip in when you have a moment"
             count={groups.someday.length}
-            tint={CATEGORY_TINT["Gifts/Events"]}
+            group="whenever"
             className="sm:col-span-2"
             open={open.someday}
             onToggle={() => toggle("someday")}
@@ -395,45 +414,67 @@ function Panel({
   subtitle,
   count,
   children,
-  tint,
+  group,
   className,
-  open = true,
+  open,
   onToggle,
 }: {
   title: string;
   subtitle: string;
   count: number;
   children: React.ReactNode;
-  tint: string;
+  group: GroupKey;
   className?: string;
   open?: boolean;
   onToggle?: () => void;
 }) {
+  const color = GROUP_COLOR[group];
   return (
     <section
       className={
-        "panel-wash flex min-w-0 flex-col rounded-[22px] border border-border p-3.5 " +
+        "panel-wash relative flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-border p-3.5 " +
         (className ?? "")
       }
-      style={{ ["--panel-tint" as string]: tint }}
+      style={{ ["--panel-tint" as string]: GROUP_TINT[group] }}
     >
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1.5"
+        style={{ background: color }}
+      />
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-start gap-2 pb-2 text-left"
+        className="flex w-full items-start gap-2 pb-2 pl-1.5 text-left"
       >
         {open ? (
-          <ChevronDown className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+          <ChevronDown
+            className="mt-1 h-4 w-4 shrink-0"
+            strokeWidth={2}
+            style={{ color }}
+          />
         ) : (
-          <ChevronRight className="mt-1 h-4 w-4 shrink-0" strokeWidth={2} />
+          <ChevronRight
+            className="mt-1 h-4 w-4 shrink-0"
+            strokeWidth={2}
+            style={{ color }}
+          />
         )}
         <span className="min-w-0">
           <span className="flex items-baseline gap-2">
-            <h2 className="truncate font-display text-lg text-foreground">
+            <h2
+              className="truncate font-display text-lg"
+              style={{ color }}
+            >
               {title}
             </h2>
-            <span className="text-xs text-muted-foreground">({count})</span>
+            <span
+              className="rounded-full px-2 py-0.5 text-xs font-semibold"
+              style={{ background: GROUP_TINT[group], color }}
+            >
+              {count}
+            </span>
           </span>
           <span className="mt-0.5 block text-xs text-muted-foreground">
             {subtitle}
@@ -441,11 +482,14 @@ function Panel({
         </span>
       </button>
       {open && (
-        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto pl-1.5 pr-0.5">
+          {children}
+        </div>
       )}
     </section>
   );
 }
+
 
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
