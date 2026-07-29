@@ -158,6 +158,9 @@
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
   --ring: #b3afa7;
+  --ring-from: #b3afa7;
+  --ring-to: #6d6a63;
+
   --sidebar: #24231f;
   --sidebar-foreground: #f2f1ee;
   --sidebar-primary: #d8d4cc;
