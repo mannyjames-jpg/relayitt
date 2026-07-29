@@ -62,8 +62,8 @@ function ContactDetail() {
   });
   const deleteM = useMutation({ mutationFn: del });
 
-  const active = (data?.tasks ?? []).filter((t) => t.status !== "Done");
-  const done = (data?.tasks ?? []).filter((t) => t.status === "Done").slice(0, 25);
+  const active = (data?.tasks ?? []).filter((t) => t.status !== "Complete");
+  const done = (data?.tasks ?? []).filter((t) => t.status === "Complete").slice(0, 25);
 
   return (
     <div className="min-h-screen bg-background">

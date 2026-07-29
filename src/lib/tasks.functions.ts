@@ -3,7 +3,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const sourceEnum = z.enum(["From Boss", "Delegated by Me", "Personal Reminder"]);
-const statusEnum = z.enum(["Not Started", "In Progress", "Waiting on Someone", "Done"]);
+const statusEnum = z.enum([
+  "Not Started",
+  "In Progress",
+  "Waiting on Someone",
+  "Complete",
+]);
 const categoryEnum = z.enum([
   "Travel",
   "Household",
@@ -18,7 +23,7 @@ const priorityEnum = z.enum(["Normal", "Important", "Urgent"]);
 const sourceTypeEnum = z.enum(["Typed", "Voice"]);
 
 const TASK_COLUMNS =
-  "id,title,notes,source,status,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,next_followup_reminder_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,created_at,updated_at";
+  "id,title,notes,next_step,source,status,status_updated_at,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,next_followup_reminder_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,created_at,updated_at";
 
 const uuid = z.string().uuid();
 const dateStr = z
@@ -40,7 +45,7 @@ export const listTasks = createServerFn({ method: "GET" })
       .from("tasks")
       .select(TASK_COLUMNS)
       .eq("user_id", userId)
-      .neq("status", "Done")
+      .neq("status", "Complete")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -53,10 +58,10 @@ export const listCompleted = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("tasks")
       .select(
-        "id,title,source,status,category,priority,assigned_to,assigned_to_name,completed_at,due_date,due_time,source_type",
+        "id,title,source,status,status_updated_at,category,priority,assigned_to,assigned_to_name,completed_at,due_date,due_time,source_type",
       )
       .eq("user_id", userId)
-      .eq("status", "Done")
+      .eq("status", "Complete")
       .order("completed_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
@@ -67,6 +72,7 @@ const createInput = z.object({
   title: z.string().trim().min(1).max(200),
   source: sourceEnum.default("Personal Reminder"),
   notes: z.string().optional().nullable(),
+  next_step: z.string().max(200).nullable().optional(),
   category: categoryEnum.nullable().optional(),
   priority: priorityEnum.optional(),
   assigned_to: uuid.nullable().optional(),
@@ -99,6 +105,7 @@ export const createTask = createServerFn({ method: "POST" })
         title: data.title.trim(),
         source: data.source,
         notes: data.notes ?? null,
+        next_step: data.next_step?.trim() || null,
         category: data.category ?? null,
         priority: data.priority ?? "Normal",
         assigned_to: data.assigned_to ?? null,
@@ -120,6 +127,7 @@ const updateInput = z.object({
   id: uuid,
   title: z.string().trim().min(1).max(200).optional(),
   notes: z.string().nullable().optional(),
+  next_step: z.string().max(200).nullable().optional(),
   source: sourceEnum.optional(),
   status: statusEnum.optional(),
   category: categoryEnum.nullable().optional(),
