@@ -63,7 +63,7 @@ export const CATEGORY_ICON: Record<TaskCategory, LucideIcon> = {
   Household: Home,
   Scheduling: CalendarDays,
   Errands: ShoppingBag,
-  Gifts/Events: Gift,
+  "Gifts/Events": Gift,
   Finance: Wallet,
   Vendors: Wrench,
   Other: Tag,
