@@ -341,8 +341,8 @@ export function TaskRow({
             onClick={toggleDone}
             aria-label={`Mark ${task.title} complete`}
             className={cn(
-              "relative flex h-5 w-5 items-center justify-center rounded-full border-2 border-border transition-all hover:border-primary",
-              completing && "border-transparent bg-primary animate-ring-pop",
+              "relative flex h-[18px] w-[18px] items-center justify-center rounded-none border border-border-strong transition-all hover:border-foreground",
+              completing && "border-foreground bg-primary animate-ring-pop",
             )}
           >
             <Check
@@ -365,13 +365,13 @@ export function TaskRow({
               {isUrgent && (
                 <span
                   aria-label="Urgent"
-                  className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-foreground"
+                  className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 bg-foreground"
                 />
               )}
               <div
                 className={cn(
                   "min-w-0 break-words text-[14px] leading-snug text-foreground",
-                  isUrgent && "font-semibold",
+                  isUrgent ? "font-bold" : "font-normal",
                 )}
               >
                 {task.title}
@@ -379,7 +379,7 @@ export function TaskRow({
             </div>
           </button>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
             {/* Status badge doubles as the status picker — always editable
                 without touching the task body. */}
             <Select
@@ -391,7 +391,7 @@ export function TaskRow({
                   <SelectTrigger
                     aria-label="Change status"
                     className={cn(
-                      "h-6 w-auto gap-1 rounded-full border-0 px-2 py-0 text-[11px] font-semibold shadow-none focus:ring-1 [&>svg:last-child]:h-3 [&>svg:last-child]:w-3 [&>svg:last-child]:opacity-60",
+                      "h-[18px] w-auto gap-1 px-1.5 py-0 shadow-none focus:ring-1 [&>svg:last-child]:h-2.5 [&>svg:last-child]:w-2.5 [&>svg:last-child]:opacity-60",
                       STATUS_BADGE[status],
                     )}
                   >
