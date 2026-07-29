@@ -227,28 +227,44 @@ function Dashboard() {
         <OnboardingCard />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <Panel
-            title="Today"
-            subtitle="Let's get these done first"
-            count={todayCount}
-            tint={CATEGORY_TINT.Finance}
-            className="sm:col-span-2 xl:col-span-1 xl:row-span-2 xl:max-h-[calc(100vh-9rem)]"
-            open={open.today}
-            onToggle={() => toggle("today")}
-          >
-            {todayCount === 0 ? (
-              <EmptyLine>Nothing due today — lovely.</EmptyLine>
-            ) : (
+          {groups.overdue.length > 0 && (
+            <Panel
+              title="Overdue"
+              subtitle="These slipped past their date"
+              count={groups.overdue.length}
+              group="overdue"
+              className="sm:col-span-2 xl:col-span-1"
+              open={open.overdue}
+              onToggle={() => toggle("overdue")}
+            >
               <div className="space-y-1.5">
                 {byPriority(groups.overdue).map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} overdue />
                 ))}
+              </div>
+            </Panel>
+          )}
+
+          <Panel
+            title="Due Today"
+            subtitle="Let's get these done first"
+            count={groups.today.length}
+            group="today"
+            className="sm:col-span-2 xl:col-span-1 xl:max-h-[calc(100vh-9rem)]"
+            open={open.today}
+            onToggle={() => toggle("today")}
+          >
+            {groups.today.length === 0 ? (
+              <EmptyLine>Nothing due today — lovely.</EmptyLine>
+            ) : (
+              <div className="space-y-1.5">
                 {byPriority(groups.today).map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} />
                 ))}
               </div>
             )}
           </Panel>
+
 
           <Panel
             title="Waiting on Someone"
