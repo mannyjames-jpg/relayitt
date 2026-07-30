@@ -229,23 +229,26 @@ function Dashboard() {
         <OnboardingCard />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {groups.overdue.length > 0 && (
-            <Panel
-              title="Overdue"
-              subtitle="These slipped past their date"
-              count={groups.overdue.length}
-              group="overdue"
-              className="sm:col-span-2 xl:col-span-1"
-              open={open.overdue}
-              onToggle={() => toggle("overdue")}
-            >
+          <Panel
+            title="Overdue"
+            subtitle="These slipped past their date"
+            count={groups.overdue.length}
+            group="overdue"
+            className="sm:col-span-2 xl:col-span-1"
+            open={open.overdue}
+            onToggle={() => toggle("overdue")}
+          >
+            {groups.overdue.length === 0 ? (
+              <EmptyLine>Nothing overdue — you're all caught up.</EmptyLine>
+            ) : (
               <div className="space-y-1.5">
                 {byPriority(groups.overdue).map((t) => (
                   <TaskRow key={t.id} task={t} contacts={contacts} overdue />
                 ))}
               </div>
-            </Panel>
-          )}
+            )}
+          </Panel>
+
 
           <Panel
             title="Due Today"
