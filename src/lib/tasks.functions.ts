@@ -24,9 +24,22 @@ const categoryEnum = z.enum([
 ]);
 const priorityEnum = z.enum(["Normal", "Important", "Urgent"]);
 const sourceTypeEnum = z.enum(["Typed", "Voice"]);
+const recurrenceTypeEnum = z.enum(["none", "daily", "weekly", "monthly"]);
 
 const TASK_COLUMNS =
-  "id,title,notes,next_step,source,status,status_updated_at,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,next_followup_reminder_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,created_at,updated_at";
+  "id,title,notes,next_step,source,status,status_updated_at,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,next_followup_reminder_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,recurrence_type,recurrence_interval,recurrence_days,recurrence_end_date,parent_task_id,created_at,updated_at";
+
+const recurrenceFields = {
+  recurrence_type: recurrenceTypeEnum.optional(),
+  recurrence_interval: z.number().int().min(1).max(365).optional(),
+  recurrence_days: z.array(z.string().max(3)).max(7).optional(),
+  recurrence_end_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
+};
+
 
 const uuid = z.string().uuid();
 const dateStr = z
