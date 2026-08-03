@@ -149,8 +149,13 @@ export type Database = {
           next_followup_reminder_at: string | null
           next_step: string | null
           notes: string | null
+          parent_task_id: string | null
           priority: Database["public"]["Enums"]["task_priority"]
           raw_transcript: string | null
+          recurrence_days: string[]
+          recurrence_end_date: string | null
+          recurrence_interval: number
+          recurrence_type: Database["public"]["Enums"]["task_recurrence_type"]
           source: Database["public"]["Enums"]["task_source"]
           source_type: Database["public"]["Enums"]["task_source_type"]
           status: Database["public"]["Enums"]["task_status"]
@@ -175,8 +180,13 @@ export type Database = {
           next_followup_reminder_at?: string | null
           next_step?: string | null
           notes?: string | null
+          parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           raw_transcript?: string | null
+          recurrence_days?: string[]
+          recurrence_end_date?: string | null
+          recurrence_interval?: number
+          recurrence_type?: Database["public"]["Enums"]["task_recurrence_type"]
           source?: Database["public"]["Enums"]["task_source"]
           source_type?: Database["public"]["Enums"]["task_source_type"]
           status?: Database["public"]["Enums"]["task_status"]
@@ -201,8 +211,13 @@ export type Database = {
           next_followup_reminder_at?: string | null
           next_step?: string | null
           notes?: string | null
+          parent_task_id?: string | null
           priority?: Database["public"]["Enums"]["task_priority"]
           raw_transcript?: string | null
+          recurrence_days?: string[]
+          recurrence_end_date?: string | null
+          recurrence_interval?: number
+          recurrence_type?: Database["public"]["Enums"]["task_recurrence_type"]
           source?: Database["public"]["Enums"]["task_source"]
           source_type?: Database["public"]["Enums"]["task_source_type"]
           status?: Database["public"]["Enums"]["task_status"]
@@ -227,6 +242,13 @@ export type Database = {
             referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -247,6 +269,7 @@ export type Database = {
         | "Vendors"
         | "Other"
       task_priority: "Normal" | "Important" | "Urgent"
+      task_recurrence_type: "none" | "daily" | "weekly" | "monthly"
       task_source: "From Boss" | "Delegated by Me" | "Personal Reminder"
       task_source_type: "Typed" | "Voice"
       task_status:
@@ -392,6 +415,7 @@ export const Constants = {
         "Other",
       ],
       task_priority: ["Normal", "Important", "Urgent"],
+      task_recurrence_type: ["none", "daily", "weekly", "monthly"],
       task_source: ["From Boss", "Delegated by Me", "Personal Reminder"],
       task_source_type: ["Typed", "Voice"],
       task_status: [

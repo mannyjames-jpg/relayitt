@@ -16,7 +16,9 @@ import {
   Phone,
   Play,
   PlayCircle,
+  Repeat,
   Trash2,
+
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -71,8 +73,16 @@ import {
 } from "@/lib/tasks.functions";
 import { addStep, deleteStep, listSteps } from "@/lib/steps.functions";
 import { formatTime, daysSince } from "@/lib/date-utils";
+import {
+  
+  recurrenceLabel,
+  type Recurrence,
+  type RecurrenceType,
+} from "@/lib/recurrence";
+import { RepeatField } from "./RepeatField";
 import type { ContactOption } from "./AssigneeCombobox";
 import { AssigneeCombobox } from "./AssigneeCombobox";
+
 
 export type Task = {
   id: string;
@@ -103,8 +113,14 @@ export type Task = {
   source_type?: "Typed" | "Voice";
   voice_note_url?: string | null;
   raw_transcript?: string | null;
+  recurrence_type?: RecurrenceType | null;
+  recurrence_interval?: number | null;
+  recurrence_days?: string[] | null;
+  recurrence_end_date?: string | null;
+  parent_task_id?: string | null;
   created_at: string;
 };
+
 
 type Category = NonNullable<Task["category"]>;
 
@@ -164,6 +180,15 @@ export function TaskRow({
   const [freeText, setFreeText] = useState(task.assigned_to_name ?? "");
   const [category, setCategory] = useState<Category | null>(task.category);
   const [priority, setPriority] = useState<Task["priority"]>(task.priority);
+  const taskRule = (t: Task): Recurrence => ({
+    recurrence_type: t.recurrence_type ?? "none",
+    recurrence_interval: t.recurrence_interval ?? 1,
+    recurrence_days: t.recurrence_days ?? [],
+    recurrence_end_date: t.recurrence_end_date ?? null,
+  });
+  const [repeat, setRepeat] = useState<Recurrence>(taskRule(task));
+  const rule = taskRule(task);
+  const repeats = rule.recurrence_type !== "none";
 
   useEffect(() => {
     setTitle(task.title);
@@ -175,7 +200,14 @@ export function TaskRow({
     setFreeText(task.assigned_to_name ?? "");
     setCategory(task.category);
     setPriority(task.priority);
+    setRepeat({
+      recurrence_type: task.recurrence_type ?? "none",
+      recurrence_interval: task.recurrence_interval ?? 1,
+      recurrence_days: task.recurrence_days ?? [],
+      recurrence_end_date: task.recurrence_end_date ?? null,
+    });
   }, [task]);
+
 
   const fetchSteps = useServerFn(listSteps);
   const createStep = useServerFn(addStep);
@@ -246,23 +278,37 @@ export function TaskRow({
     setCompleting(true);
     setTimeout(async () => {
       await updateM.mutateAsync({ data: { id: task.id, status: "Complete" } });
-      toast("Nicely done — one less thing to worry about", {
-        duration: 4000,
-        action: {
-          label: "Undo",
-          onClick: async () => {
-            await updateM.mutateAsync({
-              data: { id: task.id, status: "Not Started" },
-            });
+      toast(
+        repeats
+          ? "Done — the next one is already on your list"
+          : "Nicely done — one less thing to worry about",
+        {
+          duration: 4000,
+          action: {
+            label: "Undo",
+            onClick: async () => {
+              await updateM.mutateAsync({
+                data: { id: task.id, status: "Not Started" },
+              });
+            },
           },
         },
-      });
+      );
     }, 500);
   }
 
-  async function handleDelete() {
+  async function handleDelete(scope: "one" | "series" = "one") {
     const snapshot = task;
-    await deleteM.mutateAsync({ data: { id: task.id } });
+    await deleteM.mutateAsync({ data: { id: task.id, scope } });
+    if (repeats) {
+      toast(
+        scope === "series"
+          ? "Stopped repeating — no more occurrences"
+          : "Skipped this one — the next occurrence is on your list",
+        { duration: 4000 },
+      );
+      return;
+    }
     toast("Removed from your list", {
       duration: 4000,
       action: {
@@ -302,10 +348,15 @@ export function TaskRow({
         assigned_to_name: contactId ? null : freeText.trim() || null,
         due_date: dueDate || null,
         due_time: dueDate ? dueTime || null : null,
+        recurrence_type: repeat.recurrence_type,
+        recurrence_interval: repeat.recurrence_interval,
+        recurrence_days: repeat.recurrence_days,
+        recurrence_end_date: repeat.recurrence_end_date,
       },
     });
     setExpanded(false);
   }
+
 
   async function playOriginal() {
     if (!task.voice_note_url) return;
@@ -375,7 +426,22 @@ export function TaskRow({
               >
                 {task.title}
               </div>
+              {repeats && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="mt-[3px] shrink-0">
+                      <Repeat
+                        className="h-3.5 w-3.5 text-muted-foreground"
+                        strokeWidth={1.5}
+                        aria-label={`Repeats ${recurrenceLabel(rule)}`}
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{recurrenceLabel(rule)}</TooltipContent>
+                </Tooltip>
+              )}
             </div>
+
           </button>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
@@ -668,6 +734,11 @@ export function TaskRow({
               </Select>
             </div>
           </div>
+          <div>
+            <Label className="text-xs">Repeats</Label>
+            <RepeatField value={repeat} onChange={setRepeat} />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor={`d-${task.id}`} className="text-xs">
@@ -956,23 +1027,47 @@ export function TaskRow({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-hero text-lg">
-              Delete this task?
+              {repeats ? "Delete which?" : "Delete this task?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              "{task.title}" will be removed. You'll have a moment to undo.
+              {repeats
+                ? `"${task.title}" repeats ${recurrenceLabel(rule)}.`
+                : `"${task.title}" will be removed. You'll have a moment to undo.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                setConfirmDelete(false);
-                await handleDelete();
-              }}
-            >
-              Delete
-            </AlertDialogAction>
+            {repeats ? (
+              <>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setConfirmDelete(false);
+                    await handleDelete("one");
+                  }}
+                >
+                  Just this one
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setConfirmDelete(false);
+                    await handleDelete("series");
+                  }}
+                >
+                  Stop the series
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                onClick={async () => {
+                  setConfirmDelete(false);
+                  await handleDelete("one");
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
+
         </AlertDialogContent>
       </AlertDialog>
     </div>

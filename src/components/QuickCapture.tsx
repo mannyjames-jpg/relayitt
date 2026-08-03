@@ -25,6 +25,11 @@ import { AssigneeCombobox } from "./AssigneeCombobox";
 import { VoiceCapture } from "./VoiceCapture";
 import { toast } from "sonner";
 import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
+import { RepeatField } from "./RepeatField";
+import { NO_RECURRENCE, nextDueDate, type Recurrence } from "@/lib/recurrence";
+import { todayISO } from "@/lib/date-utils";
+
+
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
@@ -76,6 +81,8 @@ export function QuickCapture({
   const [freeText, setFreeText] = useState("");
   const [priority, setPriority] = useState<Priority>("Normal");
   const [category, setCategory] = useState<Category | null>(null);
+  const [repeat, setRepeat] = useState<Recurrence>(NO_RECURRENCE);
+
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
@@ -109,18 +116,28 @@ export function QuickCapture({
       return;
     }
     const usedFreeText = !contactId && freeText.trim();
+    const rule = parsed.recurrence ?? repeat;
+    // A repeating task with no date starts on its first matching day.
+    const firstDue =
+      parsed.due_date ??
+      (rule.recurrence_type !== "none" ? nextDueDate(todayISO(), rule) : null);
     await m.mutateAsync({
       data: {
         title: trimmed,
         source,
         priority: parsed.priority ?? priority,
         category: parsed.category ?? category,
-        due_date: parsed.due_date,
+        due_date: firstDue,
         due_time: parsed.due_time,
         assigned_to: contactId,
         assigned_to_name: contactId ? null : freeText.trim() || null,
+        recurrence_type: rule.recurrence_type,
+        recurrence_interval: rule.recurrence_interval,
+        recurrence_days: rule.recurrence_days,
+        recurrence_end_date: rule.recurrence_end_date,
       },
     });
+
     toast.success("Added to your list — you'll find it under Today", {
       duration: 4000,
       description: parsed.hints.length ? parsed.hints.join(" · ") : undefined,
@@ -136,6 +153,8 @@ export function QuickCapture({
     setFreeText("");
     setPriority("Normal");
     setCategory(null);
+    setRepeat(NO_RECURRENCE);
+
     inputRef.current?.focus();
   }
 
@@ -290,6 +309,19 @@ export function QuickCapture({
               </SelectContent>
             </Select>
           </Field>
+
+          <Field
+            label="Repeats"
+            help="Spawns the next occurrence automatically when you complete this one."
+          >
+            <RepeatField
+              compact
+              value={parsed.recurrence ?? repeat}
+              onChange={setRepeat}
+            />
+          </Field>
+
+
 
           <Link
             to="/settings"

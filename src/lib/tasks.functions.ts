@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { nextDueDate } from "@/lib/recurrence";
+
+
 
 const sourceEnum = z.enum(["From Boss", "Delegated by Me", "Personal Reminder"]);
 const statusEnum = z.enum([
@@ -21,9 +24,22 @@ const categoryEnum = z.enum([
 ]);
 const priorityEnum = z.enum(["Normal", "Important", "Urgent"]);
 const sourceTypeEnum = z.enum(["Typed", "Voice"]);
+const recurrenceTypeEnum = z.enum(["none", "daily", "weekly", "monthly"]);
 
 const TASK_COLUMNS =
-  "id,title,notes,next_step,source,status,status_updated_at,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,next_followup_reminder_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,created_at,updated_at";
+  "id,title,notes,next_step,source,status,status_updated_at,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,last_followup_at,next_followup_reminder_at,calendar_event_id,completed_at,source_type,voice_note_url,raw_transcript,recurrence_type,recurrence_interval,recurrence_days,recurrence_end_date,parent_task_id,created_at,updated_at";
+
+const recurrenceFields = {
+  recurrence_type: recurrenceTypeEnum.optional(),
+  recurrence_interval: z.number().int().min(1).max(365).optional(),
+  recurrence_days: z.array(z.string().max(3)).max(7).optional(),
+  recurrence_end_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
+};
+
 
 const uuid = z.string().uuid();
 const dateStr = z
@@ -82,7 +98,9 @@ const createInput = z.object({
   source_type: sourceTypeEnum.optional(),
   voice_note_url: z.string().max(500).nullable().optional(),
   raw_transcript: z.string().nullable().optional(),
+  ...recurrenceFields,
 });
+
 
 export const createTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -116,7 +134,12 @@ export const createTask = createServerFn({ method: "POST" })
         source_type: data.source_type ?? "Typed",
         voice_note_url: data.voice_note_url ?? null,
         raw_transcript: data.raw_transcript ?? null,
+        recurrence_type: data.recurrence_type ?? "none",
+        recurrence_interval: data.recurrence_interval ?? 1,
+        recurrence_days: data.recurrence_days ?? [],
+        recurrence_end_date: data.recurrence_end_date ?? null,
       })
+
       .select("*")
       .single();
     if (error) throw new Error(error.message);
@@ -136,6 +159,7 @@ const updateInput = z.object({
   assigned_to_name: z.string().max(100).nullable().optional(),
   due_date: dateStr,
   due_time: timeStr,
+  ...recurrenceFields,
 });
 
 export const updateTask = createServerFn({ method: "POST" })
@@ -171,22 +195,107 @@ export const updateTask = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
+
+    // Completing an occurrence of a repeating task spawns the next one.
+    // The finished row keeps its own rule — only this instance is done.
+    if (patch.status === "Complete" && row.recurrence_type !== "none") {
+      const rule = {
+        recurrence_type: row.recurrence_type,
+        recurrence_interval: row.recurrence_interval ?? 1,
+        recurrence_days: row.recurrence_days ?? [],
+        recurrence_end_date: row.recurrence_end_date ?? null,
+      };
+      const due = nextDueDate(row.due_date, rule);
+      if (due) {
+        await supabase.from("tasks").insert({
+          user_id: userId,
+          title: row.title,
+          source: row.source,
+          notes: row.notes,
+          category: row.category,
+          priority: row.priority,
+          assigned_to: row.assigned_to,
+          assigned_to_name: row.assigned_to_name,
+          delegated_to_contact_id: row.delegated_to_contact_id,
+          due_date: due,
+          due_time: row.due_time,
+          source_type: row.source_type,
+          parent_task_id: row.parent_task_id ?? row.id,
+          ...rule,
+        });
+      }
+    }
     return row;
   });
 
 export const deleteTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => z.object({ id: uuid }).parse(raw))
+  .inputValidator((raw: unknown) =>
+    z
+      .object({ id: uuid, scope: z.enum(["one", "series"]).optional() })
+      .parse(raw),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("tasks")
+      .select(
+        "id,title,source,notes,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,source_type,parent_task_id,recurrence_type,recurrence_interval,recurrence_days,recurrence_end_date",
+      )
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("tasks")
       .delete()
       .eq("id", data.id)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    if (!row || row.recurrence_type === "none") return { ok: true };
+    const rootId = row.parent_task_id ?? row.id;
+
+    if (data.scope === "series") {
+      // Stop repeating: clear the rule from the whole chain so no past
+      // occurrence can spawn another one later.
+      await supabase
+        .from("tasks")
+        .update({ recurrence_type: "none" })
+        .eq("user_id", userId)
+        .or(`id.eq.${rootId},parent_task_id.eq.${rootId}`);
+      return { ok: true, stoppedSeries: true };
+    }
+
+    // Skipping just this occurrence — keep the series alive.
+    const rule = {
+      recurrence_type: row.recurrence_type,
+      recurrence_interval: row.recurrence_interval ?? 1,
+      recurrence_days: row.recurrence_days ?? [],
+      recurrence_end_date: row.recurrence_end_date ?? null,
+    };
+    const due = nextDueDate(row.due_date, rule);
+    if (due) {
+      await supabase.from("tasks").insert({
+        user_id: userId,
+        title: row.title,
+        source: row.source,
+        notes: row.notes,
+        category: row.category,
+        priority: row.priority,
+        assigned_to: row.assigned_to,
+        assigned_to_name: row.assigned_to_name,
+        delegated_to_contact_id: row.delegated_to_contact_id,
+        due_date: due,
+        due_time: row.due_time,
+        source_type: row.source_type,
+        parent_task_id: rootId,
+        ...rule,
+      });
+    }
+    return { ok: true, spawnedNext: !!due };
   });
+
 
 export const nudgeTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
