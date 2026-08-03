@@ -159,6 +159,7 @@ const updateInput = z.object({
   assigned_to_name: z.string().max(100).nullable().optional(),
   due_date: dateStr,
   due_time: timeStr,
+  ...recurrenceFields,
 });
 
 export const updateTask = createServerFn({ method: "POST" })
@@ -194,22 +195,107 @@ export const updateTask = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
+
+    // Completing an occurrence of a repeating task spawns the next one.
+    // The finished row keeps its own rule — only this instance is done.
+    if (patch.status === "Complete" && row.recurrence_type !== "none") {
+      const rule = {
+        recurrence_type: row.recurrence_type,
+        recurrence_interval: row.recurrence_interval ?? 1,
+        recurrence_days: row.recurrence_days ?? [],
+        recurrence_end_date: row.recurrence_end_date ?? null,
+      };
+      const due = nextDueDate(row.due_date, rule);
+      if (due) {
+        await supabase.from("tasks").insert({
+          user_id: userId,
+          title: row.title,
+          source: row.source,
+          notes: row.notes,
+          category: row.category,
+          priority: row.priority,
+          assigned_to: row.assigned_to,
+          assigned_to_name: row.assigned_to_name,
+          delegated_to_contact_id: row.delegated_to_contact_id,
+          due_date: due,
+          due_time: row.due_time,
+          source_type: row.source_type,
+          parent_task_id: row.parent_task_id ?? row.id,
+          ...rule,
+        });
+      }
+    }
     return row;
   });
 
 export const deleteTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => z.object({ id: uuid }).parse(raw))
+  .inputValidator((raw: unknown) =>
+    z
+      .object({ id: uuid, scope: z.enum(["one", "series"]).optional() })
+      .parse(raw),
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { data: row } = await supabase
+      .from("tasks")
+      .select(
+        "id,title,source,notes,category,priority,assigned_to,assigned_to_name,delegated_to_contact_id,due_date,due_time,source_type,parent_task_id,recurrence_type,recurrence_interval,recurrence_days,recurrence_end_date",
+      )
+      .eq("id", data.id)
+      .eq("user_id", userId)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("tasks")
       .delete()
       .eq("id", data.id)
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    if (!row || row.recurrence_type === "none") return { ok: true };
+    const rootId = row.parent_task_id ?? row.id;
+
+    if (data.scope === "series") {
+      // Stop repeating: clear the rule from the whole chain so no past
+      // occurrence can spawn another one later.
+      await supabase
+        .from("tasks")
+        .update({ recurrence_type: "none" })
+        .eq("user_id", userId)
+        .or(`id.eq.${rootId},parent_task_id.eq.${rootId}`);
+      return { ok: true, stoppedSeries: true };
+    }
+
+    // Skipping just this occurrence — keep the series alive.
+    const rule = {
+      recurrence_type: row.recurrence_type,
+      recurrence_interval: row.recurrence_interval ?? 1,
+      recurrence_days: row.recurrence_days ?? [],
+      recurrence_end_date: row.recurrence_end_date ?? null,
+    };
+    const due = nextDueDate(row.due_date, rule);
+    if (due) {
+      await supabase.from("tasks").insert({
+        user_id: userId,
+        title: row.title,
+        source: row.source,
+        notes: row.notes,
+        category: row.category,
+        priority: row.priority,
+        assigned_to: row.assigned_to,
+        assigned_to_name: row.assigned_to_name,
+        delegated_to_contact_id: row.delegated_to_contact_id,
+        due_date: due,
+        due_time: row.due_time,
+        source_type: row.source_type,
+        parent_task_id: rootId,
+        ...rule,
+      });
+    }
+    return { ok: true, spawnedNext: !!due };
   });
+
 
 export const nudgeTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
