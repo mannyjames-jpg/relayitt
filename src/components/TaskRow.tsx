@@ -734,6 +734,11 @@ export function TaskRow({
               </Select>
             </div>
           </div>
+          <div>
+            <Label className="text-xs">Repeats</Label>
+            <RepeatField value={repeat} onChange={setRepeat} />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor={`d-${task.id}`} className="text-xs">
