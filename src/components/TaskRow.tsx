@@ -424,7 +424,22 @@ export function TaskRow({
               >
                 {task.title}
               </div>
+              {repeats && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="mt-[3px] shrink-0">
+                      <Repeat
+                        className="h-3.5 w-3.5 text-muted-foreground"
+                        strokeWidth={1.5}
+                        aria-label={`Repeats ${recurrenceLabel(rule)}`}
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{recurrenceLabel(rule)}</TooltipContent>
+                </Tooltip>
+              )}
             </div>
+
           </button>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
