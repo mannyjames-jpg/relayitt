@@ -310,6 +310,19 @@ export function QuickCapture({
             </Select>
           </Field>
 
+          <Field
+            label="Repeats"
+            help="Spawns the next occurrence automatically when you complete this one."
+          >
+            <RepeatField
+              compact
+              value={parsed.recurrence ?? repeat}
+              onChange={setRepeat}
+            />
+          </Field>
+
+
+
           <Link
             to="/settings"
             className="ml-auto text-[11px] text-muted-foreground underline-offset-2 hover:underline"
