@@ -114,18 +114,28 @@ export function QuickCapture({
       return;
     }
     const usedFreeText = !contactId && freeText.trim();
+    const rule = parsed.recurrence ?? repeat;
+    // A repeating task with no date starts on its first matching day.
+    const firstDue =
+      parsed.due_date ??
+      (rule.recurrence_type !== "none" ? nextDueDate(todayISO(), rule) : null);
     await m.mutateAsync({
       data: {
         title: trimmed,
         source,
         priority: parsed.priority ?? priority,
         category: parsed.category ?? category,
-        due_date: parsed.due_date,
+        due_date: firstDue,
         due_time: parsed.due_time,
         assigned_to: contactId,
         assigned_to_name: contactId ? null : freeText.trim() || null,
+        recurrence_type: rule.recurrence_type,
+        recurrence_interval: rule.recurrence_interval,
+        recurrence_days: rule.recurrence_days,
+        recurrence_end_date: rule.recurrence_end_date,
       },
     });
+
     toast.success("Added to your list — you'll find it under Today", {
       duration: 4000,
       description: parsed.hints.length ? parsed.hints.join(" · ") : undefined,
