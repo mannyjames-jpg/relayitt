@@ -74,7 +74,7 @@ import {
 import { addStep, deleteStep, listSteps } from "@/lib/steps.functions";
 import { formatTime, daysSince } from "@/lib/date-utils";
 import {
-  NO_RECURRENCE,
+  
   recurrenceLabel,
   type Recurrence,
   type RecurrenceType,
