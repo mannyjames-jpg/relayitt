@@ -98,7 +98,9 @@ const createInput = z.object({
   source_type: sourceTypeEnum.optional(),
   voice_note_url: z.string().max(500).nullable().optional(),
   raw_transcript: z.string().nullable().optional(),
+  ...recurrenceFields,
 });
+
 
 export const createTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
