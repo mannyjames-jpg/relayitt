@@ -85,7 +85,7 @@ export function HeroSummary({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="font-hero text-[30px] leading-tight text-foreground sm:text-[36px]">
+          <h1 className="font-hero text-[24px] leading-tight text-foreground sm:text-[28px]">
             {greeting}
           </h1>
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3">

@@ -454,12 +454,14 @@ export function TaskRow({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SelectTrigger
+                    badge
                     aria-label="Change status"
                     className={cn(
                       "h-[18px] w-auto gap-1 px-1.5 py-0 shadow-none focus:ring-1 [&>svg:last-child]:h-2.5 [&>svg:last-child]:w-2.5 [&>svg:last-child]:opacity-60",
                       STATUS_BADGE[status],
                     )}
                   >
+
                     <span className="inline-flex items-center gap-1">
                       {STATUS_ICON[status]}
                       {status}
