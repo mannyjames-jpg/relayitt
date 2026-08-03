@@ -71,8 +71,16 @@ import {
 } from "@/lib/tasks.functions";
 import { addStep, deleteStep, listSteps } from "@/lib/steps.functions";
 import { formatTime, daysSince } from "@/lib/date-utils";
+import {
+  NO_RECURRENCE,
+  recurrenceLabel,
+  type Recurrence,
+  type RecurrenceType,
+} from "@/lib/recurrence";
+import { RepeatField } from "./RepeatField";
 import type { ContactOption } from "./AssigneeCombobox";
 import { AssigneeCombobox } from "./AssigneeCombobox";
+
 
 export type Task = {
   id: string;
