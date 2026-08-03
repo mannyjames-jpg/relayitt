@@ -103,8 +103,14 @@ export type Task = {
   source_type?: "Typed" | "Voice";
   voice_note_url?: string | null;
   raw_transcript?: string | null;
+  recurrence_type?: RecurrenceType | null;
+  recurrence_interval?: number | null;
+  recurrence_days?: string[] | null;
+  recurrence_end_date?: string | null;
+  parent_task_id?: string | null;
   created_at: string;
 };
+
 
 type Category = NonNullable<Task["category"]>;
 
