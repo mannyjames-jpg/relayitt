@@ -1,0 +1,1 @@
+DELETE FROM public.tasks WHERE title IN ('Confirm dentist appointment','Send board deck','Chase caterer invoice');
