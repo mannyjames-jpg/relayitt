@@ -79,6 +79,8 @@ export function QuickCapture({
   const [freeText, setFreeText] = useState("");
   const [priority, setPriority] = useState<Priority>("Normal");
   const [category, setCategory] = useState<Category | null>(null);
+  const [repeat, setRepeat] = useState<Recurrence>(NO_RECURRENCE);
+
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
