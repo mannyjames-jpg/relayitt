@@ -273,6 +273,8 @@ export function parseQuickEntry(input: string): ParsedQuickEntry {
     due_time,
     category,
     priority,
+    recurrence,
+
     hints,
   };
 }
