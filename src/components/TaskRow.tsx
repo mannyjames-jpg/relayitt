@@ -178,6 +178,15 @@ export function TaskRow({
   const [freeText, setFreeText] = useState(task.assigned_to_name ?? "");
   const [category, setCategory] = useState<Category | null>(task.category);
   const [priority, setPriority] = useState<Task["priority"]>(task.priority);
+  const taskRule = (t: Task): Recurrence => ({
+    recurrence_type: t.recurrence_type ?? "none",
+    recurrence_interval: t.recurrence_interval ?? 1,
+    recurrence_days: t.recurrence_days ?? [],
+    recurrence_end_date: t.recurrence_end_date ?? null,
+  });
+  const [repeat, setRepeat] = useState<Recurrence>(taskRule(task));
+  const rule = taskRule(task);
+  const repeats = rule.recurrence_type !== "none";
 
   useEffect(() => {
     setTitle(task.title);
@@ -189,7 +198,14 @@ export function TaskRow({
     setFreeText(task.assigned_to_name ?? "");
     setCategory(task.category);
     setPriority(task.priority);
+    setRepeat({
+      recurrence_type: task.recurrence_type ?? "none",
+      recurrence_interval: task.recurrence_interval ?? 1,
+      recurrence_days: task.recurrence_days ?? [],
+      recurrence_end_date: task.recurrence_end_date ?? null,
+    });
   }, [task]);
+
 
   const fetchSteps = useServerFn(listSteps);
   const createStep = useServerFn(addStep);
