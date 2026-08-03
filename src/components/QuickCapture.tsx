@@ -153,6 +153,8 @@ export function QuickCapture({
     setFreeText("");
     setPriority("Normal");
     setCategory(null);
+    setRepeat(NO_RECURRENCE);
+
     inputRef.current?.focus();
   }
 
