@@ -276,23 +276,37 @@ export function TaskRow({
     setCompleting(true);
     setTimeout(async () => {
       await updateM.mutateAsync({ data: { id: task.id, status: "Complete" } });
-      toast("Nicely done — one less thing to worry about", {
-        duration: 4000,
-        action: {
-          label: "Undo",
-          onClick: async () => {
-            await updateM.mutateAsync({
-              data: { id: task.id, status: "Not Started" },
-            });
+      toast(
+        repeats
+          ? "Done — the next one is already on your list"
+          : "Nicely done — one less thing to worry about",
+        {
+          duration: 4000,
+          action: {
+            label: "Undo",
+            onClick: async () => {
+              await updateM.mutateAsync({
+                data: { id: task.id, status: "Not Started" },
+              });
+            },
           },
         },
-      });
+      );
     }, 500);
   }
 
-  async function handleDelete() {
+  async function handleDelete(scope: "one" | "series" = "one") {
     const snapshot = task;
-    await deleteM.mutateAsync({ data: { id: task.id } });
+    await deleteM.mutateAsync({ data: { id: task.id, scope } });
+    if (repeats) {
+      toast(
+        scope === "series"
+          ? "Stopped repeating — no more occurrences"
+          : "Skipped this one — the next occurrence is on your list",
+        { duration: 4000 },
+      );
+      return;
+    }
     toast("Removed from your list", {
       duration: 4000,
       action: {
@@ -332,10 +346,15 @@ export function TaskRow({
         assigned_to_name: contactId ? null : freeText.trim() || null,
         due_date: dueDate || null,
         due_time: dueDate ? dueTime || null : null,
+        recurrence_type: repeat.recurrence_type,
+        recurrence_interval: repeat.recurrence_interval,
+        recurrence_days: repeat.recurrence_days,
+        recurrence_end_date: repeat.recurrence_end_date,
       },
     });
     setExpanded(false);
   }
+
 
   async function playOriginal() {
     if (!task.voice_note_url) return;
