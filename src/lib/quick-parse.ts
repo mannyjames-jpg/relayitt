@@ -80,15 +80,92 @@ export type ParsedQuickEntry = {
   due_time: string | null;
   category: QuickCategory | null;
   priority: QuickPriority | null;
+  /** Repeat rule detected from phrases like "every Monday" or "monthly". */
+  recurrence: Recurrence | null;
   /** Human-readable list of what was detected, for feedback. */
   hints: string[];
 };
+
+const DAY_WORDS: Record<string, number> = {};
+WEEKDAYS.forEach((full, i) => {
+  DAY_WORDS[full] = i;
+  DAY_WORDS[full.slice(0, 3)] = i;
+});
+
+const DAY_GROUP = Object.keys(DAY_WORDS).sort((a, b) => b.length - a.length);
+
+/**
+ * Pull a recurrence phrase out of the raw text, returning the rule plus the
+ * text with that phrase removed so date parsing doesn't also grab "Monday".
+ */
+function extractRecurrence(input: string): {
+  rule: Recurrence | null;
+  rest: string;
+} {
+  // "daily" / "weekly" / "monthly" on their own
+  const simple = input.match(/\b(daily|weekly|monthly|every\s?day)\b/i);
+  const dayList = new RegExp(
+    `\\bevery\\s+(other\\s+)?(\\d+\\s+)?((?:${DAY_GROUP.join("|")})(?:\\s*(?:,|and|&)\\s*(?:${DAY_GROUP.join("|")}))*)\\b`,
+    "i",
+  );
+  const unit = /\bevery\s+(other\s+)?(\d+\s+)?(day|week|month)s?\b/i;
+
+  const dayMatch = input.match(dayList);
+  if (dayMatch) {
+    const days = dayMatch[3]
+      .split(/\s*(?:,|and|&)\s*/i)
+      .map((d) => DAY_WORDS[d.toLowerCase()])
+      .filter((i) => i !== undefined)
+      .map((i) => DOW[i]);
+    return {
+      rule: {
+        ...NO_RECURRENCE,
+        recurrence_type: "weekly",
+        recurrence_interval: dayMatch[1]
+          ? 2
+          : Math.max(1, Number(dayMatch[2] ?? 1) || 1),
+        recurrence_days: Array.from(new Set(days)),
+      },
+      rest: input.replace(dayList, " "),
+    };
+  }
+
+  const unitMatch = input.match(unit);
+  if (unitMatch) {
+    const kind = unitMatch[3].toLowerCase();
+    return {
+      rule: {
+        ...NO_RECURRENCE,
+        recurrence_type:
+          kind === "day" ? "daily" : kind === "week" ? "weekly" : "monthly",
+        recurrence_interval: unitMatch[1]
+          ? 2
+          : Math.max(1, Number(unitMatch[2] ?? 1) || 1),
+      },
+      rest: input.replace(unit, " "),
+    };
+  }
+
+  if (simple) {
+    const w = simple[1].toLowerCase().replace(/\s/g, "");
+    return {
+      rule: {
+        ...NO_RECURRENCE,
+        recurrence_type:
+          w === "monthly" ? "monthly" : w === "weekly" ? "weekly" : "daily",
+      },
+      rest: input.replace(simple[0], " "),
+    };
+  }
+
+  return { rule: null, rest: input };
+}
 
 /**
  * Parse inline shortcuts out of a quick-capture string:
  *   "Book flights tomorrow 9am #travel !urgent"
  * Recognises dates (today/tomorrow/weekday names/next week/YYYY-MM-DD),
- * times (9am, 09:30), #category and !priority tokens.
+ * times (9am, 09:30), #category, !priority and repeat phrases.
  */
 export function parseQuickEntry(input: string): ParsedQuickEntry {
   let due_date: string | null = null;
@@ -98,8 +175,12 @@ export function parseQuickEntry(input: string): ParsedQuickEntry {
   const hints: string[] = [];
   const today = todayISO();
 
+  const { rule: recurrence, rest } = extractRecurrence(input);
+  if (recurrence) hints.push(recurrenceLabel(recurrence));
+
   const kept: string[] = [];
-  const words = input.split(/\s+/).filter(Boolean);
+  const words = rest.split(/\s+/).filter(Boolean);
+
 
   for (let i = 0; i < words.length; i++) {
     const w = words[i];
