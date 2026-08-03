@@ -74,11 +74,13 @@ export function HeroSummary({
               className="transition-[stroke-dashoffset] duration-700 ease-out"
             />
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-hero text-3xl leading-none text-foreground">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-2 text-center">
+            <span className="font-hero text-2xl leading-none text-foreground">
               {remaining}
             </span>
-            <span className="micro-label mt-1.5">left today</span>
+            <span className="micro-label whitespace-nowrap text-[9px] leading-none">
+              left today
+            </span>
           </div>
         </div>
 
