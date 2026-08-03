@@ -1027,23 +1027,47 @@ export function TaskRow({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-hero text-lg">
-              Delete this task?
+              {repeats ? "Delete which?" : "Delete this task?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              "{task.title}" will be removed. You'll have a moment to undo.
+              {repeats
+                ? `"${task.title}" repeats ${recurrenceLabel(rule)}.`
+                : `"${task.title}" will be removed. You'll have a moment to undo.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                setConfirmDelete(false);
-                await handleDelete();
-              }}
-            >
-              Delete
-            </AlertDialogAction>
+            {repeats ? (
+              <>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setConfirmDelete(false);
+                    await handleDelete("one");
+                  }}
+                >
+                  Just this one
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setConfirmDelete(false);
+                    await handleDelete("series");
+                  }}
+                >
+                  Stop the series
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                onClick={async () => {
+                  setConfirmDelete(false);
+                  await handleDelete("one");
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
+
         </AlertDialogContent>
       </AlertDialog>
     </div>
