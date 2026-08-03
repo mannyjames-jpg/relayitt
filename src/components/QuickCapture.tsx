@@ -26,7 +26,9 @@ import { VoiceCapture } from "./VoiceCapture";
 import { toast } from "sonner";
 import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
 import { RepeatField } from "./RepeatField";
-import { NO_RECURRENCE, type Recurrence } from "@/lib/recurrence";
+import { NO_RECURRENCE, nextDueDate, type Recurrence } from "@/lib/recurrence";
+import { todayISO } from "@/lib/date-utils";
+
 
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
