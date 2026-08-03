@@ -134,7 +134,12 @@ export const createTask = createServerFn({ method: "POST" })
         source_type: data.source_type ?? "Typed",
         voice_note_url: data.voice_note_url ?? null,
         raw_transcript: data.raw_transcript ?? null,
+        recurrence_type: data.recurrence_type ?? "none",
+        recurrence_interval: data.recurrence_interval ?? 1,
+        recurrence_days: data.recurrence_days ?? [],
+        recurrence_end_date: data.recurrence_end_date ?? null,
       })
+
       .select("*")
       .single();
     if (error) throw new Error(error.message);
