@@ -8,10 +8,12 @@ import {
   createJob,
   listJobs,
   listReviews,
-  scoreApplicants,
+  saveApplicantScores,
   setDecision,
 } from "@/lib/applicants.functions";
 import { parseApplicantsCsv, type ParsedApplicant } from "@/lib/applicant-csv";
+import { parseKeywords, scoreApplicant } from "@/lib/applicant-scoring";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,7 +61,7 @@ function ApplicantsPage() {
   const jobsFn = useServerFn(listJobs);
   const createJobFn = useServerFn(createJob);
   const reviewsFn = useServerFn(listReviews);
-  const scoreFn = useServerFn(scoreApplicants);
+  const scoreFn = useServerFn(saveApplicantScores);
   const decideFn = useServerFn(setDecision);
 
   const [jobId, setJobId] = useState<string | null>(null);
@@ -320,11 +322,23 @@ function ApplicantsPage() {
                         size="sm"
                         className="h-9 rounded-none"
                         disabled={scoreM.isPending}
-                        onClick={() =>
+                        onClick={() => {
+                          const must = parseKeywords(job.must_haves);
+                          const nice = parseKeywords(job.nice_to_haves);
+                          const scored = pending.map((a) => {
+                            const s = scoreApplicant(a, must, nice);
+                            return {
+                              ...a,
+                              fit_score: s.fit_score,
+                              summary: s.summary,
+                            };
+                          });
                           scoreM.mutate({
-                            data: { jobId: job.id, applicants: pending },
-                          })
-                        }
+                            data: { jobId: job.id, applicants: scored },
+                          });
+                        }}
+
+
                       >
                         {scoreM.isPending && (
                           <Loader2 className="mr-1 h-4 w-4 animate-spin" />
