@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Plus, X } from "lucide-react";
+import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { sourceLabel, SOURCE_HELP } from "@/lib/task-style";
 import { cn } from "@/lib/utils";
@@ -83,6 +83,7 @@ export function QuickCapture({
   const [category, setCategory] = useState<Category | null>(null);
   const [repeat, setRepeat] = useState<Recurrence>(NO_RECURRENCE);
 
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
