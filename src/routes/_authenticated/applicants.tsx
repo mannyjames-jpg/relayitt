@@ -8,10 +8,12 @@ import {
   createJob,
   listJobs,
   listReviews,
-  scoreApplicants,
+  saveApplicantScores,
   setDecision,
 } from "@/lib/applicants.functions";
 import { parseApplicantsCsv, type ParsedApplicant } from "@/lib/applicant-csv";
+import { parseKeywords, scoreApplicant } from "@/lib/applicant-scoring";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
