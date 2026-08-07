@@ -347,15 +347,6 @@ export function QuickCapture({
               onChange={setRepeat}
             />
           </Field>
-
-
-
-          <Link
-            to="/settings"
-            className="ml-auto text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-          >
-            Settings
-          </Link>
         </div>
 
         {parsed.hints.length > 0 && (
