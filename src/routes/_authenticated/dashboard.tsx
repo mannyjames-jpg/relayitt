@@ -193,6 +193,13 @@ function Dashboard() {
               </Button>
             </Link>
           </Tip>
+          <Tip label="Applicants">
+            <Link to="/applicants" aria-label="Applicants">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
+                <Briefcase className="h-5 w-5" strokeWidth={2} />
+              </Button>
+            </Link>
+          </Tip>
           <Tip label="Settings">
             <Link to="/settings" aria-label="Settings">
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
