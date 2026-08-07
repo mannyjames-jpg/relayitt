@@ -325,17 +325,19 @@ function ApplicantsPage() {
                         onClick={() => {
                           const must = parseKeywords(job.must_haves);
                           const nice = parseKeywords(job.nice_to_haves);
-                          const scored = pending.map((a) => ({
-                            ...a,
-                            ...(({ fit_score, summary }) => ({
-                              fit_score,
-                              summary,
-                            }))(scoreApplicant(a, must, nice)),
-                          }));
+                          const scored = pending.map((a) => {
+                            const s = scoreApplicant(a, must, nice);
+                            return {
+                              ...a,
+                              fit_score: s.fit_score,
+                              summary: s.summary,
+                            };
+                          });
                           scoreM.mutate({
                             data: { jobId: job.id, applicants: scored },
                           });
                         }}
+
 
                       >
                         {scoreM.isPending && (
