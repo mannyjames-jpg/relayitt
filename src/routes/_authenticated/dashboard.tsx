@@ -8,6 +8,7 @@ import {
   LogOut,
   Users,
   CheckSquare,
+  Briefcase,
   Settings as SettingsIcon,
   Calendar as CalIcon,
 } from "lucide-react";
