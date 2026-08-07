@@ -95,9 +95,6 @@ export const Route = createFileRoute("/api/public/google/callback")({
           Date.now() + (token.expires_in - 60) * 1000,
         ).toISOString();
 
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
         const { error } = await supabaseAdmin
           .from("google_tokens")
           .upsert(
