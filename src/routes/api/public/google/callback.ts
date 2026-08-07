@@ -18,20 +18,49 @@ export const Route = createFileRoute("/api/public/google/callback")({
         if (err) return back(`error:${err}`);
         if (!code || !state) return back("error:missing_params");
 
-        let userId: string;
-        try {
-          const parsed = JSON.parse(Buffer.from(state, "base64url").toString());
-          userId = parsed.u;
-          if (!userId) throw new Error("no user");
-        } catch {
+        const { supabaseAdmin } = await import(
+          "@/integrations/supabase/client.server"
+        );
+
+        // `state` is an opaque single-use nonce issued server-side and bound to
+        // the user who started the flow. Never trust a user id from the client.
+        const { data: stateRow, error: stateError } = await supabaseAdmin
+          .from("google_oauth_states")
+          .select("nonce,user_id,expires_at,used_at")
+          .eq("nonce", state)
+          .maybeSingle();
+
+        if (stateError) {
+          console.error("Failed to load Google OAuth state", stateError);
           return back("error:bad_state");
         }
+        if (
+          !stateRow ||
+          stateRow.used_at ||
+          new Date(stateRow.expires_at).getTime() < Date.now()
+        ) {
+          return back("error:bad_state");
+        }
+
+        // Consume the nonce atomically so it cannot be replayed.
+        const { data: consumed, error: consumeError } = await supabaseAdmin
+          .from("google_oauth_states")
+          .update({ used_at: new Date().toISOString() })
+          .eq("nonce", state)
+          .is("used_at", null)
+          .select("user_id")
+          .maybeSingle();
+        if (consumeError || !consumed) {
+          return back("error:bad_state");
+        }
+        const userId = consumed.user_id;
 
         const clientId = process.env.GOOGLE_CLIENT_ID;
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
         if (!clientId || !clientSecret) return back("error:not_configured");
 
         const redirectUri = `${publicUrl.replace(/\/$/, "")}/api/public/google/callback`;
+
 
         const body = new URLSearchParams({
           code,
@@ -66,9 +95,6 @@ export const Route = createFileRoute("/api/public/google/callback")({
           Date.now() + (token.expires_in - 60) * 1000,
         ).toISOString();
 
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
         const { error } = await supabaseAdmin
           .from("google_tokens")
           .upsert(
