@@ -61,7 +61,7 @@ function ApplicantsPage() {
   const jobsFn = useServerFn(listJobs);
   const createJobFn = useServerFn(createJob);
   const reviewsFn = useServerFn(listReviews);
-  const scoreFn = useServerFn(scoreApplicants);
+  const scoreFn = useServerFn(saveApplicantScores);
   const decideFn = useServerFn(setDecision);
 
   const [jobId, setJobId] = useState<string | null>(null);
