@@ -17,9 +17,24 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
       return { ok: false as const, reason: "missing_public_url" as const };
     }
     const redirectUri = `${publicUrl.replace(/\/$/, "")}/api/public/google/callback`;
-    const state = Buffer.from(
-      JSON.stringify({ u: context.userId, t: Date.now() }),
-    ).toString("base64url");
+
+    // Bind the OAuth state to a single-use, server-stored nonce for this user.
+    const nonce = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, "");
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error: nonceError } = await supabaseAdmin
+      .from("google_oauth_states")
+      .insert({
+        nonce,
+        user_id: context.userId,
+        expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      });
+    if (nonceError) {
+      console.error("Failed to create Google OAuth state", nonceError);
+      return { ok: false as const, reason: "state_error" as const };
+    }
+
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
@@ -28,8 +43,9 @@ export const getGoogleAuthUrl = createServerFn({ method: "POST" })
       access_type: "offline",
       prompt: "consent",
       include_granted_scopes: "true",
-      state,
+      state: nonce,
     });
+
     return {
       ok: true as const,
       url: `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
