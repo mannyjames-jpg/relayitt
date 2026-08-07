@@ -235,8 +235,34 @@ export function QuickCapture({
         </form>
 
 
-        {/* Key fields stay visible — no hunting behind focus states. */}
-        <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5">
+        {/* Details collapse to keep the top of the screen calm on mobile. */}
+        <div className="mt-2 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((v) => !v)}
+            aria-expanded={detailsOpen}
+            className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
+          >
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 transition-transform",
+                detailsOpen && "rotate-180",
+              )}
+            />
+            {detailsOpen ? "Hide details" : "Add details"}
+          </button>
+          <Link
+            to="/settings"
+            className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+          >
+            Settings
+          </Link>
+        </div>
+
+        <div
+          hidden={!detailsOpen}
+          className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5 data-[hidden]:hidden"
+        >
           <Field label="Created by / From" help={SOURCE_HELP[source]}>
             <Select value={source} onValueChange={(v) => setSource(v as Source)}>
               <SelectTrigger
