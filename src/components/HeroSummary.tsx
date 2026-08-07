@@ -52,7 +52,7 @@ export function HeroSummary({
   return (
     <section className="border border-border bg-card p-5 sm:p-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <div className="relative h-[92px] w-[92px] shrink-0">
+        <div className="relative mx-auto h-[92px] w-[92px] shrink-0 self-center">
           <svg viewBox="0 0 96 96" className="h-full w-full -rotate-90">
             <circle
               cx="48"
