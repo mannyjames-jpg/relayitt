@@ -104,6 +104,11 @@
   --accent-quiet: #ab9a83;
   --accent-ink: #7a6749;
 
+  /* Fit-score readout (only place hue is allowed). */
+  --score-high: #4a6b4a;
+  --score-mid: #8a6d2f;
+  --score-low: #8a3b30;
+
   --destructive: #6b2f26;
   --destructive-foreground: #fbf8f4;
 
@@ -153,6 +158,10 @@
   --accent-quiet: #9c8b74;
   
   --accent-ink: #cbb69a;
+
+  --score-high: #8fb98f;
+  --score-mid: #d3b169;
+  --score-low: #d18a7e;
 
   --border: oklch(1 0 0 / 14%);
   --border-strong: oklch(1 0 0 / 28%);

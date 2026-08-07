@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      applicant_reviews: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          decision: Database["public"]["Enums"]["applicant_decision"]
+          fit_score: number | null
+          headline: string | null
+          id: string
+          job_id: string
+          location: string | null
+          name: string | null
+          profile_url: string | null
+          summary: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          decision?: Database["public"]["Enums"]["applicant_decision"]
+          fit_score?: number | null
+          headline?: string | null
+          id?: string
+          job_id: string
+          location?: string | null
+          name?: string | null
+          profile_url?: string | null
+          summary?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          decision?: Database["public"]["Enums"]["applicant_decision"]
+          fit_score?: number | null
+          headline?: string | null
+          id?: string
+          job_id?: string
+          location?: string | null
+          name?: string | null
+          profile_url?: string | null
+          summary?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applicant_reviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           created_at: string
@@ -73,6 +126,33 @@ export type Database = {
           refresh_token?: string
           scope?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_postings: {
+        Row: {
+          created_at: string
+          id: string
+          must_haves: string | null
+          nice_to_haves: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          must_haves?: string | null
+          nice_to_haves?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          must_haves?: string | null
+          nice_to_haves?: string | null
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -259,6 +339,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      applicant_decision: "Keep" | "Pass" | "Maybe" | "Undecided"
       task_category:
         | "Travel"
         | "Household"
@@ -404,6 +485,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      applicant_decision: ["Keep", "Pass", "Maybe", "Undecided"],
       task_category: [
         "Travel",
         "Household",
