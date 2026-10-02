@@ -1,14 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  deleteContact,
-  getContact,
-  updateContact,
-} from "@/lib/contacts.functions";
+import { contactFns, errorMessage } from "@/lib/api-client";
+import { ErrorState, LoadingState } from "@/components/QueryState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,14 +19,15 @@ export const Route = createFileRoute("/_authenticated/contacts/$id")({
 function ContactDetail() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
-  const get = useServerFn(getContact);
-  const update = useServerFn(updateContact);
-  const del = useServerFn(deleteContact);
+  const get = contactFns.get;
+  const update = contactFns.update;
+  const del = contactFns.remove;
 
-  const { data } = useQuery({
+  const contactQ = useQuery({
     queryKey: ["contact", id],
     queryFn: () => get({ data: { id } }),
   });
+  const data = contactQ.data;
 
   const [form, setForm] = useState({
     name: "",
@@ -59,8 +56,12 @@ function ContactDetail() {
       qc.invalidateQueries({ queryKey: ["contacts"] });
       toast.success("Saved");
     },
+    onError: (e) => toast.error(errorMessage(e)),
   });
-  const deleteM = useMutation({ mutationFn: del });
+  const deleteM = useMutation({
+    mutationFn: del,
+    onError: (e) => toast.error(errorMessage(e)),
+  });
 
   const active = (data?.tasks ?? []).filter((t) => t.status !== "Complete");
   const done = (data?.tasks ?? []).filter((t) => t.status === "Complete").slice(0, 25);
@@ -80,6 +81,20 @@ function ContactDetail() {
         </div>
       </header>
 
+      {contactQ.isPending ? (
+        <main className="mx-auto max-w-2xl px-4 py-4"><LoadingState /></main>
+      ) : contactQ.isError ? (
+        <main className="mx-auto max-w-2xl px-4 py-4">
+          <ErrorState
+            message={
+              (contactQ.error as { status?: number })?.status === 404
+                ? "This contact no longer exists."
+                : "Couldn't load this contact. Try again."
+            }
+            onRetry={() => contactQ.refetch()}
+          />
+        </main>
+      ) : (
       <main className="mx-auto max-w-2xl px-4 py-4 space-y-6">
         <section className="space-y-3">
           <Field label="Name">
@@ -124,7 +139,11 @@ function ContactDetail() {
               className="text-destructive"
               onClick={async () => {
                 if (!confirm("Delete this contact?")) return;
-                await deleteM.mutateAsync({ data: { id } });
+                try {
+                  await deleteM.mutateAsync({ data: { id } });
+                } catch {
+                  return;
+                }
                 qc.invalidateQueries({ queryKey: ["contacts"] });
                 window.history.back();
               }}
@@ -189,6 +208,7 @@ function ContactDetail() {
           </section>
         )}
       </main>
+      )}
     </div>
   );
 }

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { transcribeVoiceNote } from "@/lib/voice.functions";
-import { createTask, deleteTask } from "@/lib/tasks.functions";
+import { taskFns } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import type { ContactOption } from "./AssigneeCombobox";
 
@@ -100,8 +100,8 @@ export function VoiceCapture({
 }) {
   const qc = useQueryClient();
   const transcribe = useServerFn(transcribeVoiceNote);
-  const create = useServerFn(createTask);
-  const removeTask = useServerFn(deleteTask);
+  const create = taskFns.create;
+  const removeTask = taskFns.remove;
 
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<

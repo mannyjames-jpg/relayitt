@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { sourceLabel, SOURCE_HELP } from "@/lib/task-style";
@@ -19,8 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { createTask } from "@/lib/tasks.functions";
-import { createContact, listContacts } from "@/lib/contacts.functions";
+import { contactFns, errorMessage, taskFns } from "@/lib/api-client";
 import { AssigneeCombobox } from "./AssigneeCombobox";
 import { VoiceCapture } from "./VoiceCapture";
 import { toast } from "sonner";
@@ -58,9 +56,9 @@ export function QuickCapture({
   onFilterChange: (f: FilterSource) => void;
 }) {
   const qc = useQueryClient();
-  const create = useServerFn(createTask);
-  const createC = useServerFn(createContact);
-  const listC = useServerFn(listContacts);
+  const create = taskFns.create;
+  const createC = contactFns.create;
+  const listC = contactFns.list;
 
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts"],
@@ -96,11 +94,13 @@ export function QuickCapture({
       setFlash(true);
       setTimeout(() => setFlash(false), 700);
     },
+    onError: (e) => toast.error(errorMessage(e)),
   });
 
   const saveContactM = useMutation({
     mutationFn: createC,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contacts"] }),
+    onError: (e) => toast.error(errorMessage(e)),
   });
 
   useEffect(() => {

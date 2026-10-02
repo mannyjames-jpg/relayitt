@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, Plus, UserRound } from "lucide-react";
-import { createContact, listContacts } from "@/lib/contacts.functions";
-import { listTasks } from "@/lib/tasks.functions";
+import { contactFns, taskFns } from "@/lib/api-client";
+import { ErrorState, LoadingState } from "@/components/QueryState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,15 +22,16 @@ export const Route = createFileRoute("/_authenticated/contacts")({
 });
 
 function ContactsPage() {
-  const list = useServerFn(listContacts);
-  const listT = useServerFn(listTasks);
-  const create = useServerFn(createContact);
+  const list = contactFns.list;
+  const listT = taskFns.list;
+  const create = contactFns.create;
   const qc = useQueryClient();
 
-  const { data: contacts = [] } = useQuery({
+  const contactsQ = useQuery({
     queryKey: ["contacts"],
     queryFn: () => list(),
   });
+  const contacts = contactsQ.data ?? [];
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => listT(),
@@ -164,10 +164,21 @@ function ContactsPage() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-4">
-        {contacts.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center pt-8">
-            No contacts yet
-          </p>
+        {contactsQ.isPending ? (
+          <LoadingState />
+        ) : contactsQ.isError ? (
+          <ErrorState
+            message="Couldn't load your contacts. Try again."
+            onRetry={() => contactsQ.refetch()}
+          />
+        ) : contacts.length === 0 ? (
+          <div className="text-center pt-8 space-y-3">
+            <p className="text-sm text-muted-foreground">No contacts yet</p>
+            <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add a contact
+            </Button>
+          </div>
         ) : (
           <ul className="rounded-lg border border-border bg-card divide-y divide-border">
             {contacts.map((c) => {
