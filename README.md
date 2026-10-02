@@ -109,14 +109,20 @@ Every row is scoped to its owner and protected by row-level security.
 
 ```sh
 git clone <repository-url>
-cd relay
+cd relayitt
 bun install        # or npm install
 ```
 
+The project includes both a bun.lock and a package-lock.json, so either bun or npm works.
+
 Copy the environment variables the project needs (names only):
 
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+The server-side API routes read the first pair and the browser reads the second; each pair holds the same project URL and publishable key.
 
 Then start the dev server:
 
