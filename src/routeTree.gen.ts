@@ -19,7 +19,13 @@ import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedCompletedRouteImport } from './routes/_authenticated/completed'
 import { Route as AuthenticatedApplicantsRouteImport } from './routes/_authenticated/applicants'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
+import { Route as ApiPublicV1HealthRouteImport } from './routes/api/public/v1/health'
 import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
+import { Route as ApiPublicV1TasksIndexRouteImport } from './routes/api/public/v1/tasks.index'
+import { Route as ApiPublicV1ContactsIndexRouteImport } from './routes/api/public/v1/contacts.index'
+import { Route as ApiPublicV1TasksIdRouteImport } from './routes/api/public/v1/tasks.$id'
+import { Route as ApiPublicV1ContactsIdRouteImport } from './routes/api/public/v1/contacts.$id'
+import { Route as ApiPublicV1TasksIdNudgeRouteImport } from './routes/api/public/v1/tasks.$id.nudge'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -70,10 +76,41 @@ const AuthenticatedContactsIdRoute = AuthenticatedContactsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedContactsRoute,
 } as any)
+const ApiPublicV1HealthRoute = ApiPublicV1HealthRouteImport.update({
+  id: '/api/public/v1/health',
+  path: '/api/public/v1/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicGoogleCallbackRoute = ApiPublicGoogleCallbackRouteImport.update({
   id: '/api/public/google/callback',
   path: '/api/public/google/callback',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1TasksIndexRoute = ApiPublicV1TasksIndexRouteImport.update({
+  id: '/api/public/v1/tasks/',
+  path: '/api/public/v1/tasks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ContactsIndexRoute =
+  ApiPublicV1ContactsIndexRouteImport.update({
+    id: '/api/public/v1/contacts/',
+    path: '/api/public/v1/contacts/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicV1TasksIdRoute = ApiPublicV1TasksIdRouteImport.update({
+  id: '/api/public/v1/tasks/$id',
+  path: '/api/public/v1/tasks/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1ContactsIdRoute = ApiPublicV1ContactsIdRouteImport.update({
+  id: '/api/public/v1/contacts/$id',
+  path: '/api/public/v1/contacts/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1TasksIdNudgeRoute = ApiPublicV1TasksIdNudgeRouteImport.update({
+  id: '/nudge',
+  path: '/nudge',
+  getParentRoute: () => ApiPublicV1TasksIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -87,6 +124,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
+  '/api/public/v1/health': typeof ApiPublicV1HealthRoute
+  '/api/public/v1/contacts/$id': typeof ApiPublicV1ContactsIdRoute
+  '/api/public/v1/tasks/$id': typeof ApiPublicV1TasksIdRouteWithChildren
+  '/api/public/v1/contacts/': typeof ApiPublicV1ContactsIndexRoute
+  '/api/public/v1/tasks/': typeof ApiPublicV1TasksIndexRoute
+  '/api/public/v1/tasks/$id/nudge': typeof ApiPublicV1TasksIdNudgeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,6 +142,12 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
+  '/api/public/v1/health': typeof ApiPublicV1HealthRoute
+  '/api/public/v1/contacts/$id': typeof ApiPublicV1ContactsIdRoute
+  '/api/public/v1/tasks/$id': typeof ApiPublicV1TasksIdRouteWithChildren
+  '/api/public/v1/contacts': typeof ApiPublicV1ContactsIndexRoute
+  '/api/public/v1/tasks': typeof ApiPublicV1TasksIndexRoute
+  '/api/public/v1/tasks/$id/nudge': typeof ApiPublicV1TasksIdNudgeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +162,12 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
+  '/api/public/v1/health': typeof ApiPublicV1HealthRoute
+  '/api/public/v1/contacts/$id': typeof ApiPublicV1ContactsIdRoute
+  '/api/public/v1/tasks/$id': typeof ApiPublicV1TasksIdRouteWithChildren
+  '/api/public/v1/contacts/': typeof ApiPublicV1ContactsIndexRoute
+  '/api/public/v1/tasks/': typeof ApiPublicV1TasksIndexRoute
+  '/api/public/v1/tasks/$id/nudge': typeof ApiPublicV1TasksIdNudgeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,6 +182,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/contacts/$id'
     | '/api/public/google/callback'
+    | '/api/public/v1/health'
+    | '/api/public/v1/contacts/$id'
+    | '/api/public/v1/tasks/$id'
+    | '/api/public/v1/contacts/'
+    | '/api/public/v1/tasks/'
+    | '/api/public/v1/tasks/$id/nudge'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -139,6 +200,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/contacts/$id'
     | '/api/public/google/callback'
+    | '/api/public/v1/health'
+    | '/api/public/v1/contacts/$id'
+    | '/api/public/v1/tasks/$id'
+    | '/api/public/v1/contacts'
+    | '/api/public/v1/tasks'
+    | '/api/public/v1/tasks/$id/nudge'
   id:
     | '__root__'
     | '/'
@@ -152,6 +219,12 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/contacts/$id'
     | '/api/public/google/callback'
+    | '/api/public/v1/health'
+    | '/api/public/v1/contacts/$id'
+    | '/api/public/v1/tasks/$id'
+    | '/api/public/v1/contacts/'
+    | '/api/public/v1/tasks/'
+    | '/api/public/v1/tasks/$id/nudge'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -160,6 +233,11 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicGoogleCallbackRoute: typeof ApiPublicGoogleCallbackRoute
+  ApiPublicV1HealthRoute: typeof ApiPublicV1HealthRoute
+  ApiPublicV1ContactsIdRoute: typeof ApiPublicV1ContactsIdRoute
+  ApiPublicV1TasksIdRoute: typeof ApiPublicV1TasksIdRouteWithChildren
+  ApiPublicV1ContactsIndexRoute: typeof ApiPublicV1ContactsIndexRoute
+  ApiPublicV1TasksIndexRoute: typeof ApiPublicV1TasksIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -234,12 +312,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContactsIdRouteImport
       parentRoute: typeof AuthenticatedContactsRoute
     }
+    '/api/public/v1/health': {
+      id: '/api/public/v1/health'
+      path: '/api/public/v1/health'
+      fullPath: '/api/public/v1/health'
+      preLoaderRoute: typeof ApiPublicV1HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/google/callback': {
       id: '/api/public/google/callback'
       path: '/api/public/google/callback'
       fullPath: '/api/public/google/callback'
       preLoaderRoute: typeof ApiPublicGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/tasks/': {
+      id: '/api/public/v1/tasks/'
+      path: '/api/public/v1/tasks'
+      fullPath: '/api/public/v1/tasks/'
+      preLoaderRoute: typeof ApiPublicV1TasksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/contacts/': {
+      id: '/api/public/v1/contacts/'
+      path: '/api/public/v1/contacts'
+      fullPath: '/api/public/v1/contacts/'
+      preLoaderRoute: typeof ApiPublicV1ContactsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/tasks/$id': {
+      id: '/api/public/v1/tasks/$id'
+      path: '/api/public/v1/tasks/$id'
+      fullPath: '/api/public/v1/tasks/$id'
+      preLoaderRoute: typeof ApiPublicV1TasksIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/contacts/$id': {
+      id: '/api/public/v1/contacts/$id'
+      path: '/api/public/v1/contacts/$id'
+      fullPath: '/api/public/v1/contacts/$id'
+      preLoaderRoute: typeof ApiPublicV1ContactsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/tasks/$id/nudge': {
+      id: '/api/public/v1/tasks/$id/nudge'
+      path: '/nudge'
+      fullPath: '/api/public/v1/tasks/$id/nudge'
+      preLoaderRoute: typeof ApiPublicV1TasksIdNudgeRouteImport
+      parentRoute: typeof ApiPublicV1TasksIdRoute
     }
   }
 }
@@ -276,12 +396,28 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface ApiPublicV1TasksIdRouteChildren {
+  ApiPublicV1TasksIdNudgeRoute: typeof ApiPublicV1TasksIdNudgeRoute
+}
+
+const ApiPublicV1TasksIdRouteChildren: ApiPublicV1TasksIdRouteChildren = {
+  ApiPublicV1TasksIdNudgeRoute: ApiPublicV1TasksIdNudgeRoute,
+}
+
+const ApiPublicV1TasksIdRouteWithChildren =
+  ApiPublicV1TasksIdRoute._addFileChildren(ApiPublicV1TasksIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicGoogleCallbackRoute: ApiPublicGoogleCallbackRoute,
+  ApiPublicV1HealthRoute: ApiPublicV1HealthRoute,
+  ApiPublicV1ContactsIdRoute: ApiPublicV1ContactsIdRoute,
+  ApiPublicV1TasksIdRoute: ApiPublicV1TasksIdRouteWithChildren,
+  ApiPublicV1ContactsIndexRoute: ApiPublicV1ContactsIndexRoute,
+  ApiPublicV1TasksIndexRoute: ApiPublicV1TasksIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

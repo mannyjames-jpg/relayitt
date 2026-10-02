@@ -76,6 +76,5 @@ export async function deleteContact(supabase: DB, userId: string, id: string) {
     .eq("user_id", userId)
     .select("id");
   if (error) throw fromDbError(error);
-  if (!rows || rows.length === 0) throw new ServiceError("Contact not found", 404, "not_found");
-  return { ok: true };
+  return { ok: true, found: (rows?.length ?? 0) > 0 };
 }
