@@ -65,12 +65,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import {
-  deleteTask,
-  getVoiceNoteUrl,
-  nudgeTask,
-  updateTask,
-} from "@/lib/tasks.functions";
+import { getVoiceNoteUrl } from "@/lib/tasks.functions";
+import { errorMessage, taskFns } from "@/lib/api-client";
 import { addStep, deleteStep, listSteps } from "@/lib/steps.functions";
 import { formatTime, daysSince } from "@/lib/date-utils";
 import {
@@ -154,9 +150,9 @@ export function TaskRow({
   overdue?: boolean;
 }) {
   const qc = useQueryClient();
-  const update = useServerFn(updateTask);
-  const del = useServerFn(deleteTask);
-  const nudge = useServerFn(nudgeTask);
+  const update = taskFns.update;
+  const del = taskFns.remove;
+  const nudge = taskFns.nudge;
   const getVoice = useServerFn(getVoiceNoteUrl);
 
   const [expanded, setExpanded] = useState(false);
@@ -251,14 +247,17 @@ export function TaskRow({
   const updateM = useMutation({
     mutationFn: update,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (e) => toast.error(errorMessage(e)),
   });
   const deleteM = useMutation({
     mutationFn: del,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (e) => toast.error(errorMessage(e)),
   });
   const nudgeM = useMutation({
     mutationFn: nudge,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (e) => toast.error(errorMessage(e)),
   });
 
   const assignee =
@@ -314,8 +313,7 @@ export function TaskRow({
       action: {
         label: "Undo",
         onClick: async () => {
-          const create = (await import("@/lib/tasks.functions")).createTask;
-          await create({
+          await taskFns.create({
             data: {
               title: snapshot.title,
               source: snapshot.source,
