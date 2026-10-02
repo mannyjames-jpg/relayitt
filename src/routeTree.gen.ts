@@ -15,9 +15,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedContactsRouteImport } from './routes/_authenticated/contacts'
 import { Route as AuthenticatedCompletedRouteImport } from './routes/_authenticated/completed'
 import { Route as AuthenticatedApplicantsRouteImport } from './routes/_authenticated/applicants'
+import { Route as AuthenticatedContactsIndexRouteImport } from './routes/_authenticated/contacts.index'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as ApiPublicV1HealthRouteImport } from './routes/api/public/v1/health'
 import { Route as ApiPublicGoogleCallbackRouteImport } from './routes/api/public/google/callback'
@@ -56,11 +56,6 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedContactsRoute = AuthenticatedContactsRouteImport.update({
-  id: '/contacts',
-  path: '/contacts',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedCompletedRoute = AuthenticatedCompletedRouteImport.update({
   id: '/completed',
   path: '/completed',
@@ -71,10 +66,16 @@ const AuthenticatedApplicantsRoute = AuthenticatedApplicantsRouteImport.update({
   path: '/applicants',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedContactsIndexRoute =
+  AuthenticatedContactsIndexRouteImport.update({
+    id: '/contacts/',
+    path: '/contacts/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedContactsIdRoute = AuthenticatedContactsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedContactsRoute,
+  id: '/contacts/$id',
+  path: '/contacts/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiPublicV1HealthRoute = ApiPublicV1HealthRouteImport.update({
   id: '/api/public/v1/health',
@@ -119,10 +120,10 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/applicants': typeof AuthenticatedApplicantsRoute
   '/completed': typeof AuthenticatedCompletedRoute
-  '/contacts': typeof AuthenticatedContactsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
+  '/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/v1/health': typeof ApiPublicV1HealthRoute
   '/api/public/v1/contacts/$id': typeof ApiPublicV1ContactsIdRoute
@@ -137,10 +138,10 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/applicants': typeof AuthenticatedApplicantsRoute
   '/completed': typeof AuthenticatedCompletedRoute
-  '/contacts': typeof AuthenticatedContactsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
+  '/contacts': typeof AuthenticatedContactsIndexRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/v1/health': typeof ApiPublicV1HealthRoute
   '/api/public/v1/contacts/$id': typeof ApiPublicV1ContactsIdRoute
@@ -157,10 +158,10 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/applicants': typeof AuthenticatedApplicantsRoute
   '/_authenticated/completed': typeof AuthenticatedCompletedRoute
-  '/_authenticated/contacts': typeof AuthenticatedContactsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
+  '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
   '/api/public/google/callback': typeof ApiPublicGoogleCallbackRoute
   '/api/public/v1/health': typeof ApiPublicV1HealthRoute
   '/api/public/v1/contacts/$id': typeof ApiPublicV1ContactsIdRoute
@@ -177,10 +178,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/applicants'
     | '/completed'
-    | '/contacts'
     | '/dashboard'
     | '/settings'
     | '/contacts/$id'
+    | '/contacts/'
     | '/api/public/google/callback'
     | '/api/public/v1/health'
     | '/api/public/v1/contacts/$id'
@@ -195,10 +196,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/applicants'
     | '/completed'
-    | '/contacts'
     | '/dashboard'
     | '/settings'
     | '/contacts/$id'
+    | '/contacts'
     | '/api/public/google/callback'
     | '/api/public/v1/health'
     | '/api/public/v1/contacts/$id'
@@ -214,10 +215,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/_authenticated/applicants'
     | '/_authenticated/completed'
-    | '/_authenticated/contacts'
     | '/_authenticated/dashboard'
     | '/_authenticated/settings'
     | '/_authenticated/contacts/$id'
+    | '/_authenticated/contacts/'
     | '/api/public/google/callback'
     | '/api/public/v1/health'
     | '/api/public/v1/contacts/$id'
@@ -284,13 +285,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/contacts': {
-      id: '/_authenticated/contacts'
-      path: '/contacts'
-      fullPath: '/contacts'
-      preLoaderRoute: typeof AuthenticatedContactsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/completed': {
       id: '/_authenticated/completed'
       path: '/completed'
@@ -305,12 +299,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApplicantsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contacts/': {
+      id: '/_authenticated/contacts/'
+      path: '/contacts'
+      fullPath: '/contacts/'
+      preLoaderRoute: typeof AuthenticatedContactsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/contacts/$id': {
       id: '/_authenticated/contacts/$id'
-      path: '/$id'
+      path: '/contacts/$id'
       fullPath: '/contacts/$id'
       preLoaderRoute: typeof AuthenticatedContactsIdRouteImport
-      parentRoute: typeof AuthenticatedContactsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/v1/health': {
       id: '/api/public/v1/health'
@@ -364,33 +365,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedContactsRouteChildren {
-  AuthenticatedContactsIdRoute: typeof AuthenticatedContactsIdRoute
-}
-
-const AuthenticatedContactsRouteChildren: AuthenticatedContactsRouteChildren = {
-  AuthenticatedContactsIdRoute: AuthenticatedContactsIdRoute,
-}
-
-const AuthenticatedContactsRouteWithChildren =
-  AuthenticatedContactsRoute._addFileChildren(
-    AuthenticatedContactsRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedApplicantsRoute: typeof AuthenticatedApplicantsRoute
   AuthenticatedCompletedRoute: typeof AuthenticatedCompletedRoute
-  AuthenticatedContactsRoute: typeof AuthenticatedContactsRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedContactsIdRoute: typeof AuthenticatedContactsIdRoute
+  AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplicantsRoute: AuthenticatedApplicantsRoute,
   AuthenticatedCompletedRoute: AuthenticatedCompletedRoute,
-  AuthenticatedContactsRoute: AuthenticatedContactsRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedContactsIdRoute: AuthenticatedContactsIdRoute,
+  AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

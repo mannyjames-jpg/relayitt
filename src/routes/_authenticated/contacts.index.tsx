@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-export const Route = createFileRoute("/_authenticated/contacts")({
+export const Route = createFileRoute("/_authenticated/contacts/")({
   head: () => ({ meta: [{ title: "Contacts — Relay" }] }),
   component: ContactsPage,
 });
