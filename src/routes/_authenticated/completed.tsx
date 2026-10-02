@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, RotateCcw } from "lucide-react";
-import { listCompleted, updateTask } from "@/lib/tasks.functions";
-import { listContacts } from "@/lib/contacts.functions";
+import { toast } from "sonner";
+import { contactFns, errorMessage, taskFns } from "@/lib/api-client";
+import { ErrorState, LoadingState } from "@/components/QueryState";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/completed")({
@@ -13,14 +13,15 @@ export const Route = createFileRoute("/_authenticated/completed")({
 
 function CompletedPage() {
   const qc = useQueryClient();
-  const list = useServerFn(listCompleted);
-  const listC = useServerFn(listContacts);
-  const update = useServerFn(updateTask);
+  const list = taskFns.listCompleted;
+  const listC = contactFns.list;
+  const update = taskFns.update;
 
-  const { data: tasks = [] } = useQuery({
+  const completedQ = useQuery({
     queryKey: ["completed"],
     queryFn: () => list(),
   });
+  const tasks = completedQ.data ?? [];
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts"],
     queryFn: () => listC(),
@@ -32,6 +33,7 @@ function CompletedPage() {
       qc.invalidateQueries({ queryKey: ["completed"] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
+    onError: (e) => toast.error(errorMessage(e)),
   });
 
   return (
@@ -48,7 +50,14 @@ function CompletedPage() {
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-4">
-        {tasks.length === 0 ? (
+        {completedQ.isPending ? (
+          <LoadingState />
+        ) : completedQ.isError ? (
+          <ErrorState
+            message="Couldn't load completed tasks. Try again."
+            onRetry={() => completedQ.refetch()}
+          />
+        ) : tasks.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center pt-8">
             Nothing completed yet
           </p>

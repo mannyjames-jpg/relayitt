@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { listTasks } from "@/lib/tasks.functions";
-import { listContacts } from "@/lib/contacts.functions";
+import { contactFns, taskFns } from "@/lib/api-client";
+import { ErrorState, LoadingState } from "@/components/QueryState";
 import { getProfile } from "@/lib/profile.functions";
 import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { todayISO } from "@/lib/date-utils";
@@ -71,16 +71,17 @@ type PanelKey = "overdue" | "today" | "waiting" | "upcoming" | "someday";
 function Dashboard() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/_authenticated/dashboard" });
-  const listT = useServerFn(listTasks);
-  const listC = useServerFn(listContacts);
+  const listT = taskFns.list;
+  const listC = contactFns.list;
   const gStatus = useServerFn(getGoogleStatus);
   const gUrl = useServerFn(getGoogleAuthUrl);
   const getProf = useServerFn(getProfile);
 
-  const { data: tasks = [] } = useQuery({
+  const tasksQ = useQuery({
     queryKey: ["tasks"],
     queryFn: () => listT(),
   });
+  const tasks = tasksQ.data ?? [];
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts"],
     queryFn: () => listC(),
@@ -222,6 +223,13 @@ function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-3 px-4 pb-16 pt-2">
+        {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
+        {tasksQ.isError && (
+          <ErrorState
+            message="Couldn't load your tasks. Try again."
+            onRetry={() => tasksQ.refetch()}
+          />
+        )}
         <HeroSummary
           greeting={
             greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"
