@@ -15,6 +15,7 @@ import {
   type FontChoice,
 } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
+import { SecuritySettings } from "@/components/SecuritySettings";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -90,6 +91,7 @@ function Settings() {
       </header>
 
       <main className="mx-auto max-w-2xl space-y-6 px-4 py-6">
+        <SecuritySettings />
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="font-display">Profile</h2>
           <p className="mt-1 text-sm text-muted-foreground">
