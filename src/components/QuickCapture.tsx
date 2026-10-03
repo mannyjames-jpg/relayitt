@@ -47,10 +47,9 @@ export const QuickCapture = forwardRef<
   {
     filter: FilterSource;
     onFilterChange: (f: FilterSource) => void;
-    headerAction?: React.ReactNode;
     onHeightChange?: (height: number) => void;
   }
->(function QuickCapture({ filter, onFilterChange, headerAction, onHeightChange }, forwardedRef) {
+>(function QuickCapture({ filter, onFilterChange, onHeightChange }, forwardedRef) {
   const qc = useQueryClient();
   const create = taskFns.create;
   const createC = contactFns.create;

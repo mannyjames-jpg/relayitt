@@ -393,7 +393,7 @@ export function TaskRow({
           className="absolute -left-3 top-2.5 bottom-2.5 w-0.5 bg-alert min-[821px]:-left-3.5"
         />
       )}
-      <div className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)] sm:grid-cols-[44px_minmax(0,1fr)_auto]">
+      <div className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)] min-[821px]:grid-cols-[44px_minmax(0,1fr)_auto]">
         <div className="relative flex h-11 w-11 items-center justify-center">
           {burst && <PetalBurst />}
           <button
@@ -455,7 +455,7 @@ export function TaskRow({
             </div>
           )}
           {rightColumn && (
-            <div className="mt-1 flex items-baseline gap-2.5 whitespace-nowrap text-[12.5px] tabular-nums text-muted-foreground sm:hidden">
+            <div className="mt-1 flex items-baseline gap-2.5 whitespace-nowrap text-[12.5px] tabular-nums text-muted-foreground min-[821px]:hidden">
               <span
                 className={cn(
                   "font-semibold",
@@ -483,7 +483,7 @@ export function TaskRow({
         </div>
 
         {rightColumn && (
-          <div className="hidden pb-0 pl-4 pt-3 text-right text-[12.5px] tabular-nums text-muted-foreground sm:col-start-3 sm:row-start-1 sm:block">
+          <div className="hidden pb-0 pl-4 pt-3 text-right text-[12.5px] tabular-nums text-muted-foreground min-[821px]:col-start-3 min-[821px]:row-start-1 min-[821px]:block">
             <div
               className={cn(
                 "whitespace-nowrap text-[13px] font-semibold",
