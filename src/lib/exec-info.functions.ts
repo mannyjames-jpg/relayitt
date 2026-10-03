@@ -193,19 +193,17 @@ export const saveExecField = createServerFn({ method: "POST" })
         value_cipher = await encryptSecret(value);
       } else value_plain = value;
     }
-    const { error } = await supabase
-      .from("exec_info_fields")
-      .upsert(
-        {
-          user_id: userId,
-          section: data.section,
-          field_key: data.field_key,
-          value_plain,
-          value_cipher,
-          is_secret: secret,
-        },
-        { onConflict: "user_id,section,field_key" },
-      );
+    const { error } = await supabase.from("exec_info_fields").upsert(
+      {
+        user_id: userId,
+        section: data.section,
+        field_key: data.field_key,
+        value_plain,
+        value_cipher,
+        is_secret: secret,
+      },
+      { onConflict: "user_id,section,field_key" },
+    );
     if (error) throw new Error("Could not save");
     await audit(supabase, userId, "edit", `Edited ${fieldLabel(data.section, data.field_key)}`);
     return { ok: true };
@@ -388,7 +386,13 @@ export const listKeyDates = createServerFn({ method: "GET" })
         const p = parseMdy(data["dob"]);
         const name = str(data["name"]);
         if (!p || !name) continue;
-        push({ kind: "date", label: `${name}'s birthday`, ...p, relationship: "Child", notes: null });
+        push({
+          kind: "date",
+          label: `${name}'s birthday`,
+          ...p,
+          relationship: "Child",
+          notes: null,
+        });
       }
     }
 
@@ -406,7 +410,8 @@ export const listKeyDates = createServerFn({ method: "GET" })
       const p = parseMdy(f.value_plain);
       if (!def || !p) continue;
       if (def.kind === "doc") push({ kind: "doc", label: def.label, ...p });
-      else push({ kind: "date", label: def.label, ...p, relationship: def.rel ?? null, notes: null });
+      else
+        push({ kind: "date", label: def.label, ...p, relationship: def.rel ?? null, notes: null });
     }
     return out;
   });

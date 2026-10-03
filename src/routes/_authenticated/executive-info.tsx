@@ -399,6 +399,7 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
         });
       }
       await qc.invalidateQueries({ queryKey: ["exec-info"] });
+      void qc.invalidateQueries({ queryKey: ["key-dates"] });
       setDrafts({});
       setRowDrafts({});
       setEditing(false);
