@@ -2,34 +2,19 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  AlertCircle,
-  ArrowRight,
   ChevronDown,
   ChevronRight,
-  BellRing,
-  Calendar as CalIcon,
   Check,
-  Circle,
-  Clock,
-  MessageCircleQuestion,
   MessageSquare,
   Phone,
   Play,
   PlayCircle,
   Repeat,
-  Trash2,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PetalBurst } from "@/components/PetalBurst";
-import {
-  CATEGORY_PILL,
-  STATUS_BADGE,
-  STATUS_HELP,
-  STATUS_ORDER,
-  waitingLabel,
-  type TaskStatus,
-} from "@/lib/task-style";
+import { STATUS_ORDER, waitingLabel, type TaskStatus } from "@/lib/task-style";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -118,13 +103,6 @@ const CATEGORIES: Category[] = [
   "Vendors",
   "Other",
 ];
-
-const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
-  "Not Started": <Circle className="h-3 w-3" />,
-  "In Progress": <Play className="h-3 w-3" />,
-  "Waiting on Someone": <MessageCircleQuestion className="h-3 w-3" />,
-  Complete: <Check className="h-3 w-3" />,
-};
 
 export function TaskRow({
   task,
