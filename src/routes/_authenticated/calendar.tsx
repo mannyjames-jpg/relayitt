@@ -49,7 +49,9 @@ type MonthDay = {
 function CalendarPage() {
   const navigate = useNavigate();
   const now = new Date();
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => new Date(now.getFullYear(), now.getMonth(), 1),
+  );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => taskFns.list() });
   const contactsQ = useQuery({ queryKey: ["contacts"], queryFn: () => contactFns.list() });
@@ -86,7 +88,10 @@ function CalendarPage() {
     () => [...tasksByDate.keys()].filter((date) => date.startsWith(monthPrefix)).sort(),
     [tasksByDate, monthPrefix],
   );
-  const monthTaskCount = monthDates.reduce((total, date) => total + (tasksByDate.get(date)?.length ?? 0), 0);
+  const monthTaskCount = monthDates.reduce(
+    (total, date) => total + (tasksByDate.get(date)?.length ?? 0),
+    0,
+  );
   const selectedTasks = selectedDate ? (tasksByDate.get(selectedDate) ?? []) : [];
 
   const moveMonth = (amount: number) =>
@@ -151,11 +156,25 @@ function CalendarPage() {
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => moveMonth(-1)} aria-label="Previous month">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11"
+                  onClick={() => moveMonth(-1)}
+                  aria-label="Previous month"
+                >
                   <ChevronLeft />
                 </Button>
-                <Button variant="outline" className="h-11 px-3" onClick={jumpToday}>Today</Button>
-                <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => moveMonth(1)} aria-label="Next month">
+                <Button variant="outline" className="h-11 px-3" onClick={jumpToday}>
+                  Today
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11"
+                  onClick={() => moveMonth(1)}
+                  aria-label="Next month"
+                >
                   <ChevronRight />
                 </Button>
               </div>
@@ -193,7 +212,10 @@ function CalendarPage() {
         </main>
         <CalendarMobileTabs counts={dashboardCounts} />
         <Sheet open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
-          <SheetContent side="right" className="w-[min(92vw,560px)] overflow-y-auto rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms] sm:max-w-none">
+          <SheetContent
+            side="right"
+            className="w-[min(92vw,560px)] overflow-y-auto rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms] sm:max-w-none"
+          >
             <SheetHeader className="mb-6 text-left">
               <SheetTitle className="pr-8 text-xl font-normal">
                 {selectedDate ? fullDate(selectedDate) : "Tasks"}
@@ -202,11 +224,18 @@ function CalendarPage() {
             {selectedTasks.length ? (
               <div className="space-y-2">
                 {selectedTasks.map((task) => (
-                  <TaskRow key={task.id} task={task} contacts={contacts} overdue={(task.due_date ?? today) < today} />
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    contacts={contacts}
+                    overdue={(task.due_date ?? today) < today}
+                  />
                 ))}
               </div>
             ) : (
-              <p className="border-t border-border py-6 text-sm text-muted-foreground">Nothing scheduled</p>
+              <p className="border-t border-border py-6 text-sm text-muted-foreground">
+                Nothing scheduled
+              </p>
             )}
           </SheetContent>
         </Sheet>
@@ -230,7 +259,12 @@ function DesktopMonthGrid({
     <div className="hidden sm:block">
       <div className="grid grid-cols-7 border-l border-t border-border" aria-hidden>
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div key={day} className="border-b border-r border-border px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{day}</div>
+          <div
+            key={day}
+            className="border-b border-r border-border px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
+          >
+            {day}
+          </div>
         ))}
       </div>
       <div className="grid grid-cols-7 border-l border-border">
@@ -244,16 +278,26 @@ function DesktopMonthGrid({
               className="min-h-[132px] min-w-0 border-b border-r border-border p-2 text-left align-top hover:bg-surface focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring"
               aria-label={`${fullDate(day.iso)}, ${dayTasks.length} ${dayTasks.length === 1 ? "task" : "tasks"}`}
             >
-              <span className={`mb-2 grid h-6 w-6 place-items-center text-xs tabular-nums ${day.iso === today ? "bg-primary text-primary-foreground" : day.inMonth ? "text-foreground" : "text-muted-foreground/50"}`}>
+              <span
+                className={`mb-2 grid h-6 w-6 place-items-center text-xs tabular-nums ${day.iso === today ? "bg-primary text-primary-foreground" : day.inMonth ? "text-foreground" : "text-muted-foreground/50"}`}
+              >
                 {day.date.getDate()}
               </span>
               <span className="block space-y-1">
                 {dayTasks.slice(0, 3).map((task) => (
-                  <span key={task.id} className={`block truncate text-[11px] leading-4 ${task.priority === "Urgent" ? "font-bold" : "font-normal"} ${day.iso < today ? "text-alert" : "text-foreground"}`}>
-                    {task.due_time ? `${formatTime(task.due_time)} ` : ""}{task.title}
+                  <span
+                    key={task.id}
+                    className={`block truncate text-[11px] leading-4 ${task.priority === "Urgent" ? "font-bold" : "font-normal"} ${day.iso < today ? "text-alert" : "text-foreground"}`}
+                  >
+                    {task.due_time ? `${formatTime(task.due_time)} ` : ""}
+                    {task.title}
                   </span>
                 ))}
-                {dayTasks.length > 3 && <span className="block text-[11px] text-muted-foreground">+{dayTasks.length - 3} more</span>}
+                {dayTasks.length > 3 && (
+                  <span className="block text-[11px] text-muted-foreground">
+                    +{dayTasks.length - 3} more
+                  </span>
+                )}
               </span>
             </button>
           );
@@ -278,42 +322,85 @@ function MobileAgenda({
   today: string;
   onSelect: (date: string) => void;
 }) {
-  const scrollToDay = (date: string) => document.getElementById(`agenda-${date}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const scrollToDay = (date: string) =>
+    document
+      .getElementById(`agenda-${date}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
     <div className="sm:hidden">
       <div className="mb-8 border-l border-t border-border">
         <div className="grid grid-cols-7">
           {["S", "M", "T", "W", "T", "F", "S"].map((label, index) => (
-            <span key={`${label}-${index}`} className="grid h-8 place-items-center border-b border-r border-border text-[10px] font-semibold text-muted-foreground">{label}</span>
+            <span
+              key={`${label}-${index}`}
+              className="grid h-8 place-items-center border-b border-r border-border text-[10px] font-semibold text-muted-foreground"
+            >
+              {label}
+            </span>
           ))}
-          {Array.from({ length: new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1).getDay() }).map((_, index) => (
+          {Array.from({
+            length: new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1).getDay(),
+          }).map((_, index) => (
             <span key={`blank-${index}`} className="h-11 border-b border-r border-border" />
           ))}
           {days.map((day) => {
             const hasTasks = tasksByDate.has(day.iso);
             return (
-              <button key={day.iso} type="button" className="relative grid h-11 place-items-center border-b border-r border-border text-xs text-foreground" onClick={() => hasTasks && scrollToDay(day.iso)} aria-label={`${fullDate(day.iso)}${hasTasks ? ", has tasks" : ""}`}>
-                <span className={day.iso === today ? "grid h-6 w-6 place-items-center bg-primary text-primary-foreground" : ""}>{day.date.getDate()}</span>
-                {hasTasks && <span className="absolute bottom-1 h-1 w-1 bg-foreground" aria-hidden />}
+              <button
+                key={day.iso}
+                type="button"
+                className="relative grid h-11 place-items-center border-b border-r border-border text-xs text-foreground"
+                onClick={() => hasTasks && scrollToDay(day.iso)}
+                aria-label={`${fullDate(day.iso)}${hasTasks ? ", has tasks" : ""}`}
+              >
+                <span
+                  className={
+                    day.iso === today
+                      ? "grid h-6 w-6 place-items-center bg-primary text-primary-foreground"
+                      : ""
+                  }
+                >
+                  {day.date.getDate()}
+                </span>
+                {hasTasks && (
+                  <span className="absolute bottom-1 h-1 w-1 bg-foreground" aria-hidden />
+                )}
               </button>
             );
           })}
         </div>
       </div>
       {monthDates.length === 0 ? (
-        <p className="border-t border-border py-8 text-sm text-muted-foreground">Nothing scheduled this month.</p>
+        <p className="border-t border-border py-8 text-sm text-muted-foreground">
+          Nothing scheduled this month.
+        </p>
       ) : (
         <div className="space-y-7">
           {monthDates.map((date) => (
             <section key={date} id={`agenda-${date}`} className="scroll-mt-0">
-              <button type="button" onClick={() => onSelect(date)} className="sticky top-0 z-10 w-full border-t border-border bg-background py-3 text-left text-sm font-semibold text-foreground">
+              <button
+                type="button"
+                onClick={() => onSelect(date)}
+                className="sticky top-0 z-10 w-full border-t border-border bg-background py-3 text-left text-sm font-semibold text-foreground"
+              >
                 {shortDate(date)}
               </button>
               <div className="divide-y divide-border border-b border-border">
                 {(tasksByDate.get(date) ?? []).map((task) => (
-                  <button key={task.id} type="button" onClick={() => onSelect(date)} className={`grid min-h-12 w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-2 text-left ${date < today ? "text-alert" : "text-foreground"}`}>
-                    <span className="w-[68px] text-[11px] tabular-nums text-muted-foreground">{task.due_time ? formatTime(task.due_time) : "Any time"}</span>
-                    <span className={`truncate text-sm ${task.priority === "Urgent" ? "font-bold" : "font-normal"}`}>{task.title}</span>
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => onSelect(date)}
+                    className={`grid min-h-12 w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-2 text-left ${date < today ? "text-alert" : "text-foreground"}`}
+                  >
+                    <span className="w-[68px] text-[11px] tabular-nums text-muted-foreground">
+                      {task.due_time ? formatTime(task.due_time) : "Any time"}
+                    </span>
+                    <span
+                      className={`truncate text-sm ${task.priority === "Urgent" ? "font-bold" : "font-normal"}`}
+                    >
+                      {task.title}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -327,7 +414,17 @@ function MobileAgenda({
 
 type Counts = { today: number; overdue: number; waiting: number; coming: number; someday: number };
 
-function CalendarSidebar({ counts, displayName, initial, onSignOut }: { counts: Counts; displayName: string; initial: string; onSignOut: () => void }) {
+function CalendarSidebar({
+  counts,
+  displayName,
+  initial,
+  onSignOut,
+}: {
+  counts: Counts;
+  displayName: string;
+  initial: string;
+  onSignOut: () => void;
+}) {
   const taskLinks = [
     { label: "Today", count: counts.today, alert: counts.overdue > 0 },
     { label: "Waiting on someone", count: counts.waiting },
@@ -343,22 +440,50 @@ function CalendarSidebar({ counts, displayName, initial, onSignOut }: { counts: 
   ];
   return (
     <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 py-6 min-[821px]:flex">
-      <Link to="/dashboard" className="font-wordmark px-2 text-foreground">Relay</Link>
+      <Link to="/dashboard" className="font-wordmark px-2 text-foreground">
+        Relay
+      </Link>
       <nav className="mt-10" aria-label="Task sections">
         {taskLinks.map((item) => (
-          <Link key={item.label} to="/dashboard" className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 border-transparent px-3 text-[13px] text-muted-foreground hover:text-foreground">
-            <span className="truncate">{item.label}</span><span className={item.alert ? "text-alert" : "text-muted-foreground"}>{item.count}</span>
+          <Link
+            key={item.label}
+            to="/dashboard"
+            className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 border-transparent px-3 text-[13px] text-muted-foreground hover:text-foreground"
+          >
+            <span className="truncate">{item.label}</span>
+            <span className={item.alert ? "text-alert" : "text-muted-foreground"}>
+              {item.count}
+            </span>
           </Link>
         ))}
       </nav>
       <nav className="mt-5 border-t border-border pt-5" aria-label="Main navigation">
         {routeLinks.map((item) => (
-          <Link key={item.to} to={item.to} aria-current={item.to === "/calendar" ? "page" : undefined} className={`flex min-h-11 items-center border-l-2 px-3 text-[13px] ${item.to === "/calendar" ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{item.label}</Link>
+          <Link
+            key={item.to}
+            to={item.to}
+            aria-current={item.to === "/calendar" ? "page" : undefined}
+            className={`flex min-h-11 items-center border-l-2 px-3 text-[13px] ${item.to === "/calendar" ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            {item.label}
+          </Link>
         ))}
       </nav>
       <div className="mt-auto border-t border-border pt-5">
-        <div className="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-3"><span className="grid h-8 w-8 place-items-center bg-primary text-xs font-semibold text-primary-foreground">{initial}</span><span className="truncate text-sm font-medium text-foreground">{displayName}</span></div>
-        <Button variant="ghost" className="mt-1 h-10 w-full justify-start rounded-none px-2 text-xs" onClick={onSignOut}><LogOut />Sign out</Button>
+        <div className="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-3">
+          <span className="grid h-8 w-8 place-items-center bg-primary text-xs font-semibold text-primary-foreground">
+            {initial}
+          </span>
+          <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+        </div>
+        <Button
+          variant="ghost"
+          className="mt-1 h-10 w-full justify-start rounded-none px-2 text-xs"
+          onClick={onSignOut}
+        >
+          <LogOut />
+          Sign out
+        </Button>
       </div>
     </aside>
   );
@@ -366,17 +491,42 @@ function CalendarSidebar({ counts, displayName, initial, onSignOut }: { counts: 
 
 function CalendarMoreMenu({ onSignOut }: { onSignOut: () => void }) {
   const links = [
-    ["People", "/contacts"], ["Completed", "/completed"], ["Calendar", "/calendar"], ["Applicants", "/applicants"], ["Settings", "/settings"],
+    ["People", "/contacts"],
+    ["Completed", "/completed"],
+    ["Calendar", "/calendar"],
+    ["Applicants", "/applicants"],
+    ["Settings", "/settings"],
   ] as const;
   return (
     <Sheet>
-      <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-11 w-11" aria-label="More"><Menu /></Button></SheetTrigger>
-      <SheetContent side="right" className="w-[min(84vw,320px)] rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms]">
-        <SheetHeader className="text-left"><SheetTitle className="font-wordmark">Relay</SheetTitle></SheetHeader>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="More">
+          <Menu />
+        </Button>
+      </SheetTrigger>
+      <SheetContent
+        side="right"
+        className="w-[min(84vw,320px)] rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms]"
+      >
+        <SheetHeader className="text-left">
+          <SheetTitle className="font-wordmark">Relay</SheetTitle>
+        </SheetHeader>
         <nav className="mt-8 border-t border-border" aria-label="More navigation">
-          {links.map(([label, to]) => <SheetClose asChild key={to}><Link to={to} className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground">{label}</Link></SheetClose>)}
+          {links.map(([label, to]) => (
+            <SheetClose asChild key={to}>
+              <Link
+                to={to}
+                className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground"
+              >
+                {label}
+              </Link>
+            </SheetClose>
+          ))}
         </nav>
-        <Button variant="ghost" className="mt-6 h-11 w-full justify-start" onClick={onSignOut}><LogOut />Sign out</Button>
+        <Button variant="ghost" className="mt-6 h-11 w-full justify-start" onClick={onSignOut}>
+          <LogOut />
+          Sign out
+        </Button>
       </SheetContent>
     </Sheet>
   );
@@ -390,8 +540,24 @@ function CalendarMobileTabs({ counts }: { counts: Counts }) {
     { label: "Someday", count: counts.someday },
   ];
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 grid min-h-[60px] grid-cols-4 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] min-[821px]:hidden" aria-label="Task sections">
-      {tabs.map((tab) => <Link key={tab.label} to="/dashboard" className="relative flex min-w-0 flex-col items-center justify-center px-1 py-2 text-foreground"><span className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}>{tab.count}</span><span className="truncate text-[11px] uppercase tracking-[0.08em]">{tab.label}</span></Link>)}
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 grid min-h-[60px] grid-cols-4 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] min-[821px]:hidden"
+      aria-label="Task sections"
+    >
+      {tabs.map((tab) => (
+        <Link
+          key={tab.label}
+          to="/dashboard"
+          className="relative flex min-w-0 flex-col items-center justify-center px-1 py-2 text-foreground"
+        >
+          <span
+            className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}
+          >
+            {tab.count}
+          </span>
+          <span className="truncate text-[11px] uppercase tracking-[0.08em]">{tab.label}</span>
+        </Link>
+      ))}
     </nav>
   );
 }
@@ -411,20 +577,34 @@ function localISO(date: Date) {
 
 function fullDate(iso: string) {
   const [year, month, day] = iso.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function shortDate(iso: string) {
   const [year, month, day] = iso.split("-").map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function getDashboardCounts(tasks: Task[], today: string): Counts {
-  let overdue = 0, dueToday = 0, waiting = 0, coming = 0, someday = 0;
+  let overdue = 0,
+    dueToday = 0,
+    waiting = 0,
+    coming = 0,
+    someday = 0;
   for (const task of tasks) {
     if (task.status === "Waiting on Someone") waiting += 1;
-    if (!task.due_date) { if (task.status !== "Waiting on Someone") someday += 1; }
-    else if (task.due_date < today) overdue += 1;
+    if (!task.due_date) {
+      if (task.status !== "Waiting on Someone") someday += 1;
+    } else if (task.due_date < today) overdue += 1;
     else if (task.due_date === today) dueToday += 1;
     else coming += 1;
   }
