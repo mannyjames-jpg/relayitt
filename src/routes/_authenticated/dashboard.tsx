@@ -2,16 +2,7 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  LogOut,
-  Users,
-  CheckSquare,
-  Briefcase,
-  Settings as SettingsIcon,
-  Calendar as CalIcon,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Calendar as CalIcon, Menu } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { contactFns, taskFns } from "@/lib/api-client";
@@ -21,6 +12,14 @@ import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { daysSince, formatDateLabel, formatTime, todayISO } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { HeroSummary } from "@/components/HeroSummary";
@@ -36,7 +35,7 @@ import {
 } from "@/lib/task-style";
 
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const searchSchema = z.object({ google: z.string().optional() });
 
@@ -111,6 +110,8 @@ function Dashboard() {
   const [filter, setFilter] = useState<FilterSource>("All");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const quickCaptureRef = useRef<HTMLInputElement>(null);
+  const [captureHeight, setCaptureHeight] = useState(132);
+  const [currentSection, setCurrentSection] = useState<PanelKey>("overdue");
 
   const filteredTasks = useMemo(() => {
     if (filter === "All") return tasks as Task[];
@@ -267,236 +268,324 @@ function Dashboard() {
     };
   }, [filteredTasks, today]);
 
+  const dateLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
+  useEffect(() => {
+    let frame = 0;
+    const updateCurrentSection = () => {
+      frame = 0;
+      const threshold = window.innerHeight * 0.45;
+      const sections: Array<[PanelKey, string]> = [
+        ["overdue", "sec-overdue"],
+        ["today", "sec-today"],
+        ["waiting", "sec-waiting"],
+        ["upcoming", "sec-coming"],
+        ["someday", "sec-whenever"],
+      ];
+      let next: PanelKey = "overdue";
+      for (const [key, id] of sections) {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= threshold) next = key;
+      }
+      setCurrentSection(next);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateCurrentSection);
+    };
+    updateCurrentSection();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [filteredTasks.length]);
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const displayName = profile?.display_name?.trim() || "Relay user";
+  const initial = displayName.charAt(0).toUpperCase();
+  const showCalendarConnect = google && !google.connected && google.configured;
+
+  const moreMenu = (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-none min-[821px]:hidden"
+          aria-label="More"
+        >
+          <Menu className="h-5 w-5" strokeWidth={2} />
+        </Button>
+      </SheetTrigger>
+      <SheetContent
+        side="right"
+        className="w-[min(84vw,320px)] rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms]"
+      >
+        <SheetHeader className="text-left">
+          <SheetTitle className="font-wordmark">Relay</SheetTitle>
+        </SheetHeader>
+        <nav className="mt-8 border-t border-border" aria-label="More navigation">
+          {[
+            ["People", "/contacts"],
+            ["Completed", "/completed"],
+            ["Applicants", "/applicants"],
+            ["Settings", "/settings"],
+          ].map(([label, to]) => (
+            <SheetClose asChild key={to}>
+              <Link
+                to={to}
+                className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground"
+              >
+                {label}
+              </Link>
+            </SheetClose>
+          ))}
+        </nav>
+        <div className="mt-6 space-y-2">
+          {showCalendarConnect && (
+            <Button
+              variant="outline"
+              className="h-11 w-full justify-start rounded-none shadow-none"
+              onClick={connectGoogle}
+            >
+              <CalIcon className="h-4 w-4" strokeWidth={2} />
+              Connect Calendar
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            className="h-11 w-full justify-start rounded-none"
+            onClick={signOut}
+          >
+            <LogOut className="h-4 w-4" strokeWidth={2} />
+            Sign out
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="min-h-screen bg-background">
-        <QuickCapture ref={quickCaptureRef} filter={filter} onFilterChange={setFilter} />
+      <div className="min-h-screen bg-background min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]">
+        <DashboardSidebar
+          overdue={groups.overdue.length}
+          dueToday={groups.today.length}
+          waiting={waitingCount}
+          coming={upcomingCount}
+          whenever={groups.someday.length}
+          current={currentSection}
+          displayName={displayName}
+          initial={initial}
+          showCalendarConnect={!!showCalendarConnect}
+          onConnectCalendar={connectGoogle}
+          onSignOut={signOut}
+          onSection={scrollToSection}
+        />
 
-        <header className="mx-auto flex max-w-7xl items-center justify-end gap-1 px-4 pt-2">
-          <div className="flex shrink-0 items-center gap-1">
-            {google && !google.connected && google.configured && (
-              <Tip label="Link your calendar">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={connectGoogle}
-                  className="h-9 rounded-none text-xs"
-                  aria-label="Connect Google Calendar"
-                >
-                  <CalIcon className="mr-1 h-4 w-4" strokeWidth={2} />
-                  Connect Calendar
-                </Button>
-              </Tip>
-            )}
-            <Tip label="People">
-              <Link to="/contacts" aria-label="People">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <Users className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Completed tasks">
-              <Link to="/completed" aria-label="Completed tasks">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <CheckSquare className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Applicants">
-              <Link to="/applicants" aria-label="Applicants">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <Briefcase className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Settings">
-              <Link to="/settings" aria-label="Settings">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <SettingsIcon className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Sign out">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-none"
-                onClick={signOut}
-                aria-label="Sign out"
-              >
-                <LogOut className="h-5 w-5" strokeWidth={2} />
-              </Button>
-            </Tip>
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-7xl space-y-3 px-4 pb-16 pt-2">
-          {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
-          {tasksQ.isError && (
-            <ErrorState
-              message="Couldn't load your tasks. Try again."
-              onRetry={() => tasksQ.refetch()}
-            />
-          )}
-          <HeroSummary
-            greeting={greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"}
-            followUpCount={followUpCount}
-            upNext={upNext}
-            overdue={groups.overdue.length}
-            dueToday={groups.today.length}
-            waiting={waitingCount}
-            comingUp={upcomingCount}
-            whenever={groups.someday.length}
-            doneToday={0}
+        <div className="min-w-0">
+          <QuickCapture
+            ref={quickCaptureRef}
+            filter={filter}
+            onFilterChange={setFilter}
+            headerAction={moreMenu}
+            onHeightChange={setCaptureHeight}
           />
 
-          <OnboardingCard />
+          <main className="mx-auto max-w-[900px] space-y-8 px-5 pb-28 pt-2 min-[821px]:px-14 min-[821px]:pb-16">
+            {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
+            {tasksQ.isError && (
+              <ErrorState
+                message="Couldn't load your tasks. Try again."
+                onRetry={() => tasksQ.refetch()}
+              />
+            )}
+            <HeroSummary
+              dateLabel={dateLabel}
+              greeting={greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"}
+              followUpCount={followUpCount}
+              upNext={upNext}
+              overdue={groups.overdue.length}
+              dueToday={groups.today.length}
+              doneToday={0}
+            />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <Panel
-              title="Overdue"
-              subtitle="These slipped past their date"
-              count={groups.overdue.length}
-              group="overdue"
-              className="sm:col-span-2 xl:col-span-1"
-              open={open.overdue}
-              onToggle={() => toggle("overdue")}
-            >
-              {groups.overdue.length === 0 ? (
-                <EmptyLine>Nothing overdue — you're all caught up.</EmptyLine>
-              ) : (
-                <div className="space-y-1.5">
-                  {byPriority(groups.overdue).map((t) => (
-                    <TaskRow key={t.id} task={t} contacts={contacts} overdue />
-                  ))}
-                </div>
-              )}
-            </Panel>
+            <OnboardingCard />
 
-            <Panel
-              title="Due Today"
-              subtitle="Let's get these done first"
-              count={groups.today.length}
-              group="today"
-              className="sm:col-span-2 xl:col-span-1 xl:max-h-[calc(100vh-9rem)]"
-              open={open.today}
-              onToggle={() => toggle("today")}
-            >
-              {groups.today.length === 0 ? (
-                <EmptyLine>Nothing due today — lovely.</EmptyLine>
-              ) : (
-                <div className="space-y-1.5">
-                  {byPriority(groups.today).map((t) => (
-                    <TaskRow key={t.id} task={t} contacts={contacts} />
-                  ))}
-                </div>
-              )}
-            </Panel>
+            <div className="space-y-12">
+              <Panel
+                id="sec-overdue"
+                title="Overdue"
+                subtitle="These slipped past their date"
+                count={groups.overdue.length}
+                group="overdue"
+                stickyTop={captureHeight}
+                open={open.overdue}
+                onToggle={() => toggle("overdue")}
+              >
+                {groups.overdue.length === 0 ? (
+                  <EmptyLine>Nothing overdue — you're all caught up.</EmptyLine>
+                ) : (
+                  <div className="space-y-1.5">
+                    {byPriority(groups.overdue).map((t) => (
+                      <TaskRow key={t.id} task={t} contacts={contacts} overdue />
+                    ))}
+                  </div>
+                )}
+              </Panel>
 
-            <Panel
-              title="Waiting on Someone"
-              subtitle="Nothing to do here yet — just keeping tabs"
-              count={waitingCount}
-              group="waiting"
-              open={open.waiting}
-              onToggle={() => toggle("waiting")}
-            >
-              {waitingCount === 0 ? (
-                <EmptyLine>No one to chase right now.</EmptyLine>
-              ) : (
-                <div className="space-y-2.5">
-                  {groups.waitingGroups.map((g) => {
-                    const contact = g.contactId ? contacts.find((c) => c.id === g.contactId) : null;
-                    const label = contact
-                      ? contact.role
-                        ? `${contact.name} (${contact.role})`
-                        : contact.name
-                      : g.name || "Nobody named yet";
-                    return (
-                      <div key={g.key}>
-                        <div className="micro-label px-0.5 pb-1.5">{label}</div>
-                        <div className="space-y-1.5">
-                          {byPriority(g.tasks).map((t) => (
-                            <TaskRow key={t.id} task={t} contacts={contacts} showWaitingBadge />
-                          ))}
+              <Panel
+                id="sec-today"
+                title="Due Today"
+                subtitle="Let's get these done first"
+                count={groups.today.length}
+                group="today"
+                stickyTop={captureHeight}
+                open={open.today}
+                onToggle={() => toggle("today")}
+              >
+                {groups.today.length === 0 ? (
+                  <EmptyLine>Nothing due today — lovely.</EmptyLine>
+                ) : (
+                  <div className="space-y-1.5">
+                    {byPriority(groups.today).map((t) => (
+                      <TaskRow key={t.id} task={t} contacts={contacts} />
+                    ))}
+                  </div>
+                )}
+              </Panel>
+
+              <Panel
+                id="sec-waiting"
+                title="Waiting on Someone"
+                subtitle="Nothing to do here yet — just keeping tabs"
+                count={waitingCount}
+                group="waiting"
+                open={open.waiting}
+                onToggle={() => toggle("waiting")}
+                stickyTop={captureHeight}
+              >
+                {waitingCount === 0 ? (
+                  <EmptyLine>No one to chase right now.</EmptyLine>
+                ) : (
+                  <div className="space-y-2.5">
+                    {groups.waitingGroups.map((g) => {
+                      const contact = g.contactId
+                        ? contacts.find((c) => c.id === g.contactId)
+                        : null;
+                      const label = contact
+                        ? contact.role
+                          ? `${contact.name} (${contact.role})`
+                          : contact.name
+                        : g.name || "Nobody named yet";
+                      return (
+                        <div key={g.key}>
+                          <div className="micro-label px-0.5 pb-1.5">{label}</div>
+                          <div className="space-y-1.5">
+                            {byPriority(g.tasks).map((t) => (
+                              <TaskRow key={t.id} task={t} contacts={contacts} showWaitingBadge />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Panel>
+                      );
+                    })}
+                  </div>
+                )}
+              </Panel>
 
-            <Panel
-              title="Coming Up"
-              subtitle="Nothing urgent — just so you're not surprised"
-              count={upcomingCount}
-              group="upcoming"
-              open={open.upcoming}
-              onToggle={() => toggle("upcoming")}
-            >
-              {upcomingCount === 0 ? (
-                <EmptyLine>Nothing on the horizon.</EmptyLine>
-              ) : (
-                <div className="space-y-2.5">
-                  {groups.upcoming.map((g) => (
-                    <div key={g.date}>
-                      <div className="micro-label px-0.5 pb-1.5">{formatDateLabel(g.date)}</div>
-                      <div className="space-y-1.5">
-                        {byPriority(g.tasks).map((t) => (
-                          <TaskRow key={t.id} task={t} contacts={contacts} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-
-            <Panel
-              title="Whenever You Get To It"
-              subtitle="No date on these — dip in when you have a moment"
-              count={groups.someday.length}
-              group="whenever"
-              className="sm:col-span-2"
-              open={open.someday}
-              onToggle={() => toggle("someday")}
-            >
-              {groups.someday.length === 0 ? (
-                <EmptyLine>Nothing parked here.</EmptyLine>
-              ) : (
-                <div className="space-y-3">
-                  {groupByCategory(groups.someday).map((g) => {
-                    const Icon = CATEGORY_ICON[g.category];
-                    return (
-                      <div key={g.category}>
-                        <div className="flex items-center gap-2 px-1 pb-1">
-                          <Icon
-                            className="h-4 w-4"
-                            strokeWidth={2}
-                            style={{ color: CATEGORY_COLOR[g.category] }}
-                          />
-                          <span className="micro-label">{g.category}</span>
-                        </div>
+              <Panel
+                id="sec-coming"
+                title="Coming Up"
+                subtitle="Nothing urgent — just so you're not surprised"
+                count={upcomingCount}
+                group="upcoming"
+                open={open.upcoming}
+                onToggle={() => toggle("upcoming")}
+                stickyTop={captureHeight}
+              >
+                {upcomingCount === 0 ? (
+                  <EmptyLine>Nothing on the horizon.</EmptyLine>
+                ) : (
+                  <div className="space-y-2.5">
+                    {groups.upcoming.map((g) => (
+                      <div key={g.date}>
+                        <div className="micro-label px-0.5 pb-1.5">{formatDateLabel(g.date)}</div>
                         <div className="space-y-1.5">
                           {byPriority(g.tasks).map((t) => (
                             <TaskRow key={t.id} task={t} contacts={contacts} />
                           ))}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Panel>
-          </div>
+                    ))}
+                  </div>
+                )}
+              </Panel>
 
-          {tasks.length === 0 && (
-            <p className="pt-2 text-center text-sm text-muted-foreground">
-              Nothing here yet — type your first task up top.
-            </p>
-          )}
-        </main>
+              <Panel
+                id="sec-whenever"
+                title="Whenever You Get To It"
+                subtitle="No date on these — dip in when you have a moment"
+                count={groups.someday.length}
+                group="whenever"
+                open={open.someday}
+                onToggle={() => toggle("someday")}
+                stickyTop={captureHeight}
+              >
+                {groups.someday.length === 0 ? (
+                  <EmptyLine>Nothing parked here.</EmptyLine>
+                ) : (
+                  <div className="space-y-3">
+                    {groupByCategory(groups.someday).map((g) => {
+                      const Icon = CATEGORY_ICON[g.category];
+                      return (
+                        <div key={g.category}>
+                          <div className="flex items-center gap-2 px-1 pb-1">
+                            <Icon
+                              className="h-4 w-4"
+                              strokeWidth={2}
+                              style={{ color: CATEGORY_COLOR[g.category] }}
+                            />
+                            <span className="micro-label">{g.category}</span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {byPriority(g.tasks).map((t) => (
+                              <TaskRow key={t.id} task={t} contacts={contacts} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            {tasks.length === 0 && (
+              <p className="pt-2 text-center text-sm text-muted-foreground">
+                Nothing here yet — type your first task up top.
+              </p>
+            )}
+          </main>
+        </div>
+
+        <MobileTabBar
+          overdue={groups.overdue.length}
+          dueToday={groups.today.length}
+          waiting={waitingCount}
+          coming={upcomingCount}
+          whenever={groups.someday.length}
+          current={currentSection}
+          onSection={scrollToSection}
+        />
         <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
           <DialogContent className="max-w-sm rounded-none border-border-strong bg-card shadow-none sm:rounded-none">
             <DialogHeader>
@@ -519,68 +608,238 @@ function Dashboard() {
   );
 }
 
-function Tip({ label, children }: { label: string; children: React.ReactNode }) {
+type DashboardNavigationProps = {
+  overdue: number;
+  dueToday: number;
+  waiting: number;
+  coming: number;
+  whenever: number;
+  current: PanelKey;
+  onSection: (id: string) => void;
+};
+
+function DashboardSidebar({
+  overdue,
+  dueToday,
+  waiting,
+  coming,
+  whenever,
+  current,
+  displayName,
+  initial,
+  showCalendarConnect,
+  onConnectCalendar,
+  onSignOut,
+  onSection,
+}: DashboardNavigationProps & {
+  displayName: string;
+  initial: string;
+  showCalendarConnect: boolean;
+  onConnectCalendar: () => void;
+  onSignOut: () => void;
+}) {
+  const sectionLinks: Array<{
+    label: string;
+    count: number;
+    id: string;
+    active: boolean;
+    alert?: boolean;
+  }> = [
+    {
+      label: "Today",
+      count: overdue + dueToday,
+      id: "sec-overdue",
+      active: current === "overdue" || current === "today",
+      alert: overdue > 0,
+    },
+    {
+      label: "Waiting on someone",
+      count: waiting,
+      id: "sec-waiting",
+      active: current === "waiting",
+    },
+    { label: "Coming up", count: coming, id: "sec-coming", active: current === "upcoming" },
+    { label: "Whenever", count: whenever, id: "sec-whenever", active: current === "someday" },
+  ];
+  const routeLinks = [
+    { label: "People", to: "/contacts" as const },
+    { label: "Completed", to: "/completed" as const },
+    { label: "Applicants", to: "/applicants" as const },
+    { label: "Settings", to: "/settings" as const },
+  ];
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">{children}</span>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
+    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 py-6 min-[821px]:flex">
+      <div className="font-wordmark px-2 text-foreground">Relay</div>
+      <nav className="mt-10" aria-label="Task sections">
+        {sectionLinks.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSection(item.id)}
+            aria-current={item.active ? "location" : undefined}
+            className={`grid min-h-11 w-full grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 px-3 text-left text-[13px] ${
+              item.active
+                ? "border-foreground font-semibold text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="truncate">{item.label}</span>
+            <span className={item.alert ? "text-alert" : "text-muted-foreground"}>
+              {item.count}
+            </span>
+          </button>
+        ))}
+      </nav>
+      <nav className="mt-5 border-t border-border pt-5" aria-label="Dashboard navigation">
+        {routeLinks.map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className="flex min-h-11 items-center border-l-2 border-transparent px-3 text-[13px] text-muted-foreground hover:text-foreground"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="mt-auto border-t border-border pt-5">
+        <div className="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-3">
+          <span className="grid h-8 w-8 place-items-center bg-primary text-xs font-semibold text-primary-foreground">
+            {initial}
+          </span>
+          <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+        </div>
+        {showCalendarConnect && (
+          <Button
+            variant="outline"
+            className="mt-4 h-10 w-full justify-start rounded-none text-xs shadow-none"
+            onClick={onConnectCalendar}
+          >
+            <CalIcon className="h-4 w-4" strokeWidth={2} />
+            Connect Calendar
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          className="mt-1 h-10 w-full justify-start rounded-none px-2 text-xs"
+          onClick={onSignOut}
+        >
+          <LogOut className="h-4 w-4" strokeWidth={2} />
+          Sign out
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+function MobileTabBar({
+  overdue,
+  dueToday,
+  waiting,
+  coming,
+  whenever,
+  current,
+  onSection,
+}: DashboardNavigationProps) {
+  const tabs = [
+    {
+      label: "Today",
+      count: overdue + dueToday,
+      id: "sec-overdue",
+      active: current === "overdue" || current === "today",
+      alert: overdue > 0,
+    },
+    { label: "Waiting", count: waiting, id: "sec-waiting", active: current === "waiting" },
+    { label: "Coming", count: coming, id: "sec-coming", active: current === "upcoming" },
+    { label: "Someday", count: whenever, id: "sec-whenever", active: current === "someday" },
+  ];
+  return (
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 grid min-h-[60px] grid-cols-4 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] min-[821px]:hidden"
+      aria-label="Task sections"
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onSection(tab.id)}
+          aria-current={tab.active ? "location" : undefined}
+          className="relative flex min-w-0 flex-col items-center justify-center px-1 py-2 text-foreground"
+        >
+          {tab.active && (
+            <span
+              aria-hidden
+              className="absolute left-[20%] right-[20%] top-0 h-0.5 bg-foreground"
+            />
+          )}
+          <span
+            className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}
+          >
+            {tab.count}
+          </span>
+          <span className="truncate text-[11px] uppercase tracking-[0.08em]">{tab.label}</span>
+        </button>
+      ))}
+    </nav>
   );
 }
 
 function Panel({
+  id,
   title,
   subtitle,
   count,
   children,
   group,
-  className,
+  stickyTop,
   open,
   onToggle,
 }: {
+  id: string;
   title: string;
   subtitle: string;
   count: number;
   children: React.ReactNode;
   group: GroupKey;
-  className?: string;
+  stickyTop: number;
   open?: boolean;
   onToggle?: () => void;
 }) {
   return (
-    <section
-      className={
-        "relative flex min-w-0 flex-col overflow-hidden border border-border bg-card p-4 " +
-        (className ?? "")
-      }
-    >
+    <section id={id} className="relative min-w-0" style={{ scrollMarginTop: stickyTop + 12 }}>
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-start gap-2 pb-2.5 text-left"
-        style={{ borderBottom: GROUP_RULE[group] }}
+        className="sticky z-20 grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-2 bg-background py-3 text-left"
+        style={{
+          top: stickyTop,
+          borderTop:
+            group === "overdue"
+              ? "2px solid var(--alert)"
+              : group === "waiting" || group === "upcoming"
+                ? "1px solid var(--border-strong)"
+                : group === "whenever"
+                  ? "1px solid var(--border)"
+                  : GROUP_RULE[group],
+        }}
       >
         {open ? (
-          <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
         ) : (
-          <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
         )}
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline justify-between gap-2">
-            <h2 className="truncate font-display text-foreground">{title}</h2>
-            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
-              {count}
-            </span>
-          </span>
-          <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+        <span className="flex min-w-0 items-baseline gap-3">
+          <h2 className="shrink-0 font-display text-foreground">{title}</h2>
+          <span className="hidden min-w-0 truncate text-[11px] text-muted-foreground sm:block">
             {subtitle}
           </span>
         </span>
+        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
+          {count}
+        </span>
       </button>
-      {open && <div className="min-h-0 flex-1 overflow-y-auto pt-3">{children}</div>}
+      {open && <div className="pt-3">{children}</div>}
     </section>
   );
 }

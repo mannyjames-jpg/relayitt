@@ -352,15 +352,23 @@ export function TaskRow({
   const followupOverdue =
     !!task.next_followup_reminder_at &&
     new Date(task.next_followup_reminder_at).getTime() < Date.now();
+  const waitingNeedsAttention = !!showWaitingBadge && (waitDays >= 3 || followupOverdue);
+  const lateDays = task.due_date ? Math.max(1, daysSince(task.due_date)) : 0;
   const nudgeContact = contacts.find((c) => c.id === task.assigned_to) ?? null;
 
   return (
     <div
       className={cn(
-        "group relative overflow-hidden border border-border bg-card transition-colors hover:border-border-strong",
+        "group relative border border-border bg-card transition-colors hover:border-border-strong",
         completing && "animate-complete",
       )}
     >
+      {waitingNeedsAttention && (
+        <span
+          aria-hidden
+          className="absolute -left-3 top-0 h-full w-0.5 bg-alert min-[821px]:-left-3.5"
+        />
+      )}
       <div className="flex items-start gap-2.5 px-3 py-2.5">
         <div className="relative mt-0.5 shrink-0">
           {burst && <PetalBurst />}
@@ -459,9 +467,9 @@ export function TaskRow({
 
             {task.category && <span className={CATEGORY_PILL[task.category]}>{task.category}</span>}
             {overdue && (
-              <span className="tag-emphasis">
+              <span className="tag-emphasis border-alert text-alert">
                 <AlertCircle className="h-2.5 w-2.5" strokeWidth={2.5} />
-                Past its date
+                {lateDays} {lateDays === 1 ? "day" : "days"} late
               </span>
             )}
             {isUrgent && <span className="tag-emphasis">Urgent</span>}

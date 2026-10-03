@@ -47,8 +47,10 @@ export const QuickCapture = forwardRef<
   {
     filter: FilterSource;
     onFilterChange: (f: FilterSource) => void;
+    headerAction?: React.ReactNode;
+    onHeightChange?: (height: number) => void;
   }
->(function QuickCapture({ filter, onFilterChange }, forwardedRef) {
+>(function QuickCapture({ filter, onFilterChange, headerAction, onHeightChange }, forwardedRef) {
   const qc = useQueryClient();
   const create = taskFns.create;
   const createC = contactFns.create;
@@ -78,6 +80,7 @@ export const QuickCapture = forwardRef<
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   function setInputRef(node: HTMLInputElement | null) {
     inputRef.current = node;
@@ -104,6 +107,16 @@ export const QuickCapture = forwardRef<
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    const node = captureRef.current;
+    if (!node || !onHeightChange) return;
+    const report = () => onHeightChange(Math.ceil(node.getBoundingClientRect().height));
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [onHeightChange]);
 
   const parsed = useMemo(() => parseQuickEntry(title), [title]);
 
@@ -162,10 +175,13 @@ export const QuickCapture = forwardRef<
   }
 
   return (
-    <div className="sticky top-0 z-20 border-b border-border-strong bg-background/95 backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 py-3">
-        <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 pb-3 sm:flex sm:justify-between">
-          <span className="font-wordmark text-foreground">Relay</span>
+    <div
+      ref={captureRef}
+      className="sticky top-0 z-30 border-b border-border-strong bg-background/95 backdrop-blur"
+    >
+      <div className="mx-auto max-w-[900px] px-5 py-3 min-[821px]:px-14">
+        <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 pb-3 sm:flex sm:justify-between">
+          <span className="font-wordmark text-foreground min-[821px]:hidden">Relay</span>
           <div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
             <span className="micro-label hidden shrink-0 sm:inline">Showing</span>
             <div
@@ -194,6 +210,7 @@ export const QuickCapture = forwardRef<
               })}
             </div>
           </div>
+          {headerAction}
         </div>
 
         <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
@@ -203,6 +220,12 @@ export const QuickCapture = forwardRef<
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setTitle("");
+                  e.currentTarget.blur();
+                  return;
+                }
                 if (
                   e.key === "Enter" &&
                   !e.shiftKey &&
