@@ -151,7 +151,7 @@ function CalendarPage() {
           onSignOut={signOut}
         />
         <main className="min-w-0 bg-card px-5 pb-28 pt-6 sm:px-8 sm:pb-12 min-[821px]:px-14">
-          <div className="mx-auto max-w-[1120px]">
+          <div className="mx-auto max-w-[900px]">
             <header className="mb-6 flex min-w-0 items-start justify-between gap-4 border-b border-border pb-5">
               <div className="min-w-0">
                 <div className="mb-2 flex items-center gap-2 min-[821px]:hidden">

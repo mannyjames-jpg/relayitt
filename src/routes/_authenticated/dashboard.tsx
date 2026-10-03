@@ -449,7 +449,7 @@ function Dashboard() {
                 {groups.overdue.length === 0 ? (
                   <EmptyLine>Nothing overdue — you're all caught up.</EmptyLine>
                 ) : (
-                  <div className="space-y-1.5">
+                  <div>
                     {byPriority(groups.overdue).map((t) => (
                       <TaskRow key={t.id} task={t} contacts={contacts} overdue />
                     ))}
@@ -470,7 +470,7 @@ function Dashboard() {
                 {groups.today.length === 0 ? (
                   <EmptyLine>Today is clear.</EmptyLine>
                 ) : (
-                  <div className="space-y-1.5">
+                  <div>
                     {byPriority(groups.today).map((t) => (
                       <TaskRow key={t.id} task={t} contacts={contacts} />
                     ))}
@@ -515,7 +515,7 @@ function Dashboard() {
                               <strong className="font-semibold text-foreground">{label}</strong>
                             )}
                           </div>
-                          <div className="space-y-1.5">
+                          <div>
                             {byPriority(g.tasks).map((t) => (
                               <TaskRow key={t.id} task={t} contacts={contacts} showWaitingBadge />
                             ))}
@@ -546,7 +546,7 @@ function Dashboard() {
                         <div className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
                           {formatDateLabel(g.date)}
                         </div>
-                        <div className="space-y-1.5">
+                        <div>
                           {byPriority(g.tasks).map((t) => (
                             <TaskRow key={t.id} task={t} contacts={contacts} />
                           ))}
@@ -570,20 +570,15 @@ function Dashboard() {
                 {groups.someday.length === 0 ? (
                   <EmptyLine>Nothing parked here.</EmptyLine>
                 ) : (
-                  <div className="space-y-3">
+                  <div>
                     {groupByCategory(groups.someday).map((g) => {
                       const Icon = CATEGORY_ICON[g.category];
                       return (
                         <div key={g.category}>
-                          <div className="flex items-center gap-2 px-1 pb-1">
-                            <Icon
-                              className="h-4 w-4"
-                              strokeWidth={2}
-                              style={{ color: CATEGORY_COLOR[g.category] }}
-                            />
-                            <span className="micro-label">{g.category}</span>
+                          <div className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                            <span>{g.category}</span>
                           </div>
-                          <div className="space-y-1.5">
+                          <div>
                             {byPriority(g.tasks).map((t) => (
                               <TaskRow key={t.id} task={t} contacts={contacts} />
                             ))}
