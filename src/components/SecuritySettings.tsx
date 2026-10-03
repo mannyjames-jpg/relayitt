@@ -49,7 +49,10 @@ export function SecuritySettings() {
   const [offMode, setOffMode] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const log = useQuery({ queryKey: ["exec-audit"], queryFn: () => getLog({ data: { limit: 50 } }) });
+  const log = useQuery({
+    queryKey: ["exec-audit"],
+    queryFn: () => getLog({ data: { limit: 50 } }),
+  });
 
   async function refresh() {
     const { data } = await supabase.auth.mfa.listFactors();
@@ -73,7 +76,10 @@ export function SecuritySettings() {
           await supabase.auth.mfa.unenroll({ factorId: f.id });
         }
       }
-      const { data: e, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `Relay ${Date.now()}` });
+      const { data: e, error } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: `Relay ${Date.now()}`,
+      });
       if (error || !e) throw new Error("Couldn't start setup. Try again.");
       setEnroll({ id: e.id, qr: e.totp.qr_code, secret: e.totp.secret });
     } catch (err) {
@@ -151,15 +157,30 @@ export function SecuritySettings() {
           <div className="space-y-3 pt-2">
             <div className="border border-foreground px-4 py-3 text-[15px]">
               <span className="font-semibold">Two-step login is on</span>
-              <span className="text-muted-foreground"> · Executive info asks for a 6-digit code</span>
+              <span className="text-muted-foreground">
+                {" "}
+                · Executive info asks for a 6-digit code
+              </span>
             </div>
             {offMode ? (
               <div className="flex flex-wrap items-center gap-2">
                 {codeInput(turnOff)}
-                <button type="button" className={ghost} disabled={busy || !codeOk(code)} onClick={turnOff}>
+                <button
+                  type="button"
+                  className={ghost}
+                  disabled={busy || !codeOk(code)}
+                  onClick={turnOff}
+                >
                   Confirm turn off
                 </button>
-                <button type="button" className={ghost} onClick={() => { setOffMode(false); setCode(""); }}>
+                <button
+                  type="button"
+                  className={ghost}
+                  onClick={() => {
+                    setOffMode(false);
+                    setCode("");
+                  }}
+                >
                   Cancel
                 </button>
               </div>
@@ -171,46 +192,63 @@ export function SecuritySettings() {
               </div>
             )}
             <p className="text-[13px] text-muted-foreground">
-              Recovery codes aren't available for two-step login. If you lose your device, you'll need to be reset by the account owner.
+              Recovery codes aren't available for two-step login. If you lose your device, you'll
+              need to be reset by the account owner.
             </p>
           </div>
         ) : (
           <ol className="pt-1">
             <li className="grid grid-cols-[40px_1fr] border-t border-border py-4">
-              <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">01</span>
+              <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">
+                01
+              </span>
               <div>
                 <p className="text-[15px]">Open your password app or authenticator</p>
                 <p className="mt-1 text-[13px] text-muted-foreground">
-                  Apple Passwords, Google Authenticator, Bitwarden, or Authy all work and are free. Choose to add a new code.
+                  Apple Passwords, Google Authenticator, Bitwarden, or Authy all work and are free.
+                  Choose to add a new code.
                 </p>
               </div>
             </li>
             <li className="grid grid-cols-[40px_1fr] border-t border-border py-4">
-              <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">02</span>
+              <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">
+                02
+              </span>
               <div>
                 <p className="text-[15px]">Scan this code</p>
                 <div className="mt-3 flex h-[168px] w-[168px] items-center justify-center border border-foreground bg-white p-2">
                   {enroll ? (
                     <img src={enroll.qr} alt="Two-step login QR code" className="h-full w-full" />
                   ) : (
-                    <span className="text-xs text-muted-foreground">{busy ? "Preparing…" : ""}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {busy ? "Preparing…" : ""}
+                    </span>
                   )}
                 </div>
                 {enroll && (
                   <p className="mt-3 text-[13px]">
-                    <span className="mr-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Key</span>
+                    <span className="mr-2 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Key
+                    </span>
                     <span className="break-all font-mono">{enroll.secret}</span>
                   </p>
                 )}
               </div>
             </li>
             <li className="grid grid-cols-[40px_1fr] border-t border-border py-4">
-              <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">03</span>
+              <span className="text-[12px] font-semibold tabular-nums text-muted-foreground">
+                03
+              </span>
               <div>
                 <p className="text-[15px]">Type the 6-digit code it shows</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {codeInput(verify)}
-                  <button type="button" className={cn(ghost, "h-12")} disabled={busy || !enroll || !codeOk(code)} onClick={verify}>
+                  <button
+                    type="button"
+                    className={cn(ghost, "h-12")}
+                    disabled={busy || !enroll || !codeOk(code)}
+                    onClick={verify}
+                  >
                     Verify
                   </button>
                 </div>
@@ -226,30 +264,52 @@ export function SecuritySettings() {
           <div className="flex items-start justify-between gap-3">
             <div>
               Sensitive fields are encrypted before they are saved
-              <div className="text-[13px] text-muted-foreground">Key stored as a project secret, never in the database</div>
+              <div className="text-[13px] text-muted-foreground">
+                Key stored as a project secret, never in the database
+              </div>
             </div>
-            <span className="border border-foreground px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em]">Active</span>
+            <span className="border border-foreground px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.14em]">
+              Active
+            </span>
           </div>
         </Row>
         <Row label="Auto lock">Executive info locks after 10 minutes idle</Row>
-        <Row label="Hidden by default">Numbers show as dots until you tap Show, then hide again after 30 seconds</Row>
-        <Row label="Passwords">Never stored here. Each login is saved in your password app, and Relay keeps only its name</Row>
+        <Row label="Hidden by default">
+          Numbers show as dots until you tap Show, then hide again after 30 seconds
+        </Row>
+        <Row label="Passwords">
+          Never stored here. Each login is saved in your password app, and Relay keeps only its name
+        </Row>
       </div>
 
       <div>
         <GroupHeader title="Activity" hint="Last 50" />
         {log.isError ? (
-          <p className="border-t border-border py-4 text-sm text-muted-foreground">Couldn't load activity.</p>
+          <p className="border-t border-border py-4 text-sm text-muted-foreground">
+            Couldn't load activity.
+          </p>
         ) : (log.data ?? []).length === 0 ? (
-          <p className="border-t border-border py-4 text-sm text-muted-foreground">No activity yet.</p>
+          <p className="border-t border-border py-4 text-sm text-muted-foreground">
+            No activity yet.
+          </p>
         ) : (
           <ul>
             {(log.data ?? []).map((a) => (
-              <li key={a.id} className="flex items-baseline justify-between gap-4 border-t border-border py-3">
+              <li
+                key={a.id}
+                className="flex items-baseline justify-between gap-4 border-t border-border py-3"
+              >
                 <span className="whitespace-nowrap text-[13px] tabular-nums text-muted-foreground">
-                  {new Date(a.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  {new Date(a.created_at).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
                 </span>
-                <span className="min-w-0 truncate text-right text-[15px]">{a.label ?? ACTION_TEXT[a.action] ?? a.action}</span>
+                <span className="min-w-0 truncate text-right text-[15px]">
+                  {a.label ?? ACTION_TEXT[a.action] ?? a.action}
+                </span>
               </li>
             ))}
           </ul>

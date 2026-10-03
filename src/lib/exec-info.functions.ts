@@ -49,7 +49,10 @@ export const unlockExecInfo = createServerFn({ method: "POST" })
     if (!isAal2(claims)) throw new Error(LOCKED);
     const { error } = await supabase
       .from("exec_info_session")
-      .upsert({ user_id: userId, last_active_at: new Date().toISOString() }, { onConflict: "user_id" });
+      .upsert(
+        { user_id: userId, last_active_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
     if (error) throw new Error(LOCKED);
     await audit(supabase, userId, "unlock", null);
     return { ok: true };
@@ -88,8 +91,22 @@ export const listExecInfo = createServerFn({ method: "GET" })
     return {
       fields: (f.data ?? []).map((x) =>
         x.is_secret
-          ? { id: x.id, section: x.section, field_key: x.field_key, is_secret: true as const, has_value: !!x.value_cipher, updated_at: x.updated_at }
-          : { id: x.id, section: x.section, field_key: x.field_key, is_secret: false as const, value: x.value_plain, updated_at: x.updated_at },
+          ? {
+              id: x.id,
+              section: x.section,
+              field_key: x.field_key,
+              is_secret: true as const,
+              has_value: !!x.value_cipher,
+              updated_at: x.updated_at,
+            }
+          : {
+              id: x.id,
+              section: x.section,
+              field_key: x.field_key,
+              is_secret: false as const,
+              value: x.value_plain,
+              updated_at: x.updated_at,
+            },
       ),
       rows: (r.data ?? []).map((x) => ({
         id: x.id,
@@ -176,10 +193,19 @@ export const saveExecField = createServerFn({ method: "POST" })
         value_cipher = await encryptSecret(value);
       } else value_plain = value;
     }
-    const { error } = await supabase.from("exec_info_fields").upsert(
-      { user_id: userId, section: data.section, field_key: data.field_key, value_plain, value_cipher, is_secret: secret },
-      { onConflict: "user_id,section,field_key" },
-    );
+    const { error } = await supabase
+      .from("exec_info_fields")
+      .upsert(
+        {
+          user_id: userId,
+          section: data.section,
+          field_key: data.field_key,
+          value_plain,
+          value_cipher,
+          is_secret: secret,
+        },
+        { onConflict: "user_id,section,field_key" },
+      );
     if (error) throw new Error("Could not save");
     await audit(supabase, userId, "edit", `Edited ${fieldLabel(data.section, data.field_key)}`);
     return { ok: true };
@@ -220,10 +246,18 @@ export const saveExecRow = createServerFn({ method: "POST" })
     }
     let id = data.id;
     if (id) {
-      const { error } = await supabase.from("exec_info_rows").update(patch).eq("id", id).eq("user_id", userId);
+      const { error } = await supabase
+        .from("exec_info_rows")
+        .update(patch)
+        .eq("id", id)
+        .eq("user_id", userId);
       if (error) throw new Error("Could not save");
     } else {
-      const { data: row, error } = await supabase.from("exec_info_rows").insert(patch).select("id").single();
+      const { data: row, error } = await supabase
+        .from("exec_info_rows")
+        .insert(patch)
+        .select("id")
+        .single();
       if (error || !row) throw new Error("Could not save");
       id = row.id;
     }
@@ -243,7 +277,11 @@ export const deleteExecRow = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("user_id", userId)
       .maybeSingle();
-    const { error } = await supabase.from("exec_info_rows").delete().eq("id", data.id).eq("user_id", userId);
+    const { error } = await supabase
+      .from("exec_info_rows")
+      .delete()
+      .eq("id", data.id)
+      .eq("user_id", userId);
     if (error) throw new Error("Could not delete");
     await audit(supabase, userId, "edit", `Deleted ${row ? rowLabel(row.kind, row.data) : "row"}`);
     return { ok: true };

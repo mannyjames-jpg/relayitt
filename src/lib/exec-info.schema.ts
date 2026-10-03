@@ -101,11 +101,34 @@ export const EXEC_ROW_DEFS: Record<
   { label: string; columns: string[]; hasSecret: boolean; secretLabel?: string }
 > = {
   child: { label: "Child", columns: ["name", "dob", "school_notes"], hasSecret: false },
-  date: { label: "Important date", columns: ["occasion", "date", "relationship", "notes"], hasSecret: false },
-  airline: { label: "Airline", columns: ["program", "login_item"], hasSecret: true, secretLabel: "member number" },
-  hotel: { label: "Hotel", columns: ["program", "login_item"], hasSecret: true, secretLabel: "member number" },
-  other: { label: "Loyalty", columns: ["program", "login_item"], hasSecret: true, secretLabel: "member number" },
-  pro: { label: "Professional", columns: ["role", "name_firm", "phone", "email"], hasSecret: false },
+  date: {
+    label: "Important date",
+    columns: ["occasion", "date", "relationship", "notes"],
+    hasSecret: false,
+  },
+  airline: {
+    label: "Airline",
+    columns: ["program", "login_item"],
+    hasSecret: true,
+    secretLabel: "member number",
+  },
+  hotel: {
+    label: "Hotel",
+    columns: ["program", "login_item"],
+    hasSecret: true,
+    secretLabel: "member number",
+  },
+  other: {
+    label: "Loyalty",
+    columns: ["program", "login_item"],
+    hasSecret: true,
+    secretLabel: "member number",
+  },
+  pro: {
+    label: "Professional",
+    columns: ["role", "name_firm", "phone", "email"],
+    hasSecret: false,
+  },
 };
 
 export function findField(section: string, key: string): FieldDef | undefined {
