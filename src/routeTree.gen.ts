@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedExecutiveInfoRouteImport } from './routes/_authenticated/executive-info'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCompletedRouteImport } from './routes/_authenticated/completed'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
@@ -52,6 +53,12 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedExecutiveInfoRoute =
+  AuthenticatedExecutiveInfoRouteImport.update({
+    id: '/executive-info',
+    path: '/executive-info',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/completed': typeof AuthenticatedCompletedRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/executive-info': typeof AuthenticatedExecutiveInfoRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts/': typeof AuthenticatedContactsIndexRoute
@@ -147,6 +155,7 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/completed': typeof AuthenticatedCompletedRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/executive-info': typeof AuthenticatedExecutiveInfoRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contacts': typeof AuthenticatedContactsIndexRoute
@@ -168,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/completed': typeof AuthenticatedCompletedRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/executive-info': typeof AuthenticatedExecutiveInfoRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contacts/': typeof AuthenticatedContactsIndexRoute
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/completed'
     | '/dashboard'
+    | '/executive-info'
     | '/settings'
     | '/contacts/$id'
     | '/contacts/'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/completed'
     | '/dashboard'
+    | '/executive-info'
     | '/settings'
     | '/contacts/$id'
     | '/contacts'
@@ -228,6 +240,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar'
     | '/_authenticated/completed'
     | '/_authenticated/dashboard'
+    | '/_authenticated/executive-info'
     | '/_authenticated/settings'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contacts/'
@@ -288,6 +301,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/executive-info': {
+      id: '/_authenticated/executive-info'
+      path: '/executive-info'
+      fullPath: '/executive-info'
+      preLoaderRoute: typeof AuthenticatedExecutiveInfoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -389,6 +409,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCompletedRoute: typeof AuthenticatedCompletedRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedExecutiveInfoRoute: typeof AuthenticatedExecutiveInfoRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedContactsIdRoute: typeof AuthenticatedContactsIdRoute
   AuthenticatedContactsIndexRoute: typeof AuthenticatedContactsIndexRoute
@@ -399,6 +420,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCompletedRoute: AuthenticatedCompletedRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedExecutiveInfoRoute: AuthenticatedExecutiveInfoRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedContactsIdRoute: AuthenticatedContactsIdRoute,
   AuthenticatedContactsIndexRoute: AuthenticatedContactsIndexRoute,

@@ -8,14 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getProfile, saveProfile } from "@/lib/profile.functions";
-import {
-  applyFont,
-  FONT_LABELS,
-  FONT_STORAGE_KEY,
-  type FontChoice,
-} from "@/lib/fonts";
+import { applyFont, FONT_LABELS, FONT_STORAGE_KEY, type FontChoice } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { SecuritySettings } from "@/components/SecuritySettings";
+import { AppMobileTabs } from "@/components/AppSidebar";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -67,8 +63,7 @@ function Settings() {
       qc.invalidateQueries({ queryKey: ["profile"] });
       toast.success("Settings saved");
     },
-    onError: (e) =>
-      toast.error(e instanceof Error ? e.message : "Couldn't save settings"),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Couldn't save settings"),
   });
 
   function chooseFont(f: FontChoice) {
@@ -90,7 +85,7 @@ function Settings() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-2xl space-y-6 px-4 py-6 pb-28 min-[821px]:pb-6">
         <SecuritySettings />
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="font-display">Profile</h2>
@@ -114,9 +109,7 @@ function Settings() {
 
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="font-display">Typeface</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Applied everywhere in the app.
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Applied everywhere in the app.</p>
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             {FONTS.map((f) => (
               <button
@@ -131,12 +124,8 @@ function Settings() {
                     : "border-border hover:bg-secondary/60",
                 )}
               >
-                <span className="block text-sm font-semibold">
-                  {FONT_LABELS[f]}
-                </span>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  Aa Bb Cc — 123
-                </span>
+                <span className="block text-sm font-semibold">{FONT_LABELS[f]}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">Aa Bb Cc — 123</span>
               </button>
             ))}
           </div>
@@ -155,6 +144,7 @@ function Settings() {
           </Button>
         </div>
       </main>
+      <AppMobileTabs current="/settings" />
     </div>
   );
 }
