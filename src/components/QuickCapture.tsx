@@ -76,6 +76,8 @@ export const QuickCapture = forwardRef<
   const [repeat, setRepeat] = useState<Recurrence>(NO_RECURRENCE);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [shake, setShake] = useState(false);
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
@@ -117,6 +119,13 @@ export const QuickCapture = forwardRef<
     observer.observe(node);
     return () => observer.disconnect();
   }, [onHeightChange]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const parsed = useMemo(() => parseQuickEntry(title), [title]);
 
@@ -177,13 +186,72 @@ export const QuickCapture = forwardRef<
   return (
     <div
       ref={captureRef}
-      className="sticky top-0 z-30 border-b border-border-strong bg-background/95 backdrop-blur"
+      className={cn(
+        "sticky top-0 z-30 bg-card",
+        scrolled && "border-b border-border",
+      )}
     >
-      <div className="mx-auto max-w-[900px] px-5 py-3 min-[821px]:px-14">
-        <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 pb-3 sm:flex sm:justify-between">
-          <span className="font-wordmark text-foreground min-[821px]:hidden">Relay</span>
-          <div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
-            <span className="micro-label hidden shrink-0 sm:inline">Showing</span>
+      <div className="mx-auto max-w-[900px] px-5 pb-3.5 pt-3 min-[821px]:px-14">
+        <div className="mb-3 flex items-center justify-between min-[821px]:hidden">
+          <span className="font-wordmark text-foreground">Relay</span>
+          {headerAction}
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          className={cn(
+            "flex min-w-0 border border-foreground bg-white outline-offset-2 focus-within:border-alert focus-within:outline focus-within:outline-1 focus-within:outline-alert",
+            shake && "animate-shake",
+          )}
+        >
+          <Input
+            ref={setInputRef}
+            value={title}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setTitle("");
+                e.currentTarget.blur();
+                return;
+              }
+              if (e.key === "Enter" && !e.shiftKey && !(e.nativeEvent as KeyboardEvent).isComposing) {
+                e.preventDefault();
+                if (!m.isPending) void submitTask();
+              }
+            }}
+            placeholder="What do you need to remember? Try “Book flights friday #travel !important”"
+            maxLength={200}
+            className="h-12 min-w-0 flex-1 border-0 bg-transparent px-4 text-[16px] shadow-none outline-none focus-visible:ring-0 sm:h-[52px] max-sm:placeholder:text-transparent"
+            aria-label="New task"
+          />
+          {flash && (
+            <span className="pointer-events-none self-center text-foreground">
+              <Check className="h-4 w-4" strokeWidth={2.5} />
+            </span>
+          )}
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center border-l border-border sm:h-[52px] sm:w-[52px] [&>button]:h-full [&>button]:w-full">
+            <VoiceCapture contacts={contacts} />
+          </div>
+          <Button
+            type="submit"
+            className="h-12 shrink-0 px-3 text-[12px] tracking-[0.14em] sm:h-[52px] sm:px-[22px]"
+            disabled={!title.trim() || m.isPending}
+          >
+            Add task
+          </Button>
+        </form>
+        <span className="sr-only max-sm:not-sr-only max-sm:absolute max-sm:left-9 max-sm:top-[72px] max-sm:pointer-events-none max-sm:text-[16px] max-sm:text-muted-foreground peer-focus:hidden">
+          {!title && "Add a task"}
+        </span>
+
+        <div className="mt-2.5 flex min-h-[30px] min-w-0 items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+            <span className="micro-label hidden shrink-0 sm:inline">
+              {inputFocused ? "New task from" : "Showing"}
+            </span>
             <div
               role="group"
               aria-label="Filter tasks by source"
@@ -191,6 +259,12 @@ export const QuickCapture = forwardRef<
             >
               {(["All", ...SOURCES] as FilterSource[]).map((option) => {
                 const selected = filter === option;
+                const labels: Record<FilterSource, string> = {
+                  All: "All",
+                  "From Boss": bossName ? `From ${bossName}` : "From boss",
+                  "Delegated by Me": "Delegated",
+                  "Personal Reminder": "Personal",
+                };
                 return (
                   <Button
                     key={option}
@@ -199,195 +273,60 @@ export const QuickCapture = forwardRef<
                     aria-pressed={selected}
                     onClick={() => onFilterChange(option)}
                     className={cn(
-                      "min-h-[44px] shrink-0 rounded-none px-2.5 text-[12px] uppercase tracking-[0.08em] shadow-none sm:h-[30px] sm:min-h-[30px]",
-                      !selected &&
-                        "border-border-strong bg-card text-muted-foreground hover:text-foreground",
+                      "min-h-11 shrink-0 px-2.5 text-[12px] uppercase tracking-[0.08em] shadow-none sm:h-[30px] sm:min-h-[30px]",
+                      !selected && "border-border bg-transparent text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {option === "All" ? "All" : sourceLabel(option, bossName)}
+                    {labels[option]}
                   </Button>
                 );
               })}
             </div>
           </div>
-          {headerAction}
+          {parsed.hints.length > 0 && (
+            <div className="hidden shrink-0 items-center gap-1.5 text-[11px] sm:flex">
+              <span className="micro-label">Detected</span>
+              {parsed.hints.map((hint) => <span key={hint} className="text-muted-foreground">{hint}</span>)}
+            </div>
+          )}
         </div>
 
-        <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
-          <div className="relative flex-1">
-            <Input
-              ref={setInputRef}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  setTitle("");
-                  e.currentTarget.blur();
-                  return;
-                }
-                if (
-                  e.key === "Enter" &&
-                  !e.shiftKey &&
-                  !(e.nativeEvent as KeyboardEvent).isComposing
-                ) {
-                  e.preventDefault();
-                  if (!m.isPending) void submitTask();
-                }
-              }}
-              placeholder="What do you need to remember? Just type it naturally…"
-              maxLength={200}
-              className="h-11 border-border-strong bg-card pl-3.5 pr-10 text-[15px]"
-              aria-label="New task"
-            />
-            {flash && (
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 animate-flash text-foreground">
-                <Check className="h-4 w-4" strokeWidth={2.5} />
-              </span>
-            )}
-          </div>
-
-          <VoiceCapture contacts={contacts} />
-          <Button type="submit" className="h-11 px-5" disabled={!title.trim() || m.isPending}>
-            <Plus className="h-4 w-4" strokeWidth={2} />
-            Add task
-          </Button>
-        </form>
-
-        {/* Details collapse to keep the top of the screen calm on mobile. */}
-        <div className="mt-2 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => setDetailsOpen((v) => !v)}
-            aria-expanded={detailsOpen}
-            className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
-          >
-            <ChevronDown
-              className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")}
-            />
-            {detailsOpen ? "Hide details" : "Add details"}
-          </button>
-          <Link
-            to="/settings"
-            className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-          >
-            Settings
-          </Link>
-        </div>
-
-        <div
-          hidden={!detailsOpen}
-          className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5 data-[hidden]:hidden"
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((value) => !value)}
+          aria-expanded={detailsOpen}
+          className="mt-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
         >
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")} />
+          {detailsOpen ? "Hide details" : "Add details"}
+        </button>
+
+        <div hidden={!detailsOpen} className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5 data-[hidden]:hidden">
           <Field label="Created by / From" help={SOURCE_HELP[source]}>
             <Select value={source} onValueChange={(v) => setSource(v as Source)}>
-              <SelectTrigger className="h-8 w-[168px] text-xs" aria-label="Created by or from">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SOURCES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+              <SelectTrigger className="h-8 w-[168px] text-xs" aria-label="Created by or from"><SelectValue /></SelectTrigger>
+              <SelectContent>{SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
-
           <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
-            <AssigneeCombobox
-              compact
-              contacts={contacts}
-              contactId={contactId}
-              freeText={freeText}
-              onChange={({ contactId: id, freeText: t }) => {
-                setContactId(id);
-                setFreeText(t);
-              }}
-            />
+            <AssigneeCombobox compact contacts={contacts} contactId={contactId} freeText={freeText} onChange={({ contactId: id, freeText: text }) => { setContactId(id); setFreeText(text); }} />
           </Field>
-
           <Field label="Priority" help="Urgent tasks pin to the top of a list.">
-            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-              <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="Priority">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITIES.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}><SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger><SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select>
           </Field>
-
-          <Field label="Category" help="Used to group and colour-code tasks.">
-            <Select
-              value={category ?? "__none"}
-              onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}
-            >
-              <SelectTrigger className="h-8 w-[130px] text-xs" aria-label="Category">
-                <SelectValue placeholder="None" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">None</SelectItem>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field label="Category" help="Used to group tasks.">
+            <Select value={category ?? "__none"} onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}><SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="None" /></SelectTrigger><SelectContent><SelectItem value="__none">None</SelectItem>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
           </Field>
-
-          <Field
-            label="Repeats"
-            help="Spawns the next occurrence automatically when you complete this one."
-          >
-            <RepeatField compact value={parsed.recurrence ?? repeat} onChange={setRepeat} />
-          </Field>
+          <Field label="Repeats" help="Spawns the next occurrence automatically when you complete this one."><RepeatField compact value={parsed.recurrence ?? repeat} onChange={setRepeat} /></Field>
         </div>
 
-        {parsed.hints.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="micro-label">Detected</span>
-            {parsed.hints.map((h) => (
-              <span key={h} className="tag-quiet">
-                {h}
-              </span>
-            ))}
-          </div>
-        )}
-
         {savePrompt && (
-          <div className="mt-2 flex items-center justify-between border border-border-strong bg-card px-3 py-2 text-sm">
-            <span>
-              Save <span className="font-medium">{savePrompt.name}</span> as a contact?
-            </span>
+          <div className="mt-2 flex items-center justify-between border border-border bg-white px-3 py-2 text-sm">
+            <span>Save <span className="font-medium">{savePrompt.name}</span> as a contact?</span>
             <div className="flex items-center gap-1">
-              <Button size="sm" variant="ghost" onClick={() => setSavePrompt(null)}>
-                No
-              </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  await saveContactM.mutateAsync({
-                    data: { name: savePrompt.name },
-                  });
-                  setSavePrompt(null);
-                }}
-              >
-                Save
-              </Button>
-              <button
-                type="button"
-                aria-label="Dismiss"
-                onClick={() => setSavePrompt(null)}
-                className="ml-1 rounded p-1 hover:bg-background"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <Button size="sm" variant="ghost" onClick={() => setSavePrompt(null)}>No</Button>
+              <Button size="sm" onClick={async () => { await saveContactM.mutateAsync({ data: { name: savePrompt.name } }); setSavePrompt(null); }}>Save</Button>
+              <button type="button" aria-label="Dismiss" onClick={() => setSavePrompt(null)} className="ml-1 p-1 hover:bg-surface"><X className="h-4 w-4" /></button>
             </div>
           </div>
         )}
