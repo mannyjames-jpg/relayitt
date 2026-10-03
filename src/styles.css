@@ -50,6 +50,7 @@
   /* The single quiet accent. */
   --color-tan: var(--accent-quiet);
   --color-tan-ink: var(--accent-ink);
+  --color-alert: var(--alert);
 
   --color-chart-1: var(--ink-900);
   --color-chart-2: var(--ink-700);
@@ -77,6 +78,7 @@
   --background: #f2ede6;
   --background-deep: #eae4db;
   --foreground: #1c1a17;
+  --alert: #a33b2a;
 
   --surface: #efe9e1;
   --card: #fbf8f4;
@@ -134,6 +136,7 @@
   --background: #171614;
   --background-deep: #1e1d1a;
   --foreground: #f4f0ea;
+  --alert: #a33b2a;
   --surface: #1e1d1a;
   --card: #201f1c;
   --card-foreground: #f4f0ea;
@@ -193,9 +196,19 @@
     text-rendering: optimizeLegibility;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+}
+
+@media (max-width: 820px) {
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(72px + env(safe-area-inset-bottom)) !important;
   }
 }
 
