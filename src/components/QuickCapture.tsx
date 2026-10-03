@@ -175,7 +175,10 @@ export const QuickCapture = forwardRef<
   }
 
   return (
-    <div ref={captureRef} className="sticky top-0 z-30 border-b border-border-strong bg-background/95 backdrop-blur">
+    <div
+      ref={captureRef}
+      className="sticky top-0 z-30 border-b border-border-strong bg-background/95 backdrop-blur"
+    >
       <div className="mx-auto max-w-[900px] px-5 py-3 min-[821px]:px-14">
         <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 pb-3 sm:flex sm:justify-between">
           <span className="font-wordmark text-foreground min-[821px]:hidden">Relay</span>

@@ -2,13 +2,7 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  LogOut,
-  Calendar as CalIcon,
-  Menu,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Calendar as CalIcon, Menu } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { contactFns, taskFns } from "@/lib/api-client";
@@ -408,177 +402,179 @@ function Dashboard() {
           />
 
           <main className="mx-auto max-w-[900px] space-y-8 px-5 pb-28 pt-2 min-[821px]:px-14 min-[821px]:pb-16">
-          {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
-          {tasksQ.isError && (
-            <ErrorState
-              message="Couldn't load your tasks. Try again."
-              onRetry={() => tasksQ.refetch()}
+            {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
+            {tasksQ.isError && (
+              <ErrorState
+                message="Couldn't load your tasks. Try again."
+                onRetry={() => tasksQ.refetch()}
+              />
+            )}
+            <HeroSummary
+              dateLabel={dateLabel}
+              greeting={greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"}
+              followUpCount={followUpCount}
+              upNext={upNext}
+              overdue={groups.overdue.length}
+              dueToday={groups.today.length}
+              doneToday={0}
             />
-          )}
-          <HeroSummary
-            dateLabel={dateLabel}
-            greeting={greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"}
-            followUpCount={followUpCount}
-            upNext={upNext}
-            overdue={groups.overdue.length}
-            dueToday={groups.today.length}
-            doneToday={0}
-          />
 
-          <OnboardingCard />
+            <OnboardingCard />
 
-          <div className="space-y-12">
-            <Panel
-              id="sec-overdue"
-              title="Overdue"
-              subtitle="These slipped past their date"
-              count={groups.overdue.length}
-              group="overdue"
-              stickyTop={captureHeight}
-              open={open.overdue}
-              onToggle={() => toggle("overdue")}
-            >
-              {groups.overdue.length === 0 ? (
-                <EmptyLine>Nothing overdue — you're all caught up.</EmptyLine>
-              ) : (
-                <div className="space-y-1.5">
-                  {byPriority(groups.overdue).map((t) => (
-                    <TaskRow key={t.id} task={t} contacts={contacts} overdue />
-                  ))}
-                </div>
-              )}
-            </Panel>
+            <div className="space-y-12">
+              <Panel
+                id="sec-overdue"
+                title="Overdue"
+                subtitle="These slipped past their date"
+                count={groups.overdue.length}
+                group="overdue"
+                stickyTop={captureHeight}
+                open={open.overdue}
+                onToggle={() => toggle("overdue")}
+              >
+                {groups.overdue.length === 0 ? (
+                  <EmptyLine>Nothing overdue — you're all caught up.</EmptyLine>
+                ) : (
+                  <div className="space-y-1.5">
+                    {byPriority(groups.overdue).map((t) => (
+                      <TaskRow key={t.id} task={t} contacts={contacts} overdue />
+                    ))}
+                  </div>
+                )}
+              </Panel>
 
-            <Panel
-              id="sec-today"
-              title="Due Today"
-              subtitle="Let's get these done first"
-              count={groups.today.length}
-              group="today"
-              stickyTop={captureHeight}
-              open={open.today}
-              onToggle={() => toggle("today")}
-            >
-              {groups.today.length === 0 ? (
-                <EmptyLine>Nothing due today — lovely.</EmptyLine>
-              ) : (
-                <div className="space-y-1.5">
-                  {byPriority(groups.today).map((t) => (
-                    <TaskRow key={t.id} task={t} contacts={contacts} />
-                  ))}
-                </div>
-              )}
-            </Panel>
+              <Panel
+                id="sec-today"
+                title="Due Today"
+                subtitle="Let's get these done first"
+                count={groups.today.length}
+                group="today"
+                stickyTop={captureHeight}
+                open={open.today}
+                onToggle={() => toggle("today")}
+              >
+                {groups.today.length === 0 ? (
+                  <EmptyLine>Nothing due today — lovely.</EmptyLine>
+                ) : (
+                  <div className="space-y-1.5">
+                    {byPriority(groups.today).map((t) => (
+                      <TaskRow key={t.id} task={t} contacts={contacts} />
+                    ))}
+                  </div>
+                )}
+              </Panel>
 
-            <Panel
-              id="sec-waiting"
-              title="Waiting on Someone"
-              subtitle="Nothing to do here yet — just keeping tabs"
-              count={waitingCount}
-              group="waiting"
-              open={open.waiting}
-              onToggle={() => toggle("waiting")}
-              stickyTop={captureHeight}
-            >
-              {waitingCount === 0 ? (
-                <EmptyLine>No one to chase right now.</EmptyLine>
-              ) : (
-                <div className="space-y-2.5">
-                  {groups.waitingGroups.map((g) => {
-                    const contact = g.contactId ? contacts.find((c) => c.id === g.contactId) : null;
-                    const label = contact
-                      ? contact.role
-                        ? `${contact.name} (${contact.role})`
-                        : contact.name
-                      : g.name || "Nobody named yet";
-                    return (
-                      <div key={g.key}>
-                        <div className="micro-label px-0.5 pb-1.5">{label}</div>
-                        <div className="space-y-1.5">
-                          {byPriority(g.tasks).map((t) => (
-                            <TaskRow key={t.id} task={t} contacts={contacts} showWaitingBadge />
-                          ))}
+              <Panel
+                id="sec-waiting"
+                title="Waiting on Someone"
+                subtitle="Nothing to do here yet — just keeping tabs"
+                count={waitingCount}
+                group="waiting"
+                open={open.waiting}
+                onToggle={() => toggle("waiting")}
+                stickyTop={captureHeight}
+              >
+                {waitingCount === 0 ? (
+                  <EmptyLine>No one to chase right now.</EmptyLine>
+                ) : (
+                  <div className="space-y-2.5">
+                    {groups.waitingGroups.map((g) => {
+                      const contact = g.contactId
+                        ? contacts.find((c) => c.id === g.contactId)
+                        : null;
+                      const label = contact
+                        ? contact.role
+                          ? `${contact.name} (${contact.role})`
+                          : contact.name
+                        : g.name || "Nobody named yet";
+                      return (
+                        <div key={g.key}>
+                          <div className="micro-label px-0.5 pb-1.5">{label}</div>
+                          <div className="space-y-1.5">
+                            {byPriority(g.tasks).map((t) => (
+                              <TaskRow key={t.id} task={t} contacts={contacts} showWaitingBadge />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Panel>
+                      );
+                    })}
+                  </div>
+                )}
+              </Panel>
 
-            <Panel
-              id="sec-coming"
-              title="Coming Up"
-              subtitle="Nothing urgent — just so you're not surprised"
-              count={upcomingCount}
-              group="upcoming"
-              open={open.upcoming}
-              onToggle={() => toggle("upcoming")}
-              stickyTop={captureHeight}
-            >
-              {upcomingCount === 0 ? (
-                <EmptyLine>Nothing on the horizon.</EmptyLine>
-              ) : (
-                <div className="space-y-2.5">
-                  {groups.upcoming.map((g) => (
-                    <div key={g.date}>
-                      <div className="micro-label px-0.5 pb-1.5">{formatDateLabel(g.date)}</div>
-                      <div className="space-y-1.5">
-                        {byPriority(g.tasks).map((t) => (
-                          <TaskRow key={t.id} task={t} contacts={contacts} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-
-            <Panel
-              id="sec-whenever"
-              title="Whenever You Get To It"
-              subtitle="No date on these — dip in when you have a moment"
-              count={groups.someday.length}
-              group="whenever"
-              open={open.someday}
-              onToggle={() => toggle("someday")}
-              stickyTop={captureHeight}
-            >
-              {groups.someday.length === 0 ? (
-                <EmptyLine>Nothing parked here.</EmptyLine>
-              ) : (
-                <div className="space-y-3">
-                  {groupByCategory(groups.someday).map((g) => {
-                    const Icon = CATEGORY_ICON[g.category];
-                    return (
-                      <div key={g.category}>
-                        <div className="flex items-center gap-2 px-1 pb-1">
-                          <Icon
-                            className="h-4 w-4"
-                            strokeWidth={2}
-                            style={{ color: CATEGORY_COLOR[g.category] }}
-                          />
-                          <span className="micro-label">{g.category}</span>
-                        </div>
+              <Panel
+                id="sec-coming"
+                title="Coming Up"
+                subtitle="Nothing urgent — just so you're not surprised"
+                count={upcomingCount}
+                group="upcoming"
+                open={open.upcoming}
+                onToggle={() => toggle("upcoming")}
+                stickyTop={captureHeight}
+              >
+                {upcomingCount === 0 ? (
+                  <EmptyLine>Nothing on the horizon.</EmptyLine>
+                ) : (
+                  <div className="space-y-2.5">
+                    {groups.upcoming.map((g) => (
+                      <div key={g.date}>
+                        <div className="micro-label px-0.5 pb-1.5">{formatDateLabel(g.date)}</div>
                         <div className="space-y-1.5">
                           {byPriority(g.tasks).map((t) => (
                             <TaskRow key={t.id} task={t} contacts={contacts} />
                           ))}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Panel>
-          </div>
+                    ))}
+                  </div>
+                )}
+              </Panel>
 
-          {tasks.length === 0 && (
-            <p className="pt-2 text-center text-sm text-muted-foreground">
-              Nothing here yet — type your first task up top.
-            </p>
-          )}
-        </main>
+              <Panel
+                id="sec-whenever"
+                title="Whenever You Get To It"
+                subtitle="No date on these — dip in when you have a moment"
+                count={groups.someday.length}
+                group="whenever"
+                open={open.someday}
+                onToggle={() => toggle("someday")}
+                stickyTop={captureHeight}
+              >
+                {groups.someday.length === 0 ? (
+                  <EmptyLine>Nothing parked here.</EmptyLine>
+                ) : (
+                  <div className="space-y-3">
+                    {groupByCategory(groups.someday).map((g) => {
+                      const Icon = CATEGORY_ICON[g.category];
+                      return (
+                        <div key={g.category}>
+                          <div className="flex items-center gap-2 px-1 pb-1">
+                            <Icon
+                              className="h-4 w-4"
+                              strokeWidth={2}
+                              style={{ color: CATEGORY_COLOR[g.category] }}
+                            />
+                            <span className="micro-label">{g.category}</span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {byPriority(g.tasks).map((t) => (
+                              <TaskRow key={t.id} task={t} contacts={contacts} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            {tasks.length === 0 && (
+              <p className="pt-2 text-center text-sm text-muted-foreground">
+                Nothing here yet — type your first task up top.
+              </p>
+            )}
+          </main>
         </div>
 
         <MobileTabBar
@@ -689,7 +685,9 @@ function DashboardSidebar({
             }`}
           >
             <span className="truncate">{item.label}</span>
-            <span className={item.alert ? "text-alert" : "text-muted-foreground"}>{item.count}</span>
+            <span className={item.alert ? "text-alert" : "text-muted-foreground"}>
+              {item.count}
+            </span>
           </button>
         ))}
       </nav>
@@ -768,8 +766,15 @@ function MobileTabBar({
           aria-current={tab.active ? "location" : undefined}
           className="relative flex min-w-0 flex-col items-center justify-center px-1 py-2 text-foreground"
         >
-          {tab.active && <span aria-hidden className="absolute left-[20%] right-[20%] top-0 h-0.5 bg-foreground" />}
-          <span className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}>
+          {tab.active && (
+            <span
+              aria-hidden
+              className="absolute left-[20%] right-[20%] top-0 h-0.5 bg-foreground"
+            />
+          )}
+          <span
+            className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}
+          >
             {tab.count}
           </span>
           <span className="truncate text-[11px] uppercase tracking-[0.08em]">{tab.label}</span>
@@ -801,11 +806,7 @@ function Panel({
   onToggle?: () => void;
 }) {
   return (
-    <section
-      id={id}
-      className="relative min-w-0"
-      style={{ scrollMarginTop: stickyTop + 12 }}
-    >
+    <section id={id} className="relative min-w-0" style={{ scrollMarginTop: stickyTop + 12 }}>
       <button
         type="button"
         onClick={onToggle}

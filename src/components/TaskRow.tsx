@@ -364,7 +364,10 @@ export function TaskRow({
       )}
     >
       {waitingNeedsAttention && (
-        <span aria-hidden className="absolute -left-3 top-0 h-full w-0.5 bg-alert min-[821px]:-left-3.5" />
+        <span
+          aria-hidden
+          className="absolute -left-3 top-0 h-full w-0.5 bg-alert min-[821px]:-left-3.5"
+        />
       )}
       <div className="flex items-start gap-2.5 px-3 py-2.5">
         <div className="relative mt-0.5 shrink-0">
