@@ -1,9 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, ChevronRight, LogOut, Menu } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { contactFns, taskFns } from "@/lib/api-client";
 import { getProfile } from "@/lib/profile.functions";
 import { formatTime, todayISO } from "@/lib/date-utils";
@@ -12,11 +11,9 @@ import { ErrorState, LoadingState } from "@/components/QueryState";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppMobileTabs, AppMoreMenu, AppSidebar, useAppShell } from "@/components/AppSidebar";
@@ -48,7 +45,6 @@ type MonthDay = {
 };
 
 function CalendarPage() {
-  const navigate = useNavigate();
   const now = new Date();
   const [visibleMonth, setVisibleMonth] = useState(
     () => new Date(now.getFullYear(), now.getMonth(), 1),

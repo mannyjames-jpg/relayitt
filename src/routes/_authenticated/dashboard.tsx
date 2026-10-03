@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LogOut, Calendar as CalIcon, Menu } from "lucide-react";
+import { Calendar as CalIcon } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { contactFns, taskFns } from "@/lib/api-client";
@@ -12,14 +12,6 @@ import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { daysSince, formatDateLabel, formatTime, todayISO } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { HeroSummary } from "@/components/HeroSummary";
