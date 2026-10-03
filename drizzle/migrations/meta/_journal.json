@@ -15,6 +15,13 @@
       "when": 1790994431955,
       "tag": "0001_exec_info_harden_aal2",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790994474892,
+      "tag": "0002_exec_info_revoke_maintain",
+      "breakpoints": true
     }
   ]
 }
