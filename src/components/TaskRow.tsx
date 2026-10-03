@@ -490,7 +490,9 @@ export function TaskRow({
             {showWaitingBadge && (
               <span
                 className={cn(
-                  waitDays >= 3 || followupOverdue ? "tag-emphasis" : "tag-quiet",
+                  waitDays >= 3 || followupOverdue
+                    ? "tag-emphasis border-alert text-alert"
+                    : "tag-quiet",
                   nudgeFlash && "animate-flash",
                 )}
                 title={

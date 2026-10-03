@@ -70,7 +70,7 @@ export function HeroSummary({
               strokeWidth="1.5"
               strokeDasharray={circumference}
               strokeDashoffset={circumference * (1 - pct)}
-              className="transition-[stroke-dashoffset] duration-700 ease-out"
+              className="transition-[stroke-dashoffset] duration-300 ease-out"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
