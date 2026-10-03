@@ -337,6 +337,7 @@ function Dashboard() {
           {[
             ["People", "/contacts"],
             ["Completed", "/completed"],
+            ["Calendar", "/calendar"],
             ["Applicants", "/applicants"],
             ["Settings", "/settings"],
           ].map(([label, to]) => (
@@ -664,6 +665,7 @@ function DashboardSidebar({
   const routeLinks = [
     { label: "People", to: "/contacts" as const },
     { label: "Completed", to: "/completed" as const },
+    { label: "Calendar", to: "/calendar" as const },
     { label: "Applicants", to: "/applicants" as const },
     { label: "Settings", to: "/settings" as const },
   ];
