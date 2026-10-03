@@ -802,7 +802,6 @@ export function TaskRow({
                       if (s === "Complete") toast.success("Marked Complete");
                     }}
                   >
-                    <span className="mr-2 inline-flex">{STATUS_ICON[s]}</span>
                     Mark as {s}
                   </Button>
                 ))}
