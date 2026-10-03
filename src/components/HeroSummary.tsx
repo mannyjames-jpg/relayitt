@@ -64,18 +64,18 @@ export function HeroSummary({
       )}
       {(overdue > 0 || followUpCount > 0) && (
         <p className="mt-2 truncate whitespace-nowrap text-[13px] text-muted-foreground">
-              {overdue > 0 && (
-                <span className="text-alert">
-                  <strong className="font-semibold">{overdue}</strong> late
-                </span>
-              )}
-              {overdue > 0 && followUpCount > 0 && " · "}
-              {followUpCount > 0 && (
-                <>
-                  <strong className="font-semibold text-foreground">{followUpCount}</strong> to
-                  follow up
-                </>
-              )}
+          {overdue > 0 && (
+            <span className="text-alert">
+              <strong className="font-semibold">{overdue}</strong> late
+            </span>
+          )}
+          {overdue > 0 && followUpCount > 0 && " · "}
+          {followUpCount > 0 && (
+            <>
+              <strong className="font-semibold text-foreground">{followUpCount}</strong> to follow
+              up
+            </>
+          )}
         </p>
       )}
     </section>

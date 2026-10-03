@@ -186,10 +186,7 @@ export const QuickCapture = forwardRef<
   return (
     <div
       ref={captureRef}
-      className={cn(
-        "sticky top-0 z-30 bg-card",
-        scrolled && "border-b border-border",
-      )}
+      className={cn("sticky top-0 z-30 bg-card", scrolled && "border-b border-border")}
     >
       <div className="mx-auto max-w-[900px] px-5 pb-3.5 pt-3 min-[821px]:px-14">
         <div className="mb-3 flex items-center justify-between min-[821px]:hidden">
@@ -217,7 +214,11 @@ export const QuickCapture = forwardRef<
                 e.currentTarget.blur();
                 return;
               }
-              if (e.key === "Enter" && !e.shiftKey && !(e.nativeEvent as KeyboardEvent).isComposing) {
+              if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                !(e.nativeEvent as KeyboardEvent).isComposing
+              ) {
                 e.preventDefault();
                 if (!m.isPending) void submitTask();
               }
@@ -274,7 +275,8 @@ export const QuickCapture = forwardRef<
                     onClick={() => onFilterChange(option)}
                     className={cn(
                       "min-h-11 shrink-0 px-2.5 text-[12px] uppercase tracking-[0.08em] shadow-none sm:h-[30px] sm:min-h-[30px]",
-                      !selected && "border-border bg-transparent text-muted-foreground hover:text-foreground",
+                      !selected &&
+                        "border-border bg-transparent text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {labels[option]}
@@ -286,7 +288,11 @@ export const QuickCapture = forwardRef<
           {parsed.hints.length > 0 && (
             <div className="hidden shrink-0 items-center gap-1.5 text-[11px] sm:flex">
               <span className="micro-label">Detected</span>
-              {parsed.hints.map((hint) => <span key={hint} className="text-muted-foreground">{hint}</span>)}
+              {parsed.hints.map((hint) => (
+                <span key={hint} className="text-muted-foreground">
+                  {hint}
+                </span>
+              ))}
             </div>
           )}
         </div>
@@ -297,36 +303,108 @@ export const QuickCapture = forwardRef<
           aria-expanded={detailsOpen}
           className="mt-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
         >
-          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")} />
+          <ChevronDown
+            className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")}
+          />
           {detailsOpen ? "Hide details" : "Add details"}
         </button>
 
-        <div hidden={!detailsOpen} className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5 data-[hidden]:hidden">
+        <div
+          hidden={!detailsOpen}
+          className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5 data-[hidden]:hidden"
+        >
           <Field label="Created by / From" help={SOURCE_HELP[source]}>
             <Select value={source} onValueChange={(v) => setSource(v as Source)}>
-              <SelectTrigger className="h-8 w-[168px] text-xs" aria-label="Created by or from"><SelectValue /></SelectTrigger>
-              <SelectContent>{SOURCES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              <SelectTrigger className="h-8 w-[168px] text-xs" aria-label="Created by or from">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SOURCES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </Field>
           <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
-            <AssigneeCombobox compact contacts={contacts} contactId={contactId} freeText={freeText} onChange={({ contactId: id, freeText: text }) => { setContactId(id); setFreeText(text); }} />
+            <AssigneeCombobox
+              compact
+              contacts={contacts}
+              contactId={contactId}
+              freeText={freeText}
+              onChange={({ contactId: id, freeText: text }) => {
+                setContactId(id);
+                setFreeText(text);
+              }}
+            />
           </Field>
           <Field label="Priority" help="Urgent tasks pin to the top of a list.">
-            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}><SelectTrigger className="h-8 w-[110px] text-xs"><SelectValue /></SelectTrigger><SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select>
+            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+              <SelectTrigger className="h-8 w-[110px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORITIES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="Category" help="Used to group tasks.">
-            <Select value={category ?? "__none"} onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}><SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="None" /></SelectTrigger><SelectContent><SelectItem value="__none">None</SelectItem>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+            <Select
+              value={category ?? "__none"}
+              onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}
+            >
+              <SelectTrigger className="h-8 w-[130px] text-xs">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">None</SelectItem>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
-          <Field label="Repeats" help="Spawns the next occurrence automatically when you complete this one."><RepeatField compact value={parsed.recurrence ?? repeat} onChange={setRepeat} /></Field>
+          <Field
+            label="Repeats"
+            help="Spawns the next occurrence automatically when you complete this one."
+          >
+            <RepeatField compact value={parsed.recurrence ?? repeat} onChange={setRepeat} />
+          </Field>
         </div>
 
         {savePrompt && (
           <div className="mt-2 flex items-center justify-between border border-border bg-white px-3 py-2 text-sm">
-            <span>Save <span className="font-medium">{savePrompt.name}</span> as a contact?</span>
+            <span>
+              Save <span className="font-medium">{savePrompt.name}</span> as a contact?
+            </span>
             <div className="flex items-center gap-1">
-              <Button size="sm" variant="ghost" onClick={() => setSavePrompt(null)}>No</Button>
-              <Button size="sm" onClick={async () => { await saveContactM.mutateAsync({ data: { name: savePrompt.name } }); setSavePrompt(null); }}>Save</Button>
-              <button type="button" aria-label="Dismiss" onClick={() => setSavePrompt(null)} className="ml-1 p-1 hover:bg-surface"><X className="h-4 w-4" /></button>
+              <Button size="sm" variant="ghost" onClick={() => setSavePrompt(null)}>
+                No
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  await saveContactM.mutateAsync({ data: { name: savePrompt.name } });
+                  setSavePrompt(null);
+                }}
+              >
+                Save
+              </Button>
+              <button
+                type="button"
+                aria-label="Dismiss"
+                onClick={() => setSavePrompt(null)}
+                className="ml-1 p-1 hover:bg-surface"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
         )}

@@ -125,7 +125,8 @@ function Dashboard() {
 
   const todayCount = groups.overdue.length + groups.today.length;
   const doneToday = completedTasks.filter(
-    (task) => task.completed_at && new Date(task.completed_at).toLocaleDateString("en-CA") === today,
+    (task) =>
+      task.completed_at && new Date(task.completed_at).toLocaleDateString("en-CA") === today,
   ).length;
 
   useEffect(() => {
@@ -384,7 +385,10 @@ function Dashboard() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div data-relay-workspace className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]">
+      <div
+        data-relay-workspace
+        className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]"
+      >
         <DashboardSidebar
           overdue={groups.overdue.length}
           dueToday={groups.today.length}
@@ -500,7 +504,16 @@ function Dashboard() {
                       return (
                         <div key={g.key}>
                           <div className="pb-2 pt-5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                            {contact ? <><strong className="font-semibold text-foreground">{contact.name}</strong>{contact.role ? ` · ${contact.role}` : ""}</> : <strong className="font-semibold text-foreground">{label}</strong>}
+                            {contact ? (
+                              <>
+                                <strong className="font-semibold text-foreground">
+                                  {contact.name}
+                                </strong>
+                                {contact.role ? ` · ${contact.role}` : ""}
+                              </>
+                            ) : (
+                              <strong className="font-semibold text-foreground">{label}</strong>
+                            )}
                           </div>
                           <div className="space-y-1.5">
                             {byPriority(g.tasks).map((t) => (
@@ -530,7 +543,9 @@ function Dashboard() {
                   <div className="space-y-2.5">
                     {groups.upcoming.map((g) => (
                       <div key={g.date}>
-                          <div className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">{formatDateLabel(g.date)}</div>
+                        <div className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                          {formatDateLabel(g.date)}
+                        </div>
                         <div className="space-y-1.5">
                           {byPriority(g.tasks).map((t) => (
                             <TaskRow key={t.id} task={t} contacts={contacts} />
@@ -683,7 +698,9 @@ function DashboardSidebar({
 
   return (
     <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 min-[821px]:flex">
-      <div className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground">Relay</div>
+      <div className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground">
+        Relay
+      </div>
       <nav aria-label="Task sections">
         {sectionLinks.map((item) => (
           <button
@@ -699,7 +716,11 @@ function DashboardSidebar({
           >
             <span className="truncate">{item.label}</span>
             <span className="flex items-center text-[12px] tabular-nums text-muted-foreground">
-              {item.label === "Today" && overdue > 0 && <span className="mr-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-alert">{overdue} late</span>}
+              {item.label === "Today" && overdue > 0 && (
+                <span className="mr-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-alert">
+                  {overdue} late
+                </span>
+              )}
               {item.count}
             </span>
           </button>
@@ -721,7 +742,14 @@ function DashboardSidebar({
           <span className="grid h-[30px] w-[30px] place-items-center bg-primary text-xs font-semibold text-primary-foreground">
             {initial}
           </span>
-          <span className="min-w-0"><span className="block truncate text-[14px] font-medium text-foreground">{displayName}</span><span className="block truncate text-[12px] text-muted-foreground">Personal assistant</span></span>
+          <span className="min-w-0">
+            <span className="block truncate text-[14px] font-medium text-foreground">
+              {displayName}
+            </span>
+            <span className="block truncate text-[12px] text-muted-foreground">
+              Personal assistant
+            </span>
+          </span>
         </div>
         {showCalendarConnect && (
           <Button
@@ -839,11 +867,13 @@ function Panel({
         }}
       >
         <span className="w-3 shrink-0 text-[14px] text-foreground">{open ? "−" : "+"}</span>
-        <h2 className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.16em] text-foreground">{title}</h2>
-        <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
-          {count}
+        <h2 className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.16em] text-foreground">
+          {title}
+        </h2>
+        <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">{count}</span>
+        <span className="ml-auto hidden min-w-0 truncate text-right text-[13px] text-muted-foreground sm:block">
+          {subtitle}
         </span>
-        <span className="ml-auto hidden min-w-0 truncate text-right text-[13px] text-muted-foreground sm:block">{subtitle}</span>
       </button>
       {open && <div className="pt-3">{children}</div>}
     </section>
@@ -851,7 +881,11 @@ function Panel({
 }
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
-  return <p className="border-t border-border py-[18px] text-[14.5px] text-muted-foreground">{children}</p>;
+  return (
+    <p className="border-t border-border py-[18px] text-[14.5px] text-muted-foreground">
+      {children}
+    </p>
+  );
 }
 
 function groupByCategory(tasks: Task[]) {
