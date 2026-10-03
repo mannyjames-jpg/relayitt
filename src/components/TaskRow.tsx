@@ -387,9 +387,10 @@ export function TaskRow({
           <button
             type="button"
             onClick={toggleDone}
+            data-task-check={task.id}
             aria-label={`Mark ${task.title} complete`}
             className={cn(
-              "relative flex h-[18px] w-[18px] items-center justify-center rounded-none border border-border-strong transition-all hover:border-foreground",
+              "relative flex h-[18px] w-[18px] items-center justify-center rounded-none border border-border-strong transition-all duration-100 hover:border-foreground active:scale-[0.84]",
               completing && "border-foreground bg-primary animate-ring-pop",
             )}
           >
@@ -407,6 +408,7 @@ export function TaskRow({
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
+            data-task-title={task.id}
             className="w-full text-left"
           >
             <div className="flex items-start gap-1.5">

@@ -8,6 +8,8 @@ type Stat = { label: string; value: number; color: string };
  */
 export function HeroSummary({
   greeting,
+  followUpCount,
+  upNext,
   overdue,
   dueToday,
   waiting,
@@ -16,6 +18,8 @@ export function HeroSummary({
   doneToday,
 }: {
   greeting: string;
+  followUpCount: number;
+  upNext: { title: string; time: string | null; date: string | null } | null;
   overdue: number;
   dueToday: number;
   waiting: number;
@@ -88,6 +92,31 @@ export function HeroSummary({
           <h1 className="font-hero text-[24px] leading-tight text-foreground sm:text-[28px]">
             {greeting}
           </h1>
+          {(overdue > 0 || followUpCount > 0) && (
+            <p className="mt-2 truncate whitespace-nowrap text-[13px] text-muted-foreground">
+              {overdue > 0 && (
+                <>
+                  <strong className="font-semibold text-foreground">{overdue}</strong> late
+                </>
+              )}
+              {overdue > 0 && followUpCount > 0 && " · "}
+              {followUpCount > 0 && (
+                <>
+                  <strong className="font-semibold text-foreground">{followUpCount}</strong> to follow up
+                </>
+              )}
+            </p>
+          )}
+          {upNext && (
+            <div className="mt-2 flex min-w-0 items-baseline gap-2 overflow-hidden whitespace-nowrap text-[14px]">
+              <span className="micro-label shrink-0">Up next</span>
+              <span className="min-w-0 truncate text-foreground">
+                {upNext.title}
+                {upNext.time ? ` · ${upNext.time}` : ""}
+                {upNext.date ? ` · ${upNext.date}` : ""}
+              </span>
+            </div>
+          )}
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3">
             {stats.map((s) => (
               <div key={s.label} className="flex items-center gap-2">

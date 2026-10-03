@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -48,13 +48,10 @@ const CATEGORIES = [
 ] as const;
 type Category = QuickCategory;
 
-export function QuickCapture({
-  filter,
-  onFilterChange,
-}: {
+export const QuickCapture = forwardRef<HTMLInputElement, {
   filter: FilterSource;
   onFilterChange: (f: FilterSource) => void;
-}) {
+}>(function QuickCapture({ filter, onFilterChange }, forwardedRef) {
   const qc = useQueryClient();
   const create = taskFns.create;
   const createC = contactFns.create;
@@ -86,6 +83,12 @@ export function QuickCapture({
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  function setInputRef(node: HTMLInputElement | null) {
+    inputRef.current = node;
+    if (typeof forwardedRef === "function") forwardedRef(node);
+    else if (forwardedRef) forwardedRef.current = node;
+  }
 
   const m = useMutation({
     mutationFn: create,
@@ -167,29 +170,35 @@ export function QuickCapture({
   return (
     <div className="sticky top-0 z-20 border-b border-border-strong bg-background/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-3">
-        <div className="flex items-center justify-between pb-3">
+        <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 pb-3 sm:flex sm:justify-between">
           <span className="font-wordmark text-foreground">Relay</span>
-          <div className="flex items-center gap-2">
-            <span className="micro-label">Showing</span>
-            <Select
-              value={filter}
-              onValueChange={(v) => onFilterChange(v as FilterSource)}
+          <div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
+            <span className="micro-label hidden shrink-0 sm:inline">Showing</span>
+            <div
+              role="group"
+              aria-label="Filter tasks by source"
+              className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              <SelectTrigger
-                className="h-7 w-auto gap-1.5 border-border-strong bg-card px-2 text-[11px]"
-                aria-label="Filter tasks by source"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="All">All tasks</SelectItem>
-                {SOURCES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {sourceLabel(s, bossName)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {(["All", ...SOURCES] as FilterSource[]).map((option) => {
+                const selected = filter === option;
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant={selected ? "default" : "outline"}
+                    aria-pressed={selected}
+                    onClick={() => onFilterChange(option)}
+                    className={cn(
+                      "min-h-[44px] shrink-0 rounded-none px-2.5 text-[12px] uppercase tracking-[0.08em] shadow-none sm:h-[30px] sm:min-h-[30px]",
+                      !selected &&
+                        "border-border-strong bg-card text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {option === "All" ? "All" : sourceLabel(option, bossName)}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -199,7 +208,7 @@ export function QuickCapture({
         >
           <div className="relative flex-1">
             <Input
-              ref={inputRef}
+              ref={setInputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -400,7 +409,7 @@ export function QuickCapture({
       </div>
     </div>
   );
-}
+});
 
 function Field({
   label,
