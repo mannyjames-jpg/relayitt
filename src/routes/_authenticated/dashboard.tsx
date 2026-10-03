@@ -6,11 +6,8 @@ import {
   ChevronDown,
   ChevronRight,
   LogOut,
-  Users,
-  CheckSquare,
-  Briefcase,
-  Settings as SettingsIcon,
   Calendar as CalIcon,
+  Menu,
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +18,14 @@ import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
 import { daysSince, formatDateLabel, formatTime, todayISO } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { HeroSummary } from "@/components/HeroSummary";
@@ -36,7 +41,7 @@ import {
 } from "@/lib/task-style";
 
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const searchSchema = z.object({ google: z.string().optional() });
 
@@ -111,6 +116,8 @@ function Dashboard() {
   const [filter, setFilter] = useState<FilterSource>("All");
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const quickCaptureRef = useRef<HTMLInputElement>(null);
+  const [captureHeight, setCaptureHeight] = useState(132);
+  const [currentSection, setCurrentSection] = useState<PanelKey>("overdue");
 
   const filteredTasks = useMemo(() => {
     if (filter === "All") return tasks as Task[];
@@ -267,70 +274,141 @@ function Dashboard() {
     };
   }, [filteredTasks, today]);
 
+  const dateLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
+  useEffect(() => {
+    let frame = 0;
+    const updateCurrentSection = () => {
+      frame = 0;
+      const threshold = window.innerHeight * 0.45;
+      const sections: Array<[PanelKey, string]> = [
+        ["overdue", "sec-overdue"],
+        ["today", "sec-today"],
+        ["waiting", "sec-waiting"],
+        ["upcoming", "sec-coming"],
+        ["someday", "sec-whenever"],
+      ];
+      let next: PanelKey = "overdue";
+      for (const [key, id] of sections) {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= threshold) next = key;
+      }
+      setCurrentSection(next);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateCurrentSection);
+    };
+    updateCurrentSection();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [groups]);
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const todayIsCurrent = currentSection === "overdue" || currentSection === "today";
+  const displayName = profile?.display_name?.trim() || "Relay user";
+  const initial = displayName.charAt(0).toUpperCase();
+  const showCalendarConnect = google && !google.connected && google.configured;
+
+  const moreMenu = (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-none min-[821px]:hidden"
+          aria-label="More"
+        >
+          <Menu className="h-5 w-5" strokeWidth={2} />
+        </Button>
+      </SheetTrigger>
+      <SheetContent
+        side="right"
+        className="w-[min(84vw,320px)] rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms]"
+      >
+        <SheetHeader className="text-left">
+          <SheetTitle className="font-wordmark">Relay</SheetTitle>
+        </SheetHeader>
+        <nav className="mt-8 border-t border-border" aria-label="More navigation">
+          {[
+            ["People", "/contacts"],
+            ["Completed", "/completed"],
+            ["Applicants", "/applicants"],
+            ["Settings", "/settings"],
+          ].map(([label, to]) => (
+            <SheetClose asChild key={to}>
+              <Link
+                to={to}
+                className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground"
+              >
+                {label}
+              </Link>
+            </SheetClose>
+          ))}
+        </nav>
+        <div className="mt-6 space-y-2">
+          {showCalendarConnect && (
+            <Button
+              variant="outline"
+              className="h-11 w-full justify-start rounded-none shadow-none"
+              onClick={connectGoogle}
+            >
+              <CalIcon className="h-4 w-4" strokeWidth={2} />
+              Connect Calendar
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            className="h-11 w-full justify-start rounded-none"
+            onClick={signOut}
+          >
+            <LogOut className="h-4 w-4" strokeWidth={2} />
+            Sign out
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="min-h-screen bg-background">
-        <QuickCapture ref={quickCaptureRef} filter={filter} onFilterChange={setFilter} />
+      <div className="min-h-screen bg-background min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]">
+        <DashboardSidebar
+          overdue={groups.overdue.length}
+          dueToday={groups.today.length}
+          waiting={waitingCount}
+          coming={upcomingCount}
+          whenever={groups.someday.length}
+          current={currentSection}
+          displayName={displayName}
+          initial={initial}
+          showCalendarConnect={!!showCalendarConnect}
+          onConnectCalendar={connectGoogle}
+          onSignOut={signOut}
+          onSection={scrollToSection}
+        />
 
-        <header className="mx-auto flex max-w-7xl items-center justify-end gap-1 px-4 pt-2">
-          <div className="flex shrink-0 items-center gap-1">
-            {google && !google.connected && google.configured && (
-              <Tip label="Link your calendar">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={connectGoogle}
-                  className="h-9 rounded-none text-xs"
-                  aria-label="Connect Google Calendar"
-                >
-                  <CalIcon className="mr-1 h-4 w-4" strokeWidth={2} />
-                  Connect Calendar
-                </Button>
-              </Tip>
-            )}
-            <Tip label="People">
-              <Link to="/contacts" aria-label="People">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <Users className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Completed tasks">
-              <Link to="/completed" aria-label="Completed tasks">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <CheckSquare className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Applicants">
-              <Link to="/applicants" aria-label="Applicants">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <Briefcase className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Settings">
-              <Link to="/settings" aria-label="Settings">
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-none">
-                  <SettingsIcon className="h-5 w-5" strokeWidth={2} />
-                </Button>
-              </Link>
-            </Tip>
-            <Tip label="Sign out">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-none"
-                onClick={signOut}
-                aria-label="Sign out"
-              >
-                <LogOut className="h-5 w-5" strokeWidth={2} />
-              </Button>
-            </Tip>
-          </div>
-        </header>
+        <div className="min-w-0">
+          <QuickCapture
+            ref={quickCaptureRef}
+            filter={filter}
+            onFilterChange={setFilter}
+            headerAction={moreMenu}
+            onHeightChange={setCaptureHeight}
+          />
 
-        <main className="mx-auto max-w-7xl space-y-3 px-4 pb-16 pt-2">
+          <main className="mx-auto max-w-[900px] space-y-8 px-5 pb-28 pt-2 min-[821px]:px-14 min-[821px]:pb-16">
           {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
           {tasksQ.isError && (
             <ErrorState
@@ -339,26 +417,25 @@ function Dashboard() {
             />
           )}
           <HeroSummary
+            dateLabel={dateLabel}
             greeting={greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"}
             followUpCount={followUpCount}
             upNext={upNext}
             overdue={groups.overdue.length}
             dueToday={groups.today.length}
-            waiting={waitingCount}
-            comingUp={upcomingCount}
-            whenever={groups.someday.length}
             doneToday={0}
           />
 
           <OnboardingCard />
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-12">
             <Panel
+              id="sec-overdue"
               title="Overdue"
               subtitle="These slipped past their date"
               count={groups.overdue.length}
               group="overdue"
-              className="sm:col-span-2 xl:col-span-1"
+              stickyTop={captureHeight}
               open={open.overdue}
               onToggle={() => toggle("overdue")}
             >
@@ -374,11 +451,12 @@ function Dashboard() {
             </Panel>
 
             <Panel
+              id="sec-today"
               title="Due Today"
               subtitle="Let's get these done first"
               count={groups.today.length}
               group="today"
-              className="sm:col-span-2 xl:col-span-1 xl:max-h-[calc(100vh-9rem)]"
+              stickyTop={captureHeight}
               open={open.today}
               onToggle={() => toggle("today")}
             >
@@ -394,12 +472,14 @@ function Dashboard() {
             </Panel>
 
             <Panel
+              id="sec-waiting"
               title="Waiting on Someone"
               subtitle="Nothing to do here yet — just keeping tabs"
               count={waitingCount}
               group="waiting"
               open={open.waiting}
               onToggle={() => toggle("waiting")}
+              stickyTop={captureHeight}
             >
               {waitingCount === 0 ? (
                 <EmptyLine>No one to chase right now.</EmptyLine>
@@ -428,12 +508,14 @@ function Dashboard() {
             </Panel>
 
             <Panel
+              id="sec-coming"
               title="Coming Up"
               subtitle="Nothing urgent — just so you're not surprised"
               count={upcomingCount}
               group="upcoming"
               open={open.upcoming}
               onToggle={() => toggle("upcoming")}
+              stickyTop={captureHeight}
             >
               {upcomingCount === 0 ? (
                 <EmptyLine>Nothing on the horizon.</EmptyLine>
@@ -454,13 +536,14 @@ function Dashboard() {
             </Panel>
 
             <Panel
+              id="sec-whenever"
               title="Whenever You Get To It"
               subtitle="No date on these — dip in when you have a moment"
               count={groups.someday.length}
               group="whenever"
-              className="sm:col-span-2"
               open={open.someday}
               onToggle={() => toggle("someday")}
+              stickyTop={captureHeight}
             >
               {groups.someday.length === 0 ? (
                 <EmptyLine>Nothing parked here.</EmptyLine>
@@ -497,6 +580,17 @@ function Dashboard() {
             </p>
           )}
         </main>
+        </div>
+
+        <MobileTabBar
+          overdue={groups.overdue.length}
+          dueToday={groups.today.length}
+          waiting={waitingCount}
+          coming={upcomingCount}
+          whenever={groups.someday.length}
+          current={currentSection}
+          onSection={scrollToSection}
+        />
         <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
           <DialogContent className="max-w-sm rounded-none border-border-strong bg-card shadow-none sm:rounded-none">
             <DialogHeader>
@@ -519,24 +613,15 @@ function Dashboard() {
   );
 }
 
-function Tip({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">{children}</span>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 function Panel({
+  id,
   title,
   subtitle,
   count,
   children,
   group,
-  className,
+  stickyTop,
+  id: string;
   open,
   onToggle,
 }: {
@@ -545,42 +630,39 @@ function Panel({
   count: number;
   children: React.ReactNode;
   group: GroupKey;
-  className?: string;
+  stickyTop: number;
   open?: boolean;
   onToggle?: () => void;
 }) {
   return (
     <section
-      className={
-        "relative flex min-w-0 flex-col overflow-hidden border border-border bg-card p-4 " +
-        (className ?? "")
-      }
+      id={id}
+      className="relative min-w-0"
+      style={{ scrollMarginTop: stickyTop + 12 }}
     >
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-start gap-2 pb-2.5 text-left"
-        style={{ borderBottom: GROUP_RULE[group] }}
+        className="sticky z-20 grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-2 bg-background py-3 text-left"
+        style={{ top: stickyTop, borderTop: GROUP_RULE[group] }}
       >
         {open ? (
-          <ChevronDown className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
         ) : (
-          <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
         )}
-        <span className="min-w-0 flex-1">
-          <span className="flex items-baseline justify-between gap-2">
-            <h2 className="truncate font-display text-foreground">{title}</h2>
-            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
-              {count}
-            </span>
-          </span>
-          <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">
+        <span className="flex min-w-0 items-baseline gap-3">
+          <h2 className="shrink-0 font-display text-foreground">{title}</h2>
+          <span className="hidden min-w-0 truncate text-[11px] text-muted-foreground sm:block">
             {subtitle}
           </span>
         </span>
+        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
+          {count}
+        </span>
       </button>
-      {open && <div className="min-h-0 flex-1 overflow-y-auto pt-3">{children}</div>}
+      {open && <div className="pt-3">{children}</div>}
     </section>
   );
 }
