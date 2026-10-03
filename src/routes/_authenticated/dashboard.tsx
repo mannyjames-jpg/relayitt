@@ -817,6 +817,8 @@ function Panel({
           borderTop:
             group === "overdue"
               ? "2px solid var(--alert)"
+              : group === "waiting" || group === "upcoming"
+                ? "1px solid var(--border-strong)"
               : group === "whenever"
                 ? "1px solid var(--border)"
                 : GROUP_RULE[group],
