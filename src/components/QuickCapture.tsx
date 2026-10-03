@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronDown, Plus, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -13,11 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { contactFns, errorMessage, taskFns } from "@/lib/api-client";
 import { AssigneeCombobox } from "./AssigneeCombobox";
 import { VoiceCapture } from "./VoiceCapture";
@@ -26,8 +22,6 @@ import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
 import { RepeatField } from "./RepeatField";
 import { NO_RECURRENCE, nextDueDate, type Recurrence } from "@/lib/recurrence";
 import { todayISO } from "@/lib/date-utils";
-
-
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
@@ -48,13 +42,13 @@ const CATEGORIES = [
 ] as const;
 type Category = QuickCategory;
 
-export function QuickCapture({
-  filter,
-  onFilterChange,
-}: {
-  filter: FilterSource;
-  onFilterChange: (f: FilterSource) => void;
-}) {
+export const QuickCapture = forwardRef<
+  HTMLInputElement,
+  {
+    filter: FilterSource;
+    onFilterChange: (f: FilterSource) => void;
+  }
+>(function QuickCapture({ filter, onFilterChange }, forwardedRef) {
   const qc = useQueryClient();
   const create = taskFns.create;
   const createC = contactFns.create;
@@ -67,9 +61,7 @@ export function QuickCapture({
 
   // Name the person tasks come from, when a contact is marked as such.
   const bossName = useMemo(() => {
-    const match = contacts.find((c) =>
-      /boss|principal|employer/i.test(c.role ?? ""),
-    );
+    const match = contacts.find((c) => /boss|principal|employer/i.test(c.role ?? ""));
     return match?.name.split(" ")[0] ?? null;
   }, [contacts]);
 
@@ -86,6 +78,12 @@ export function QuickCapture({
   const [flash, setFlash] = useState(false);
   const [savePrompt, setSavePrompt] = useState<{ name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  function setInputRef(node: HTMLInputElement | null) {
+    inputRef.current = node;
+    if (typeof forwardedRef === "function") forwardedRef(node);
+    else if (forwardedRef) forwardedRef.current = node;
+  }
 
   const m = useMutation({
     mutationFn: create,
@@ -120,8 +118,7 @@ export function QuickCapture({
     const rule = parsed.recurrence ?? repeat;
     // A repeating task with no date starts on its first matching day.
     const firstDue =
-      parsed.due_date ??
-      (rule.recurrence_type !== "none" ? nextDueDate(todayISO(), rule) : null);
+      parsed.due_date ?? (rule.recurrence_type !== "none" ? nextDueDate(todayISO(), rule) : null);
     await m.mutateAsync({
       data: {
         title: trimmed,
@@ -167,39 +164,42 @@ export function QuickCapture({
   return (
     <div className="sticky top-0 z-20 border-b border-border-strong bg-background/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-3">
-        <div className="flex items-center justify-between pb-3">
+        <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 pb-3 sm:flex sm:justify-between">
           <span className="font-wordmark text-foreground">Relay</span>
-          <div className="flex items-center gap-2">
-            <span className="micro-label">Showing</span>
-            <Select
-              value={filter}
-              onValueChange={(v) => onFilterChange(v as FilterSource)}
+          <div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
+            <span className="micro-label hidden shrink-0 sm:inline">Showing</span>
+            <div
+              role="group"
+              aria-label="Filter tasks by source"
+              className="flex min-w-0 max-w-full gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              <SelectTrigger
-                className="h-7 w-auto gap-1.5 border-border-strong bg-card px-2 text-[11px]"
-                aria-label="Filter tasks by source"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="All">All tasks</SelectItem>
-                {SOURCES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {sourceLabel(s, bossName)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              {(["All", ...SOURCES] as FilterSource[]).map((option) => {
+                const selected = filter === option;
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant={selected ? "default" : "outline"}
+                    aria-pressed={selected}
+                    onClick={() => onFilterChange(option)}
+                    className={cn(
+                      "min-h-[44px] shrink-0 rounded-none px-2.5 text-[12px] uppercase tracking-[0.08em] shadow-none sm:h-[30px] sm:min-h-[30px]",
+                      !selected &&
+                        "border-border-strong bg-card text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {option === "All" ? "All" : sourceLabel(option, bossName)}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          className={cn("flex gap-2", shake && "animate-shake")}
-        >
+        <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
           <div className="relative flex-1">
             <Input
-              ref={inputRef}
+              ref={setInputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -225,16 +225,11 @@ export function QuickCapture({
           </div>
 
           <VoiceCapture contacts={contacts} />
-          <Button
-            type="submit"
-            className="h-11 px-5"
-            disabled={!title.trim() || m.isPending}
-          >
+          <Button type="submit" className="h-11 px-5" disabled={!title.trim() || m.isPending}>
             <Plus className="h-4 w-4" strokeWidth={2} />
             Add task
           </Button>
         </form>
-
 
         {/* Details collapse to keep the top of the screen calm on mobile. */}
         <div className="mt-2 flex items-center justify-between">
@@ -245,10 +240,7 @@ export function QuickCapture({
             className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
           >
             <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 transition-transform",
-                detailsOpen && "rotate-180",
-              )}
+              className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")}
             />
             {detailsOpen ? "Hide details" : "Add details"}
           </button>
@@ -266,10 +258,7 @@ export function QuickCapture({
         >
           <Field label="Created by / From" help={SOURCE_HELP[source]}>
             <Select value={source} onValueChange={(v) => setSource(v as Source)}>
-              <SelectTrigger
-                className="h-8 w-[168px] text-xs"
-                aria-label="Created by or from"
-              >
+              <SelectTrigger className="h-8 w-[168px] text-xs" aria-label="Created by or from">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -282,10 +271,7 @@ export function QuickCapture({
             </Select>
           </Field>
 
-          <Field
-            label="Assigned to"
-            help="Who will actually do this. Leave empty if it's you."
-          >
+          <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
             <AssigneeCombobox
               compact
               contacts={contacts}
@@ -299,10 +285,7 @@ export function QuickCapture({
           </Field>
 
           <Field label="Priority" help="Urgent tasks pin to the top of a list.">
-            <Select
-              value={priority}
-              onValueChange={(v) => setPriority(v as Priority)}
-            >
+            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
               <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="Priority">
                 <SelectValue />
               </SelectTrigger>
@@ -319,9 +302,7 @@ export function QuickCapture({
           <Field label="Category" help="Used to group and colour-code tasks.">
             <Select
               value={category ?? "__none"}
-              onValueChange={(v) =>
-                setCategory(v === "__none" ? null : (v as Category))
-              }
+              onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}
             >
               <SelectTrigger className="h-8 w-[130px] text-xs" aria-label="Category">
                 <SelectValue placeholder="None" />
@@ -341,11 +322,7 @@ export function QuickCapture({
             label="Repeats"
             help="Spawns the next occurrence automatically when you complete this one."
           >
-            <RepeatField
-              compact
-              value={parsed.recurrence ?? repeat}
-              onChange={setRepeat}
-            />
+            <RepeatField compact value={parsed.recurrence ?? repeat} onChange={setRepeat} />
           </Field>
         </div>
 
@@ -362,17 +339,11 @@ export function QuickCapture({
 
         {savePrompt && (
           <div className="mt-2 flex items-center justify-between border border-border-strong bg-card px-3 py-2 text-sm">
-
             <span>
-              Save <span className="font-medium">{savePrompt.name}</span> as a
-              contact?
+              Save <span className="font-medium">{savePrompt.name}</span> as a contact?
             </span>
             <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setSavePrompt(null)}
-              >
+              <Button size="sm" variant="ghost" onClick={() => setSavePrompt(null)}>
                 No
               </Button>
               <Button
@@ -400,7 +371,7 @@ export function QuickCapture({
       </div>
     </div>
   );
-}
+});
 
 function Field({
   label,
