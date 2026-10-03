@@ -771,7 +771,7 @@ function MobileTabBar({
               aria-hidden
               className="absolute left-[20%] right-[20%] top-0 h-0.5 bg-foreground"
             />
-            )}
+          )}
           <span
             className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}
           >
