@@ -18,7 +18,6 @@ import {
   PlayCircle,
   Repeat,
   Trash2,
-
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -59,26 +58,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { getVoiceNoteUrl } from "@/lib/tasks.functions";
 import { errorMessage, taskFns } from "@/lib/api-client";
 import { addStep, deleteStep, listSteps } from "@/lib/steps.functions";
 import { formatTime, daysSince } from "@/lib/date-utils";
-import {
-  
-  recurrenceLabel,
-  type Recurrence,
-  type RecurrenceType,
-} from "@/lib/recurrence";
+import { recurrenceLabel, type Recurrence, type RecurrenceType } from "@/lib/recurrence";
 import { RepeatField } from "./RepeatField";
 import type { ContactOption } from "./AssigneeCombobox";
 import { AssigneeCombobox } from "./AssigneeCombobox";
-
 
 export type Task = {
   id: string;
@@ -116,7 +105,6 @@ export type Task = {
   parent_task_id?: string | null;
   created_at: string;
 };
-
 
 type Category = NonNullable<Task["category"]>;
 
@@ -159,9 +147,7 @@ export function TaskRow({
   const [burst, setBurst] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [nudgeFlash, setNudgeFlash] = useState(false);
-  const [nudgeStep, setNudgeStep] = useState<
-    null | "contact" | "status" | "reminder"
-  >(null);
+  const [nudgeStep, setNudgeStep] = useState<null | "contact" | "status" | "reminder">(null);
   const [remindDays, setRemindDays] = useState<number>(2);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -204,7 +190,6 @@ export function TaskRow({
     });
   }, [task]);
 
-
   const fetchSteps = useServerFn(listSteps);
   const createStep = useServerFn(addStep);
   const removeStep = useServerFn(deleteStep);
@@ -217,8 +202,7 @@ export function TaskRow({
   const steps = allSteps.filter((s) => s.task_id === task.id);
   const latestStep = steps[0] ?? null;
 
-  const invalidateSteps = () =>
-    qc.invalidateQueries({ queryKey: ["task-steps"] });
+  const invalidateSteps = () => qc.invalidateQueries({ queryKey: ["task-steps"] });
   const addStepM = useMutation({
     mutationFn: createStep,
     onSuccess: invalidateSteps,
@@ -260,9 +244,7 @@ export function TaskRow({
     onError: (e) => toast.error(errorMessage(e)),
   });
 
-  const assignee =
-    contacts.find((c) => c.id === task.assigned_to)?.name ??
-    task.assigned_to_name;
+  const assignee = contacts.find((c) => c.id === task.assigned_to)?.name ?? task.assigned_to_name;
 
   const isUrgent = task.priority === "Urgent";
 
@@ -355,7 +337,6 @@ export function TaskRow({
     setExpanded(false);
   }
 
-
   async function playOriginal() {
     if (!task.voice_note_url) return;
     try {
@@ -381,7 +362,6 @@ export function TaskRow({
       )}
     >
       <div className="flex items-start gap-2.5 px-3 py-2.5">
-
         <div className="relative mt-0.5 shrink-0">
           {burst && <PetalBurst />}
           <button
@@ -441,16 +421,12 @@ export function TaskRow({
                 </Tooltip>
               )}
             </div>
-
           </button>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
             {/* Status badge doubles as the status picker — always editable
                 without touching the task body. */}
-            <Select
-              value={status}
-              onValueChange={(v) => void setStatusTo(v as TaskStatus)}
-            >
+            <Select value={status} onValueChange={(v) => void setStatusTo(v as TaskStatus)}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SelectTrigger
@@ -461,7 +437,6 @@ export function TaskRow({
                       STATUS_BADGE[status],
                     )}
                   >
-
                     <span className="inline-flex items-center gap-1">
                       {STATUS_ICON[status]}
                       {status}
@@ -482,11 +457,7 @@ export function TaskRow({
               </SelectContent>
             </Select>
 
-            {task.category && (
-              <span className={CATEGORY_PILL[task.category]}>
-                {task.category}
-              </span>
-            )}
+            {task.category && <span className={CATEGORY_PILL[task.category]}>{task.category}</span>}
             {overdue && (
               <span className="tag-emphasis">
                 <AlertCircle className="h-2.5 w-2.5" strokeWidth={2.5} />
@@ -494,9 +465,7 @@ export function TaskRow({
               </span>
             )}
             {isUrgent && <span className="tag-emphasis">Urgent</span>}
-            {task.priority === "Important" && (
-              <span className="tag-emphasis">Important</span>
-            )}
+            {task.priority === "Important" && <span className="tag-emphasis">Important</span>}
             {task.due_date && (
               <span className="inline-flex items-center gap-1">
                 <CalIcon className="h-3 w-3" strokeWidth={2} />
@@ -535,9 +504,7 @@ export function TaskRow({
               className="mt-1.5 flex items-start gap-1.5 border-l-2 border-tan pl-2 text-left text-[12px] text-tan-ink underline-offset-2 transition-colors hover:underline"
             >
               <span className="min-w-0 break-words">
-                <span className="font-semibold uppercase tracking-[0.08em] text-[10px]">
-                  Next
-                </span>{" "}
+                <span className="font-semibold uppercase tracking-[0.08em] text-[10px]">Next</span>{" "}
                 {latestStep.body}
               </span>
               <span className="mt-[1px] shrink-0 text-[11px]">+</span>
@@ -559,11 +526,7 @@ export function TaskRow({
               type="button"
               onClick={() => {
                 setRemindDays(2);
-                setNudgeStep(
-                  nudgeContact?.phone || nudgeContact?.email
-                    ? "contact"
-                    : "status",
-                );
+                setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "status");
               }}
               title="Reach out, then update the status"
               aria-label="Follow up and set a reminder"
@@ -606,8 +569,8 @@ export function TaskRow({
                 </Label>
               </TooltipTrigger>
               <TooltipContent>
-                A running record of what's happened — newest first. Separate
-                from notes and from the task's status.
+                A running record of what's happened — newest first. Separate from notes and from the
+                task's status.
               </TooltipContent>
             </Tooltip>
             <div className="mt-1 flex gap-2">
@@ -639,9 +602,7 @@ export function TaskRow({
                 <StepEntry
                   body={steps[0].body}
                   at={steps[0].created_at}
-                  onDelete={() =>
-                    void deleteStepM.mutateAsync({ data: { id: steps[0].id } })
-                  }
+                  onDelete={() => void deleteStepM.mutateAsync({ data: { id: steps[0].id } })}
                   latest
                 />
                 {steps.length > 1 && (
@@ -685,9 +646,7 @@ export function TaskRow({
                   Notes
                 </Label>
               </TooltipTrigger>
-              <TooltipContent>
-                Background and context you may need later.
-              </TooltipContent>
+              <TooltipContent>Background and context you may need later.</TooltipContent>
             </Tooltip>
             <Textarea
               id={`n-${task.id}`}
@@ -702,9 +661,7 @@ export function TaskRow({
               <Label className="text-xs">Category</Label>
               <Select
                 value={category ?? "__none"}
-                onValueChange={(v) =>
-                  setCategory(v === "__none" ? null : (v as Category))
-                }
+                onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}
               >
                 <SelectTrigger className="mt-1 h-10">
                   <SelectValue placeholder="None" />
@@ -721,10 +678,7 @@ export function TaskRow({
             </div>
             <div>
               <Label className="text-xs">Priority</Label>
-              <Select
-                value={priority}
-                onValueChange={(v) => setPriority(v as Task["priority"])}
-              >
+              <Select value={priority} onValueChange={(v) => setPriority(v as Task["priority"])}>
                 <SelectTrigger className="mt-1 h-10">
                   <SelectValue />
                 </SelectTrigger>
@@ -795,17 +749,14 @@ export function TaskRow({
 
           {task.status_updated_at && (
             <p className="text-[11px] text-muted-foreground">
-              Status last changed{" "}
-              {new Date(task.status_updated_at).toLocaleString()}
+              Status last changed {new Date(task.status_updated_at).toLocaleString()}
             </p>
           )}
 
           {task.source_type === "Voice" && (
             <div className="space-y-2 rounded-md bg-secondary/70 px-3 py-2 text-xs text-muted-foreground">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-foreground/80">
-                  From voice note
-                </span>
+                <span className="font-medium text-foreground/80">From voice note</span>
                 {task.voice_note_url && (
                   <Button
                     type="button"
@@ -819,9 +770,7 @@ export function TaskRow({
                   </Button>
                 )}
               </div>
-              {task.raw_transcript && (
-                <p className="italic">"{task.raw_transcript}"</p>
-              )}
+              {task.raw_transcript && <p className="italic">"{task.raw_transcript}"</p>}
             </div>
           )}
 
@@ -837,12 +786,7 @@ export function TaskRow({
               Delete
             </Button>
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setExpanded(false)}
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={() => setExpanded(false)}>
                 Cancel
               </Button>
               <Button type="button" size="sm" onClick={saveEdits}>
@@ -908,10 +852,7 @@ export function TaskRow({
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     No phone number saved for this contact.{" "}
-                    <a
-                      href={`/contacts/${nudgeContact?.id ?? ""}`}
-                      className="underline"
-                    >
+                    <a href={`/contacts/${nudgeContact?.id ?? ""}`} className="underline">
                       Add phone number
                     </a>
                   </p>
@@ -928,17 +869,13 @@ export function TaskRow({
           {nudgeStep === "status" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-hero text-lg">
-                  Update the status?
-                </DialogTitle>
+                <DialogTitle className="font-hero text-lg">Update the status?</DialogTitle>
               </DialogHeader>
               <div className="space-y-2 py-1">
                 <p className="text-sm text-muted-foreground">
                   You just reached out — where does this stand now?
                 </p>
-                {(
-                  ["In Progress", "Waiting on Someone", "Complete"] as TaskStatus[]
-                ).map((s) => (
+                {(["In Progress", "Waiting on Someone", "Complete"] as TaskStatus[]).map((s) => (
                   <Button
                     key={s}
                     variant="secondary"
@@ -965,9 +902,7 @@ export function TaskRow({
           {nudgeStep === "reminder" && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-hero text-lg">
-                  Remind you again?
-                </DialogTitle>
+                <DialogTitle className="font-hero text-lg">Remind you again?</DialogTitle>
               </DialogHeader>
               <div className="space-y-3 py-1">
                 <p className="text-sm text-muted-foreground">
@@ -984,9 +919,7 @@ export function TaskRow({
                     max={60}
                     value={remindDays}
                     onChange={(e) =>
-                      setRemindDays(
-                        Math.max(1, Math.min(60, Number(e.target.value) || 1)),
-                      )
+                      setRemindDays(Math.max(1, Math.min(60, Number(e.target.value) || 1)))
                     }
                     className="h-10 w-20"
                   />
@@ -1069,7 +1002,6 @@ export function TaskRow({
               </AlertDialogAction>
             )}
           </AlertDialogFooter>
-
         </AlertDialogContent>
       </AlertDialog>
     </div>
@@ -1096,9 +1028,7 @@ function StepEntry({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="break-words text-[12px] leading-snug text-foreground">
-          {body}
-        </p>
+        <p className="break-words text-[12px] leading-snug text-foreground">{body}</p>
         <p className="mt-0.5 text-[10px] text-muted-foreground">
           {new Date(at).toLocaleString(undefined, {
             month: "short",

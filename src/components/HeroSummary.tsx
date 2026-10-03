@@ -58,14 +58,7 @@ export function HeroSummary({
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         <div className="relative mx-auto h-[92px] w-[92px] shrink-0 self-center">
           <svg viewBox="0 0 96 96" className="h-full w-full -rotate-90">
-            <circle
-              cx="48"
-              cy="48"
-              r={r}
-              fill="none"
-              stroke="var(--border)"
-              strokeWidth="1.5"
-            />
+            <circle cx="48" cy="48" r={r} fill="none" stroke="var(--border)" strokeWidth="1.5" />
             <circle
               cx="48"
               cy="48"
@@ -79,9 +72,7 @@ export function HeroSummary({
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="font-hero text-2xl leading-none text-foreground">
-              {remaining}
-            </span>
+            <span className="font-hero text-2xl leading-none text-foreground">{remaining}</span>
             <span className="micro-label mt-1 whitespace-nowrap text-[9px] leading-none [text-indent:0]">
               left today
             </span>
@@ -102,7 +93,8 @@ export function HeroSummary({
               {overdue > 0 && followUpCount > 0 && " · "}
               {followUpCount > 0 && (
                 <>
-                  <strong className="font-semibold text-foreground">{followUpCount}</strong> to follow up
+                  <strong className="font-semibold text-foreground">{followUpCount}</strong> to
+                  follow up
                 </>
               )}
             </p>
@@ -120,14 +112,9 @@ export function HeroSummary({
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-3">
             {stats.map((s) => (
               <div key={s.label} className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-1.5 w-1.5"
-                  style={{ background: s.color }}
-                />
+                <span aria-hidden className="h-1.5 w-1.5" style={{ background: s.color }} />
                 <span className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
-                  <span className="font-semibold text-foreground">{s.value}</span>{" "}
-                  {s.label}
+                  <span className="font-semibold text-foreground">{s.value}</span> {s.label}
                 </span>
               </div>
             ))}

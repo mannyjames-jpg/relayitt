@@ -13,11 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { contactFns, errorMessage, taskFns } from "@/lib/api-client";
 import { AssigneeCombobox } from "./AssigneeCombobox";
 import { VoiceCapture } from "./VoiceCapture";
@@ -26,8 +22,6 @@ import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
 import { RepeatField } from "./RepeatField";
 import { NO_RECURRENCE, nextDueDate, type Recurrence } from "@/lib/recurrence";
 import { todayISO } from "@/lib/date-utils";
-
-
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
@@ -48,10 +42,13 @@ const CATEGORIES = [
 ] as const;
 type Category = QuickCategory;
 
-export const QuickCapture = forwardRef<HTMLInputElement, {
-  filter: FilterSource;
-  onFilterChange: (f: FilterSource) => void;
-}>(function QuickCapture({ filter, onFilterChange }, forwardedRef) {
+export const QuickCapture = forwardRef<
+  HTMLInputElement,
+  {
+    filter: FilterSource;
+    onFilterChange: (f: FilterSource) => void;
+  }
+>(function QuickCapture({ filter, onFilterChange }, forwardedRef) {
   const qc = useQueryClient();
   const create = taskFns.create;
   const createC = contactFns.create;
@@ -64,9 +61,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
 
   // Name the person tasks come from, when a contact is marked as such.
   const bossName = useMemo(() => {
-    const match = contacts.find((c) =>
-      /boss|principal|employer/i.test(c.role ?? ""),
-    );
+    const match = contacts.find((c) => /boss|principal|employer/i.test(c.role ?? ""));
     return match?.name.split(" ")[0] ?? null;
   }, [contacts]);
 
@@ -123,8 +118,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
     const rule = parsed.recurrence ?? repeat;
     // A repeating task with no date starts on its first matching day.
     const firstDue =
-      parsed.due_date ??
-      (rule.recurrence_type !== "none" ? nextDueDate(todayISO(), rule) : null);
+      parsed.due_date ?? (rule.recurrence_type !== "none" ? nextDueDate(todayISO(), rule) : null);
     await m.mutateAsync({
       data: {
         title: trimmed,
@@ -202,10 +196,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
           </div>
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          className={cn("flex gap-2", shake && "animate-shake")}
-        >
+        <form onSubmit={onSubmit} className={cn("flex gap-2", shake && "animate-shake")}>
           <div className="relative flex-1">
             <Input
               ref={setInputRef}
@@ -234,16 +225,11 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
           </div>
 
           <VoiceCapture contacts={contacts} />
-          <Button
-            type="submit"
-            className="h-11 px-5"
-            disabled={!title.trim() || m.isPending}
-          >
+          <Button type="submit" className="h-11 px-5" disabled={!title.trim() || m.isPending}>
             <Plus className="h-4 w-4" strokeWidth={2} />
             Add task
           </Button>
         </form>
-
 
         {/* Details collapse to keep the top of the screen calm on mobile. */}
         <div className="mt-2 flex items-center justify-between">
@@ -254,10 +240,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
             className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
           >
             <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 transition-transform",
-                detailsOpen && "rotate-180",
-              )}
+              className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")}
             />
             {detailsOpen ? "Hide details" : "Add details"}
           </button>
@@ -275,10 +258,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
         >
           <Field label="Created by / From" help={SOURCE_HELP[source]}>
             <Select value={source} onValueChange={(v) => setSource(v as Source)}>
-              <SelectTrigger
-                className="h-8 w-[168px] text-xs"
-                aria-label="Created by or from"
-              >
+              <SelectTrigger className="h-8 w-[168px] text-xs" aria-label="Created by or from">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -291,10 +271,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
             </Select>
           </Field>
 
-          <Field
-            label="Assigned to"
-            help="Who will actually do this. Leave empty if it's you."
-          >
+          <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
             <AssigneeCombobox
               compact
               contacts={contacts}
@@ -308,10 +285,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
           </Field>
 
           <Field label="Priority" help="Urgent tasks pin to the top of a list.">
-            <Select
-              value={priority}
-              onValueChange={(v) => setPriority(v as Priority)}
-            >
+            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
               <SelectTrigger className="h-8 w-[110px] text-xs" aria-label="Priority">
                 <SelectValue />
               </SelectTrigger>
@@ -328,9 +302,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
           <Field label="Category" help="Used to group and colour-code tasks.">
             <Select
               value={category ?? "__none"}
-              onValueChange={(v) =>
-                setCategory(v === "__none" ? null : (v as Category))
-              }
+              onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}
             >
               <SelectTrigger className="h-8 w-[130px] text-xs" aria-label="Category">
                 <SelectValue placeholder="None" />
@@ -350,11 +322,7 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
             label="Repeats"
             help="Spawns the next occurrence automatically when you complete this one."
           >
-            <RepeatField
-              compact
-              value={parsed.recurrence ?? repeat}
-              onChange={setRepeat}
-            />
+            <RepeatField compact value={parsed.recurrence ?? repeat} onChange={setRepeat} />
           </Field>
         </div>
 
@@ -371,17 +339,11 @@ export const QuickCapture = forwardRef<HTMLInputElement, {
 
         {savePrompt && (
           <div className="mt-2 flex items-center justify-between border border-border-strong bg-card px-3 py-2 text-sm">
-
             <span>
-              Save <span className="font-medium">{savePrompt.name}</span> as a
-              contact?
+              Save <span className="font-medium">{savePrompt.name}</span> as a contact?
             </span>
             <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setSavePrompt(null)}
-              >
+              <Button size="sm" variant="ghost" onClick={() => setSavePrompt(null)}>
                 No
               </Button>
               <Button
