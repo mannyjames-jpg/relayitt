@@ -140,15 +140,18 @@ function CalendarPage() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="min-h-screen bg-background min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]">
+      <div
+        data-relay-workspace
+        className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]"
+      >
         <CalendarSidebar
           counts={dashboardCounts}
           displayName={displayName}
           initial={initial}
           onSignOut={signOut}
         />
-        <main className="min-w-0 px-5 pb-28 pt-6 sm:px-8 sm:pb-12 min-[821px]:px-14">
-          <div className="mx-auto max-w-[1120px]">
+        <main className="min-w-0 bg-card px-5 pb-28 pt-6 sm:px-8 sm:pb-12 min-[821px]:px-14">
+          <div className="mx-auto max-w-[900px]">
             <header className="mb-6 flex min-w-0 items-start justify-between gap-4 border-b border-border pb-5">
               <div className="min-w-0">
                 <div className="mb-2 flex items-center gap-2 min-[821px]:hidden">
@@ -446,16 +449,19 @@ function CalendarSidebar({
     { label: "Settings", to: "/settings" as const },
   ];
   return (
-    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 py-6 min-[821px]:flex">
-      <Link to="/dashboard" className="font-wordmark px-2 text-foreground">
+    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 min-[821px]:flex">
+      <Link
+        to="/dashboard"
+        className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground"
+      >
         Relay
       </Link>
-      <nav className="mt-10" aria-label="Task sections">
+      <nav aria-label="Task sections">
         {taskLinks.map((item) => (
           <Link
             key={item.label}
             to="/dashboard"
-            className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 border-transparent px-3 text-[13px] text-muted-foreground hover:text-foreground"
+            className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 border-transparent px-3 py-2.5 text-[14px] text-muted-foreground hover:text-foreground"
           >
             <span className="truncate">{item.label}</span>
             <span className={item.alert ? "text-alert" : "text-muted-foreground"}>
@@ -464,24 +470,29 @@ function CalendarSidebar({
           </Link>
         ))}
       </nav>
-      <nav className="mt-5 border-t border-border pt-5" aria-label="Main navigation">
+      <nav className="mx-3 mt-3 border-t border-border pt-3" aria-label="Main navigation">
         {routeLinks.map((item) => (
           <Link
             key={item.to}
             to={item.to}
             aria-current={item.to === "/calendar" ? "page" : undefined}
-            className={`flex min-h-11 items-center border-l-2 px-3 text-[13px] ${item.to === "/calendar" ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`flex min-h-11 items-center border-l-2 px-3 py-2.5 text-[14px] ${item.to === "/calendar" ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
             {item.label}
           </Link>
         ))}
       </nav>
-      <div className="mt-auto border-t border-border pt-5">
-        <div className="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-3">
-          <span className="grid h-8 w-8 place-items-center bg-primary text-xs font-semibold text-primary-foreground">
+      <div className="mt-auto border-t border-border pb-5 pt-5">
+        <div className="grid grid-cols-[30px_minmax(0,1fr)] items-center gap-3">
+          <span className="grid h-[30px] w-[30px] place-items-center bg-primary text-xs font-semibold text-primary-foreground">
             {initial}
           </span>
-          <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+          <span className="min-w-0">
+            <span className="block truncate text-[14px] font-medium text-foreground">
+              {displayName}
+            </span>
+            <span className="block text-[12px] text-muted-foreground">Personal assistant</span>
+          </span>
         </div>
         <Button
           variant="ghost"

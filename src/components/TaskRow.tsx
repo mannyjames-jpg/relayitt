@@ -2,34 +2,19 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  AlertCircle,
-  ArrowRight,
   ChevronDown,
   ChevronRight,
-  BellRing,
-  Calendar as CalIcon,
   Check,
-  Circle,
-  Clock,
-  MessageCircleQuestion,
   MessageSquare,
   Phone,
   Play,
   PlayCircle,
   Repeat,
-  Trash2,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PetalBurst } from "@/components/PetalBurst";
-import {
-  CATEGORY_PILL,
-  STATUS_BADGE,
-  STATUS_HELP,
-  STATUS_ORDER,
-  waitingLabel,
-  type TaskStatus,
-} from "@/lib/task-style";
+import { STATUS_ORDER, waitingLabel, type TaskStatus } from "@/lib/task-style";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -119,13 +104,6 @@ const CATEGORIES: Category[] = [
   "Other",
 ];
 
-const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
-  "Not Started": <Circle className="h-3 w-3" />,
-  "In Progress": <Play className="h-3 w-3" />,
-  "Waiting on Someone": <MessageCircleQuestion className="h-3 w-3" />,
-  Complete: <Check className="h-3 w-3" />,
-};
-
 export function TaskRow({
   task,
   contacts,
@@ -144,6 +122,7 @@ export function TaskRow({
   const getVoice = useServerFn(getVoiceNoteUrl);
 
   const [expanded, setExpanded] = useState(false);
+  const [editDetailsOpen, setEditDetailsOpen] = useState(false);
   const [burst, setBurst] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [nudgeFlash, setNudgeFlash] = useState(false);
@@ -334,7 +313,7 @@ export function TaskRow({
         recurrence_end_date: repeat.recurrence_end_date,
       },
     });
-    setExpanded(false);
+    setEditDetailsOpen(false);
   }
 
   async function playOriginal() {
@@ -356,21 +335,66 @@ export function TaskRow({
   const lateDays = task.due_date ? Math.max(1, daysSince(task.due_date)) : 0;
   const nudgeContact = contacts.find((c) => c.id === task.assigned_to) ?? null;
 
+  const dateParts = task.due_date?.split("-").map(Number);
+  const dueDateObject = dateParts ? new Date(dateParts[0], dateParts[1] - 1, dateParts[2]) : null;
+  const shortDueDate = dueDateObject?.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  const comingDate = dueDateObject?.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+  const rightColumn = overdue
+    ? {
+        first: `${lateDays} ${lateDays === 1 ? "day" : "days"} late`,
+        second: `${shortDueDate ?? ""}${task.due_time ? ` · ${formatTime(task.due_time)}` : ""}`,
+        alert: true,
+      }
+    : showWaitingBadge
+      ? {
+          first: waitingLabel(waitDays),
+          second: waitingNeedsAttention ? "Time to follow up" : "",
+          alert: waitingNeedsAttention,
+        }
+      : task.due_date === new Date().toLocaleDateString("en-CA")
+        ? { first: task.due_time ? formatTime(task.due_time) : "Today", second: "", alert: false }
+        : task.due_date
+          ? {
+              first: comingDate ?? "",
+              second: task.due_time ? formatTime(task.due_time) : "",
+              alert: false,
+            }
+          : null;
+  const meta = [
+    task.category,
+    task.priority === "Important" ? "Important" : null,
+    repeats ? recurrenceLabel(rule) : null,
+    status === "In Progress" ? "In progress" : null,
+  ].filter(Boolean);
+
+  async function moveToToday() {
+    const today = new Date().toLocaleDateString("en-CA");
+    await updateM.mutateAsync({ data: { id: task.id, due_date: today } });
+    toast.success("Moved to today");
+  }
+
   return (
     <div
       className={cn(
-        "group relative border border-border bg-card transition-colors hover:border-border-strong",
+        "group relative border-t border-border transition-colors hover:bg-foreground/[0.035]",
         completing && "animate-complete",
       )}
     >
       {waitingNeedsAttention && (
         <span
           aria-hidden
-          className="absolute -left-3 top-0 h-full w-0.5 bg-alert min-[821px]:-left-3.5"
+          className="absolute -left-3 top-2.5 bottom-2.5 w-0.5 bg-alert min-[821px]:-left-3.5"
         />
       )}
-      <div className="flex items-start gap-2.5 px-3 py-2.5">
-        <div className="relative mt-0.5 shrink-0">
+      <div className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)] sm:grid-cols-[44px_minmax(0,1fr)_auto]">
+        <div className="relative flex h-11 w-11 items-center justify-center">
           {burst && <PetalBurst />}
           <button
             type="button"
@@ -378,8 +402,8 @@ export function TaskRow({
             data-task-check={task.id}
             aria-label={`Mark ${task.title} complete`}
             className={cn(
-              "relative flex h-[18px] w-[18px] items-center justify-center rounded-none border border-border-strong transition-all duration-100 hover:border-foreground active:scale-[0.84]",
-              completing && "border-foreground bg-primary animate-ring-pop",
+              "relative flex h-[18px] w-[18px] items-center justify-center border-[1.5px] border-foreground transition-transform duration-100 active:scale-[0.84]",
+              completing && "bg-primary animate-ring-pop",
             )}
           >
             <Check
@@ -392,419 +416,303 @@ export function TaskRow({
           </button>
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 py-3 pr-2">
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={() => setExpanded((value) => !value)}
             data-task-title={task.id}
-            className="w-full text-left"
+            className="flex w-full min-w-0 items-start text-left"
           >
-            <div className="flex items-start gap-1.5">
-              {isUrgent && (
-                <span
-                  aria-label="Urgent"
-                  className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 bg-foreground"
-                />
+            {isUrgent && (
+              <span
+                aria-label="Urgent"
+                className="mr-2 mt-[7px] h-[7px] w-[7px] shrink-0 bg-foreground"
+              />
+            )}
+            <span
+              className={cn(
+                "min-w-0 break-words text-[15.5px] leading-[1.35] text-foreground",
+                isUrgent ? "font-bold" : "font-normal",
               )}
+            >
+              {task.title}
+            </span>
+          </button>
+          {meta.length > 0 && (
+            <div className="mt-1 flex flex-wrap items-center text-[12.5px] text-muted-foreground">
+              {meta.map((item, index) => (
+                <span
+                  key={String(item)}
+                  className={cn(item === "Important" && "font-semibold text-foreground")}
+                >
+                  {index > 0 && <span className="mx-1.5">·</span>}
+                  {item === recurrenceLabel(rule) && repeats && (
+                    <Repeat className="mr-1 inline h-3 w-3" strokeWidth={1.5} />
+                  )}
+                  {item}
+                </span>
+              ))}
+            </div>
+          )}
+          {!expanded && latestStep && (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="mt-1 block max-w-full truncate text-left text-[12.5px] text-muted-foreground"
+            >
+              <span className="font-semibold text-foreground">Next:</span> {latestStep.body}
+            </button>
+          )}
+        </div>
+
+        {rightColumn && (
+          <div className="col-start-2 pb-3 pr-2 text-left text-[12.5px] tabular-nums text-muted-foreground sm:col-start-3 sm:row-start-1 sm:pb-0 sm:pl-4 sm:pt-3 sm:text-right">
+            <div
+              className={cn(
+                "whitespace-nowrap text-[13px] font-semibold",
+                rightColumn.alert ? "text-alert" : "text-foreground",
+              )}
+            >
+              {rightColumn.first}
+            </div>
+            {rightColumn.second && (
               <div
                 className={cn(
-                  "min-w-0 break-words text-[14px] leading-snug text-foreground",
-                  isUrgent ? "font-bold" : "font-normal",
+                  "mt-0.5 whitespace-nowrap",
+                  rightColumn.alert && showWaitingBadge && "text-alert",
                 )}
               >
-                {task.title}
+                {rightColumn.second}
               </div>
-              {repeats && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="mt-[3px] shrink-0">
-                      <Repeat
-                        className="h-3.5 w-3.5 text-muted-foreground"
-                        strokeWidth={1.5}
-                        aria-label={`Repeats ${recurrenceLabel(rule)}`}
-                      />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{recurrenceLabel(rule)}</TooltipContent>
-                </Tooltip>
+            )}
+          </div>
+        )}
+
+        {expanded && (
+          <div className="col-span-2 col-start-1 space-y-4 pb-[18px] pl-11 pr-0 sm:col-span-2 sm:col-start-2">
+            <div className="border-l border-border pl-3">
+              {steps.length === 0 ? (
+                <p className="py-2 text-[13px] text-muted-foreground">No steps logged yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {steps.map((step) => (
+                    <StepEntry
+                      key={step.id}
+                      body={step.body}
+                      at={step.created_at}
+                      onDelete={() => void deleteStepM.mutateAsync({ data: { id: step.id } })}
+                    />
+                  ))}
+                </div>
               )}
             </div>
-          </button>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-            {/* Status badge doubles as the status picker — always editable
-                without touching the task body. */}
-            <Select value={status} onValueChange={(v) => void setStatusTo(v as TaskStatus)}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SelectTrigger
-                    badge
-                    aria-label="Change status"
-                    className={cn(
-                      "h-[18px] w-auto gap-1 px-1.5 py-0 shadow-none focus:ring-1 [&>svg:last-child]:h-2.5 [&>svg:last-child]:w-2.5 [&>svg:last-child]:opacity-60",
-                      STATUS_BADGE[status],
-                    )}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {STATUS_ICON[status]}
-                      {status}
-                    </span>
-                  </SelectTrigger>
-                </TooltipTrigger>
-                <TooltipContent>{STATUS_HELP[status]}</TooltipContent>
-              </Tooltip>
-              <SelectContent align="start">
-                {STATUS_ORDER.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    <span className="inline-flex items-center gap-2">
-                      {STATUS_ICON[s]}
-                      {s}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {task.category && <span className={CATEGORY_PILL[task.category]}>{task.category}</span>}
-            {overdue && (
-              <span className="tag-emphasis border-alert text-alert">
-                <AlertCircle className="h-2.5 w-2.5" strokeWidth={2.5} />
-                {lateDays} {lateDays === 1 ? "day" : "days"} late
-              </span>
-            )}
-            {isUrgent && <span className="tag-emphasis">Urgent</span>}
-            {task.priority === "Important" && <span className="tag-emphasis">Important</span>}
-            {task.due_date && (
-              <span className="inline-flex items-center gap-1">
-                <CalIcon className="h-3 w-3" strokeWidth={2} />
-                {task.due_date}
-                {task.due_time && (
-                  <>
-                    <Clock className="ml-1 h-3 w-3" strokeWidth={2} />
-                    {formatTime(task.due_time)}
-                  </>
-                )}
-              </span>
-            )}
-            {assignee && <span className="truncate">→ {assignee}</span>}
-            {showWaitingBadge && (
-              <span
-                className={cn(
-                  waitDays >= 3 || followupOverdue ? "tag-emphasis" : "tag-quiet",
-                  nudgeFlash && "animate-flash",
-                )}
-                title={
-                  followupOverdue
-                    ? "You asked to be reminded about this — that time has passed"
-                    : undefined
-                }
-              >
-                {waitingLabel(waitDays)}
-              </span>
-            )}
-          </div>
-
-          {/* Most recent entry from the step log, visible without expanding. */}
-          {latestStep ? (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="mt-1.5 flex items-start gap-1.5 border-l-2 border-tan pl-2 text-left text-[12px] text-tan-ink underline-offset-2 transition-colors hover:underline"
-            >
-              <span className="min-w-0 break-words">
-                <span className="font-semibold uppercase tracking-[0.08em] text-[10px]">Next</span>{" "}
-                {latestStep.body}
-              </span>
-              <span className="mt-[1px] shrink-0 text-[11px]">+</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            >
-              + Add step
-            </button>
-          )}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-1 translate-x-2 opacity-0 transition-all duration-200 focus-within:translate-x-0 focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100">
-          {showWaitingBadge && (
-            <button
-              type="button"
-              onClick={() => {
-                setRemindDays(2);
-                setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "status");
-              }}
-              title="Reach out, then update the status"
-              aria-label="Follow up and set a reminder"
-              className="flex h-7 w-7 items-center justify-center rounded-none text-foreground transition-colors hover:bg-accent"
-            >
-              <BellRing className="h-4 w-4" strokeWidth={2} />
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            title="Remove this task"
-            aria-label={`Delete ${task.title}`}
-            className="flex h-7 w-7 items-center justify-center rounded-none text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <X className="h-4 w-4" strokeWidth={2} />
-          </button>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="space-y-3 border-t border-border bg-surface px-3 pb-4">
-          <div className="pt-3">
-            <Label htmlFor={`t-${task.id}`} className="text-xs">
-              Title
-            </Label>
-            <Input
-              id={`t-${task.id}`}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={200}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Label htmlFor={`ns-${task.id}`} className="text-xs">
-                  Step log
-                </Label>
-              </TooltipTrigger>
-              <TooltipContent>
-                A running record of what's happened — newest first. Separate from notes and from the
-                task's status.
-              </TooltipContent>
-            </Tooltip>
-            <div className="mt-1 flex gap-2">
+            <div className="flex max-w-[460px] border border-border bg-white">
               <Input
-                id={`ns-${task.id}`}
                 value={stepDraft}
                 maxLength={300}
-                placeholder="e.g. Called the caterer, waiting on a quote"
-                onChange={(e) => setStepDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
+                placeholder="Log the next step"
+                onChange={(event) => setStepDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
                     void submitStep();
                   }
                 }}
+                className="h-12 flex-1 border-0 bg-transparent px-3 shadow-none focus-visible:ring-0 sm:h-10"
               />
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 onClick={() => void submitStep()}
                 disabled={!stepDraft.trim() || addStepM.isPending}
+                className="h-12 border-l border-border px-4 text-[11px] tracking-[0.14em] hover:bg-primary hover:text-primary-foreground sm:h-10"
               >
-                Add step
+                Add
               </Button>
             </div>
+            <div className="flex flex-wrap gap-2 pt-2">
+              {showWaitingBadge && (
+                <RowAction
+                  onClick={() => {
+                    setRemindDays(2);
+                    setNudgeStep(nudgeContact?.phone || nudgeContact?.email ? "contact" : "status");
+                  }}
+                >
+                  Follow up
+                </RowAction>
+              )}
+              {overdue && <RowAction onClick={() => void moveToToday()}>Move to today</RowAction>}
+              <RowAction onClick={() => setEditDetailsOpen((value) => !value)}>
+                Edit details
+              </RowAction>
+              <RowAction onClick={() => setConfirmDelete(true)}>Delete</RowAction>
+            </div>
 
-            {steps.length > 0 && (
-              <div className="mt-2 space-y-1.5">
-                <StepEntry
-                  body={steps[0].body}
-                  at={steps[0].created_at}
-                  onDelete={() => void deleteStepM.mutateAsync({ data: { id: steps[0].id } })}
-                  latest
-                />
-                {steps.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setHistoryOpen((v) => !v)}
-                      className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            {editDetailsOpen && (
+              <div className="space-y-3 border-t border-border pt-4">
+                <div>
+                  <Label htmlFor={`t-${task.id}`} className="text-xs">
+                    Title
+                  </Label>
+                  <Input
+                    id={`t-${task.id}`}
+                    value={title}
+                    onChange={(event) => setTitle(event.target.value)}
+                    maxLength={200}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`n-${task.id}`} className="text-xs">
+                    Notes
+                  </Label>
+                  <Textarea
+                    id={`n-${task.id}`}
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <Label className="text-xs">Status</Label>
+                    <Select
+                      value={status}
+                      onValueChange={(value) => setStatus(value as TaskStatus)}
                     >
-                      {historyOpen ? (
-                        <ChevronDown className="h-3 w-3" strokeWidth={2} />
-                      ) : (
-                        <ChevronRight className="h-3 w-3" strokeWidth={2} />
+                      <SelectTrigger className="mt-1 h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_ORDER.map((item) => (
+                          <SelectItem key={item} value={item}>
+                            {item}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Category</Label>
+                    <Select
+                      value={category ?? "__none"}
+                      onValueChange={(value) =>
+                        setCategory(value === "__none" ? null : (value as Category))
+                      }
+                    >
+                      <SelectTrigger className="mt-1 h-10">
+                        <SelectValue placeholder="None" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">None</SelectItem>
+                        {CATEGORIES.map((item) => (
+                          <SelectItem key={item} value={item}>
+                            {item}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Priority</Label>
+                    <Select
+                      value={priority}
+                      onValueChange={(value) => setPriority(value as Task["priority"])}
+                    >
+                      <SelectTrigger className="mt-1 h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["Normal", "Important", "Urgent"].map((item) => (
+                          <SelectItem key={item} value={item}>
+                            {item}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Repeats</Label>
+                  <RepeatField value={repeat} onChange={setRepeat} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor={`d-${task.id}`} className="text-xs">
+                      Due date
+                    </Label>
+                    <Input
+                      id={`d-${task.id}`}
+                      type="date"
+                      value={dueDate}
+                      onChange={(event) => {
+                        setDueDate(event.target.value);
+                        if (!event.target.value) setDueTime("");
+                      }}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`ti-${task.id}`} className="text-xs">
+                      Time
+                    </Label>
+                    <Input
+                      id={`ti-${task.id}`}
+                      type="time"
+                      value={dueTime}
+                      onChange={(event) => setDueTime(event.target.value)}
+                      disabled={!dueDate}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Assigned to</Label>
+                  <div className="mt-1">
+                    <AssigneeCombobox
+                      contacts={contacts}
+                      contactId={contactId}
+                      freeText={freeText}
+                      onChange={({ contactId: id, freeText: text }) => {
+                        setContactId(id);
+                        setFreeText(text);
+                      }}
+                    />
+                  </div>
+                </div>
+                {task.source_type === "Voice" && (
+                  <div className="border border-border px-3 py-2 text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">From voice note</span>
+                      {task.voice_note_url && (
+                        <Button type="button" size="sm" variant="ghost" onClick={playOriginal}>
+                          <PlayCircle />
+                          Play original
+                        </Button>
                       )}
-                      {historyOpen
-                        ? "Hide earlier steps"
-                        : `${steps.length - 1} earlier step${steps.length > 2 ? "s" : ""}`}
-                    </button>
-                    {historyOpen &&
-                      steps.slice(1).map((st) => (
-                        <StepEntry
-                          key={st.id}
-                          body={st.body}
-                          at={st.created_at}
-                          onDelete={() =>
-                            void deleteStepM.mutateAsync({
-                              data: { id: st.id },
-                            })
-                          }
-                        />
-                      ))}
-                  </>
+                    </div>
+                    {task.raw_transcript && <p className="mt-2 italic">“{task.raw_transcript}”</p>}
+                  </div>
                 )}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditDetailsOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="button" size="sm" onClick={saveEdits}>
+                    Save
+                  </Button>
+                </div>
               </div>
             )}
           </div>
-          <div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Label htmlFor={`n-${task.id}`} className="text-xs">
-                  Notes
-                </Label>
-              </TooltipTrigger>
-              <TooltipContent>Background and context you may need later.</TooltipContent>
-            </Tooltip>
-            <Textarea
-              id={`n-${task.id}`}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="mt-1"
-              rows={3}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">Category</Label>
-              <Select
-                value={category ?? "__none"}
-                onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}
-              >
-                <SelectTrigger className="mt-1 h-10">
-                  <SelectValue placeholder="None" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">None</SelectItem>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs">Priority</Label>
-              <Select value={priority} onValueChange={(v) => setPriority(v as Task["priority"])}>
-                <SelectTrigger className="mt-1 h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Normal">Normal</SelectItem>
-                  <SelectItem value="Important">Important</SelectItem>
-                  <SelectItem value="Urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs">Repeats</Label>
-            <RepeatField value={repeat} onChange={setRepeat} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor={`d-${task.id}`} className="text-xs">
-                Due date
-              </Label>
-              <Input
-                id={`d-${task.id}`}
-                type="date"
-                value={dueDate}
-                onChange={(e) => {
-                  setDueDate(e.target.value);
-                  if (!e.target.value) setDueTime("");
-                }}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor={`ti-${task.id}`} className="text-xs">
-                Time
-              </Label>
-              <Input
-                id={`ti-${task.id}`}
-                type="time"
-                value={dueTime}
-                onChange={(e) => setDueTime(e.target.value)}
-                disabled={!dueDate}
-                className="mt-1"
-              />
-            </div>
-          </div>
-          <div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Label className="text-xs">Assigned to</Label>
-              </TooltipTrigger>
-              <TooltipContent>
-                The person actually doing this — leave empty if it's you.
-              </TooltipContent>
-            </Tooltip>
-            <div className="mt-1">
-              <AssigneeCombobox
-                contacts={contacts}
-                contactId={contactId}
-                freeText={freeText}
-                onChange={({ contactId: id, freeText: t }) => {
-                  setContactId(id);
-                  setFreeText(t);
-                }}
-              />
-            </div>
-          </div>
-
-          {task.status_updated_at && (
-            <p className="text-[11px] text-muted-foreground">
-              Status last changed {new Date(task.status_updated_at).toLocaleString()}
-            </p>
-          )}
-
-          {task.source_type === "Voice" && (
-            <div className="space-y-2 rounded-md bg-secondary/70 px-3 py-2 text-xs text-muted-foreground">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-foreground/80">From voice note</span>
-                {task.voice_note_url && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 gap-1"
-                    onClick={playOriginal}
-                  >
-                    <PlayCircle className="h-4 w-4" />
-                    Play original
-                  </Button>
-                )}
-              </div>
-              {task.raw_transcript && <p className="italic">"{task.raw_transcript}"</p>}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between pt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 className="mr-1 h-4 w-4" />
-              Delete
-            </Button>
-            <div className="flex gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setExpanded(false)}>
-                Cancel
-              </Button>
-              <Button type="button" size="sm" onClick={saveEdits}>
-                Save
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
+        )}
+      </div>
       <Dialog
         open={nudgeStep !== null}
         onOpenChange={(o) => {
@@ -894,7 +802,6 @@ export function TaskRow({
                       if (s === "Complete") toast.success("Marked Complete");
                     }}
                   >
-                    <span className="mr-2 inline-flex">{STATUS_ICON[s]}</span>
                     Mark as {s}
                   </Button>
                 ))}
@@ -1017,11 +924,24 @@ export function TaskRow({
 }
 
 /** One timestamped entry in a task's step log. */
+function RowAction({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onClick}
+      className="h-11 px-3 text-[11px] tracking-[0.14em] hover:bg-primary hover:text-primary-foreground sm:h-9"
+    >
+      {children}
+    </Button>
+  );
+}
+
+/** One timestamped entry in a task's step log. */
 function StepEntry({
   body,
   at,
   onDelete,
-  latest,
 }: {
   body: string;
   at: string;
@@ -1029,15 +949,9 @@ function StepEntry({
   latest?: boolean;
 }) {
   return (
-    <div
-      className={cn(
-        "group/step flex items-start gap-2 rounded-lg border border-border px-2 py-1.5",
-        latest ? "bg-card" : "bg-surface",
-      )}
-    >
+    <div className="group/step flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        <p className="break-words text-[12px] leading-snug text-foreground">{body}</p>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {new Date(at).toLocaleString(undefined, {
             month: "short",
             day: "numeric",
@@ -1045,12 +959,13 @@ function StepEntry({
             minute: "2-digit",
           })}
         </p>
+        <p className="mt-0.5 break-words text-[13.5px] leading-snug text-foreground">{body}</p>
       </div>
       <button
         type="button"
         onClick={onDelete}
         aria-label="Delete this step"
-        className="mt-0.5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/step:opacity-100"
+        className="mt-1 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/step:opacity-100"
       >
         <X className="h-3 w-3" strokeWidth={2} />
       </button>
