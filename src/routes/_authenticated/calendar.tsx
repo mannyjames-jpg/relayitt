@@ -4,17 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { contactFns, taskFns } from "@/lib/api-client";
-import { getProfile } from "@/lib/profile.functions";
 import { formatTime, todayISO } from "@/lib/date-utils";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { ErrorState, LoadingState } from "@/components/QueryState";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppMobileTabs, AppMoreMenu, AppSidebar, useAppShell } from "@/components/AppSidebar";
 
@@ -52,8 +46,6 @@ function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => taskFns.list() });
   const contactsQ = useQuery({ queryKey: ["contacts"], queryFn: () => contactFns.list() });
-  const getProf = useServerFn(getProfile);
-  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: () => getProf() });
   const tasks = (tasksQ.data ?? []) as Task[];
   const contacts = contactsQ.data ?? [];
   const today = todayISO();
