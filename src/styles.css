@@ -387,3 +387,18 @@
     animation: none !important;
   }
 }
+
+[data-relay-workspace] {
+  --background: #efece6;
+  --surface: #efece6;
+  --card: #faf8f4;
+  --card-foreground: #1a1816;
+  --foreground: #1a1816;
+  --primary: #1a1816;
+  --primary-foreground: #faf8f4;
+  --muted-foreground: #645f58;
+  --border: rgb(26 24 22 / 14%);
+  --border-strong: rgb(26 24 22 / 14%);
+  font-size: 15px;
+  line-height: 1.45;
+}
