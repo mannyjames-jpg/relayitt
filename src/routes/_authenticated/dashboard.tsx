@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -18,9 +18,14 @@ import { contactFns, taskFns } from "@/lib/api-client";
 import { ErrorState, LoadingState } from "@/components/QueryState";
 import { getProfile } from "@/lib/profile.functions";
 import { getGoogleAuthUrl, getGoogleStatus } from "@/lib/google.functions";
-import { todayISO } from "@/lib/date-utils";
-import { formatDateLabel } from "@/lib/date-utils";
+import { daysSince, formatDateLabel, formatTime, todayISO } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { HeroSummary } from "@/components/HeroSummary";
@@ -115,6 +120,8 @@ function Dashboard() {
 
   const today = todayISO();
   const [filter, setFilter] = useState<FilterSource>("All");
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const quickCaptureRef = useRef<HTMLInputElement>(null);
 
   const filteredTasks = useMemo(() => {
     if (filter === "All") return tasks as Task[];
@@ -124,6 +131,93 @@ function Dashboard() {
     () => groupTasks(filteredTasks, today),
     [filteredTasks, today],
   );
+
+  const todayCount = groups.overdue.length + groups.today.length;
+
+  useEffect(() => {
+    document.title = todayCount > 0 ? `(${todayCount}) Your day — Relay` : "Your day — Relay";
+    return () => {
+      document.title = "Your day — Relay";
+    };
+  }, [todayCount]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const tag = target?.tagName;
+      const editing =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target?.isContentEditable;
+      const overlayOpen = Boolean(
+        document.querySelector('[role="dialog"], [role="listbox"][data-state="open"]'),
+      );
+
+      if (editing || overlayOpen || event.ctrlKey || event.metaKey || event.altKey) return;
+
+      if (event.key === "/") {
+        event.preventDefault();
+        quickCaptureRef.current?.focus();
+        return;
+      }
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setShortcutsOpen(true);
+        return;
+      }
+
+      const titles = Array.from(
+        document.querySelectorAll<HTMLButtonElement>("[data-task-title]"),
+      ).filter((button) => button.offsetParent !== null);
+      const current = target?.closest<HTMLButtonElement>("[data-task-title]");
+      const currentIndex = current ? titles.indexOf(current) : -1;
+
+      if (event.key.toLowerCase() === "j" || event.key.toLowerCase() === "k") {
+        if (titles.length === 0) return;
+        event.preventDefault();
+        const nextIndex =
+          event.key.toLowerCase() === "j"
+            ? currentIndex < 0
+              ? 0
+              : Math.min(currentIndex + 1, titles.length - 1)
+            : currentIndex < 0
+              ? titles.length - 1
+              : Math.max(currentIndex - 1, 0);
+        titles[nextIndex]?.focus();
+        titles[nextIndex]?.scrollIntoView({ block: "nearest" });
+        return;
+      }
+
+      if (event.key.toLowerCase() === "x" && current && currentIndex >= 0) {
+        const taskId = current.dataset.taskTitle;
+        const checkbox = taskId
+          ? document.querySelector<HTMLButtonElement>(`[data-task-check="${CSS.escape(taskId)}"]`)
+          : null;
+        if (!checkbox) return;
+        event.preventDefault();
+        checkbox.click();
+
+        const focusAfterRemoval = () => {
+          const remaining = Array.from(
+            document.querySelectorAll<HTMLButtonElement>("[data-task-title]"),
+          ).filter((button) => button.offsetParent !== null);
+          if (taskId && remaining.some((button) => button.dataset.taskTitle === taskId)) {
+            window.requestAnimationFrame(focusAfterRemoval);
+            return;
+          }
+          const next = remaining[Math.min(currentIndex, remaining.length - 1)];
+          next?.focus();
+          next?.scrollIntoView({ block: "nearest" });
+        };
+        window.requestAnimationFrame(focusAfterRemoval);
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const greetingName = useMemo(() => {
     const raw = profile?.display_name ?? "";
@@ -157,12 +251,48 @@ function Dashboard() {
     0,
   );
   const upcomingCount = groups.upcoming.reduce((n, g) => n + g.tasks.length, 0);
-  const todayCount = groups.overdue.length + groups.today.length;
+  const followUpCount = groups.waitingGroups.reduce(
+    (count, group) =>
+      count +
+      group.tasks.filter(
+        (task) =>
+          daysSince(task.last_followup_at ?? task.created_at) >= 3 ||
+          (!!task.next_followup_reminder_at &&
+            new Date(task.next_followup_reminder_at).getTime() < Date.now()),
+      ).length,
+    0,
+  );
+  const upNext = useMemo(() => {
+    const next = filteredTasks
+      .filter(
+        (task) =>
+          task.status !== "Waiting on Someone" &&
+          !!task.due_date &&
+          task.due_date >= today,
+      )
+      .sort((a, b) => {
+        const dateOrder = (a.due_date ?? "").localeCompare(b.due_date ?? "");
+        return dateOrder || (a.due_time ?? "zz").localeCompare(b.due_time ?? "zz");
+      })[0];
+    if (!next) return null;
+    const [year, month, day] = (next.due_date ?? today).split("-").map(Number);
+    return {
+      title: next.title,
+      time: next.due_time ? formatTime(next.due_time) : null,
+      date:
+        next.due_date === today
+          ? null
+          : new Date(year, month - 1, day).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            }),
+    };
+  }, [filteredTasks, today]);
 
   return (
     <TooltipProvider delayDuration={200}>
     <div className="min-h-screen bg-background">
-      <QuickCapture filter={filter} onFilterChange={setFilter} />
+      <QuickCapture ref={quickCaptureRef} filter={filter} onFilterChange={setFilter} />
 
       <header className="mx-auto flex max-w-7xl items-center justify-end gap-1 px-4 pt-2">
         <div className="flex shrink-0 items-center gap-1">
@@ -234,6 +364,8 @@ function Dashboard() {
           greeting={
             greetingName ? `Good ${partOfDay}, ${greetingName}` : "Good to see you"
           }
+          followUpCount={followUpCount}
+          upNext={upNext}
           overdue={groups.overdue.length}
           dueToday={groups.today.length}
           waiting={waitingCount}
@@ -404,6 +536,23 @@ function Dashboard() {
           </p>
         )}
       </main>
+      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
+        <DialogContent className="max-w-sm rounded-none border-border-strong bg-card shadow-none sm:rounded-none">
+          <DialogHeader>
+            <DialogTitle>Keyboard shortcuts</DialogTitle>
+          </DialogHeader>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-sm">
+            <dt className="font-semibold text-foreground">/</dt>
+            <dd className="text-muted-foreground">Add a task</dd>
+            <dt className="font-semibold text-foreground">J / K</dt>
+            <dd className="text-muted-foreground">Next / previous task</dd>
+            <dt className="font-semibold text-foreground">X</dt>
+            <dd className="text-muted-foreground">Complete the focused task</dd>
+            <dt className="font-semibold text-foreground">?</dt>
+            <dd className="text-muted-foreground">Show this list</dd>
+          </dl>
+        </DialogContent>
+      </Dialog>
     </div>
     </TooltipProvider>
   );
