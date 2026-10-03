@@ -234,7 +234,7 @@ export const QuickCapture = forwardRef<
             Add task
           </Button>
         </form>
-        <span className="sr-only max-sm:not-sr-only max-sm:absolute max-sm:left-9 max-sm:top-[72px] max-sm:pointer-events-none max-sm:text-[16px] max-sm:text-muted-foreground peer-focus:hidden">
+        <span className="sr-only max-sm:not-sr-only max-sm:pointer-events-none max-sm:absolute max-sm:left-9 max-sm:top-7 max-sm:text-[16px] max-sm:text-muted-foreground peer-focus:hidden">
           {!title && "Add a task"}
         </span>
 
