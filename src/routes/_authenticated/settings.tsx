@@ -11,7 +11,7 @@ import { getProfile, saveProfile } from "@/lib/profile.functions";
 import { applyFont, FONT_LABELS, FONT_STORAGE_KEY, type FontChoice } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { SecuritySettings } from "@/components/SecuritySettings";
-import { AppMobileTabs } from "@/components/AppSidebar";
+import { AppMobileTabs, AppSidebar, useAppShell } from "@/components/AppSidebar";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
@@ -39,6 +39,7 @@ function Settings() {
   const qc = useQueryClient();
   const get = useServerFn(getProfile);
   const save = useServerFn(saveProfile);
+  const shell = useAppShell();
 
   const { data: profile } = useQuery({
     queryKey: ["profile"],
@@ -73,77 +74,92 @@ function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
-          <Link to="/dashboard" aria-label="Back to dashboard">
-            <Button variant="ghost" size="icon" className="h-10 w-10">
-              <ArrowLeft className="h-5 w-5" />
+    <div
+      data-relay-workspace
+      className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]"
+    >
+      <AppSidebar
+        counts={shell.counts}
+        currentRoute="/settings"
+        displayName={shell.displayName}
+        initial={shell.initial}
+        onSignOut={shell.signOut}
+      />
+      <div className="min-w-0 bg-card">
+        <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur min-[821px]:hidden">
+          <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
+            <Link to="/dashboard" aria-label="Back to dashboard">
+              <Button variant="ghost" size="icon" className="h-10 w-10">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="font-hero text-2xl">Settings</h1>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-[900px] space-y-6 px-4 py-6 pb-28 min-[821px]:px-14 min-[821px]:pb-16 min-[821px]:pt-11">
+          <h1 className="hidden text-[36px] font-normal tracking-[-0.02em] min-[821px]:block">
+            Settings
+          </h1>
+          <SecuritySettings />
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="font-display">Profile</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The name Relay greets you with on the dashboard.
+            </p>
+            <div className="mt-4">
+              <Label htmlFor="display-name" className="text-xs">
+                Display name
+              </Label>
+              <Input
+                id="display-name"
+                value={name}
+                maxLength={80}
+                placeholder="e.g. Selah"
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border bg-card p-5">
+            <h2 className="font-display">Typeface</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Applied everywhere in the app.</p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-3">
+              {FONTS.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={font === f}
+                  onClick={() => chooseFont(f)}
+                  className={cn(
+                    "rounded-xl border p-3 text-left transition-colors",
+                    font === f
+                      ? "border-foreground/40 bg-secondary"
+                      : "border-border hover:bg-secondary/60",
+                  )}
+                >
+                  <span className="block text-sm font-semibold">{FONT_LABELS[f]}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">Aa Bb Cc — 123</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={() =>
+                saveM.mutate({
+                  data: { display_name: name.trim() || null, font_choice: font },
+                })
+              }
+              disabled={saveM.isPending}
+            >
+              Save settings
             </Button>
-          </Link>
-          <h1 className="font-hero text-2xl">Settings</h1>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-2xl space-y-6 px-4 py-6 pb-28 min-[821px]:pb-6">
-        <SecuritySettings />
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="font-display">Profile</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            The name Relay greets you with on the dashboard.
-          </p>
-          <div className="mt-4">
-            <Label htmlFor="display-name" className="text-xs">
-              Display name
-            </Label>
-            <Input
-              id="display-name"
-              value={name}
-              maxLength={80}
-              placeholder="e.g. Selah"
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1"
-            />
           </div>
-        </section>
-
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="font-display">Typeface</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Applied everywhere in the app.</p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
-            {FONTS.map((f) => (
-              <button
-                key={f}
-                type="button"
-                aria-pressed={font === f}
-                onClick={() => chooseFont(f)}
-                className={cn(
-                  "rounded-xl border p-3 text-left transition-colors",
-                  font === f
-                    ? "border-foreground/40 bg-secondary"
-                    : "border-border hover:bg-secondary/60",
-                )}
-              >
-                <span className="block text-sm font-semibold">{FONT_LABELS[f]}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">Aa Bb Cc — 123</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <div className="flex justify-end">
-          <Button
-            onClick={() =>
-              saveM.mutate({
-                data: { display_name: name.trim() || null, font_choice: font },
-              })
-            }
-            disabled={saveM.isPending}
-          >
-            Save settings
-          </Button>
-        </div>
-      </main>
+        </main>
+      </div>
       <AppMobileTabs current="/settings" />
     </div>
   );

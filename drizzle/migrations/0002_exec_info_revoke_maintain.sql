@@ -1,0 +1,1 @@
+REVOKE MAINTAIN ON public.exec_info_fields, public.exec_info_rows, public.exec_info_audit, public.exec_info_session FROM authenticated, anon, public;
