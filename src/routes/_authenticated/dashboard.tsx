@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, LogOut, Calendar as CalIcon, Menu } from "lucide-react";
+import { LogOut, Calendar as CalIcon, Menu } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { contactFns, taskFns } from "@/lib/api-client";
@@ -76,6 +76,10 @@ function Dashboard() {
     queryFn: () => listT(),
   });
   const tasks = tasksQ.data ?? [];
+  const { data: completedTasks = [] } = useQuery({
+    queryKey: ["completed"],
+    queryFn: () => taskFns.listCompleted(),
+  });
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts"],
     queryFn: () => listC(),
@@ -120,6 +124,9 @@ function Dashboard() {
   const groups = useMemo(() => groupTasks(filteredTasks, today), [filteredTasks, today]);
 
   const todayCount = groups.overdue.length + groups.today.length;
+  const doneToday = completedTasks.filter(
+    (task) => task.completed_at && new Date(task.completed_at).toLocaleDateString("en-CA") === today,
+  ).length;
 
   useEffect(() => {
     document.title = todayCount > 0 ? `(${todayCount}) Your day — Relay` : "Your day — Relay";
@@ -377,7 +384,7 @@ function Dashboard() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="min-h-screen bg-background min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]">
+      <div data-relay-workspace className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]">
         <DashboardSidebar
           overdue={groups.overdue.length}
           dueToday={groups.today.length}
@@ -393,16 +400,8 @@ function Dashboard() {
           onSection={scrollToSection}
         />
 
-        <div className="min-w-0">
-          <QuickCapture
-            ref={quickCaptureRef}
-            filter={filter}
-            onFilterChange={setFilter}
-            headerAction={moreMenu}
-            onHeightChange={setCaptureHeight}
-          />
-
-          <main className="mx-auto max-w-[900px] space-y-8 px-5 pb-28 pt-2 min-[821px]:px-14 min-[821px]:pb-16">
+        <div className="min-w-0 bg-card">
+          <div className="mx-auto max-w-[900px] px-5 min-[821px]:px-14">
             {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
             {tasksQ.isError && (
               <ErrorState
@@ -417,12 +416,22 @@ function Dashboard() {
               upNext={upNext}
               overdue={groups.overdue.length}
               dueToday={groups.today.length}
-              doneToday={0}
+              doneToday={doneToday}
             />
+          </div>
 
-            <OnboardingCard />
+          <QuickCapture
+            ref={quickCaptureRef}
+            filter={filter}
+            onFilterChange={setFilter}
+            headerAction={moreMenu}
+            onHeightChange={setCaptureHeight}
+          />
 
-            <div className="space-y-12">
+          <main className="mx-auto max-w-[900px] px-5 pb-28 min-[821px]:px-14 min-[821px]:pb-16">
+            {tasks.length === 0 && <OnboardingCard />}
+
+            <div className="space-y-10">
               <Panel
                 id="sec-overdue"
                 title="Overdue"
@@ -455,7 +464,7 @@ function Dashboard() {
                 onToggle={() => toggle("today")}
               >
                 {groups.today.length === 0 ? (
-                  <EmptyLine>Nothing due today — lovely.</EmptyLine>
+                  <EmptyLine>Today is clear.</EmptyLine>
                 ) : (
                   <div className="space-y-1.5">
                     {byPriority(groups.today).map((t) => (
@@ -468,7 +477,7 @@ function Dashboard() {
               <Panel
                 id="sec-waiting"
                 title="Waiting on Someone"
-                subtitle="Nothing to do here yet — just keeping tabs"
+                subtitle="Nothing to do here yet. Just keeping tabs."
                 count={waitingCount}
                 group="waiting"
                 open={open.waiting}
@@ -490,7 +499,9 @@ function Dashboard() {
                         : g.name || "Nobody named yet";
                       return (
                         <div key={g.key}>
-                          <div className="micro-label px-0.5 pb-1.5">{label}</div>
+                          <div className="pb-2 pt-5 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                            {contact ? <><strong className="font-semibold text-foreground">{contact.name}</strong>{contact.role ? ` · ${contact.role}` : ""}</> : <strong className="font-semibold text-foreground">{label}</strong>}
+                          </div>
                           <div className="space-y-1.5">
                             {byPriority(g.tasks).map((t) => (
                               <TaskRow key={t.id} task={t} contacts={contacts} showWaitingBadge />
@@ -506,7 +517,7 @@ function Dashboard() {
               <Panel
                 id="sec-coming"
                 title="Coming Up"
-                subtitle="Nothing urgent — just so you're not surprised"
+                subtitle="Nothing urgent. Just so you're not surprised."
                 count={upcomingCount}
                 group="upcoming"
                 open={open.upcoming}
@@ -519,7 +530,7 @@ function Dashboard() {
                   <div className="space-y-2.5">
                     {groups.upcoming.map((g) => (
                       <div key={g.date}>
-                        <div className="micro-label px-0.5 pb-1.5">{formatDateLabel(g.date)}</div>
+                          <div className="pb-2 pt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">{formatDateLabel(g.date)}</div>
                         <div className="space-y-1.5">
                           {byPriority(g.tasks).map((t) => (
                             <TaskRow key={t.id} task={t} contacts={contacts} />
@@ -534,7 +545,7 @@ function Dashboard() {
               <Panel
                 id="sec-whenever"
                 title="Whenever You Get To It"
-                subtitle="No date on these — dip in when you have a moment"
+                subtitle="No date on these. Dip in when you have a moment."
                 count={groups.someday.length}
                 group="whenever"
                 open={open.someday}
