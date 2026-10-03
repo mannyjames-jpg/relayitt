@@ -140,7 +140,10 @@ function CalendarPage() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div data-relay-workspace className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]">
+      <div
+        data-relay-workspace
+        className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]"
+      >
         <CalendarSidebar
           counts={dashboardCounts}
           displayName={displayName}
@@ -447,7 +450,10 @@ function CalendarSidebar({
   ];
   return (
     <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 min-[821px]:flex">
-      <Link to="/dashboard" className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground">
+      <Link
+        to="/dashboard"
+        className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground"
+      >
         Relay
       </Link>
       <nav aria-label="Task sections">
@@ -481,7 +487,12 @@ function CalendarSidebar({
           <span className="grid h-[30px] w-[30px] place-items-center bg-primary text-xs font-semibold text-primary-foreground">
             {initial}
           </span>
-          <span className="min-w-0"><span className="block truncate text-[14px] font-medium text-foreground">{displayName}</span><span className="block text-[12px] text-muted-foreground">Personal assistant</span></span>
+          <span className="min-w-0">
+            <span className="block truncate text-[14px] font-medium text-foreground">
+              {displayName}
+            </span>
+            <span className="block text-[12px] text-muted-foreground">Personal assistant</span>
+          </span>
         </div>
         <Button
           variant="ghost"
