@@ -8,6 +8,13 @@
       "when": 1790993470982,
       "tag": "0000_exec_info_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790994431955,
+      "tag": "0001_exec_info_harden_aal2",
+      "breakpoints": true
     }
   ]
 }
