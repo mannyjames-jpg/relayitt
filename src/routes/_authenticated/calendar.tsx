@@ -128,7 +128,10 @@ function CalendarPage() {
 
   const displayName = profile?.display_name?.trim() || "Relay user";
   const initial = displayName.charAt(0).toUpperCase();
-  const dashboardCounts = useMemo(() => getDashboardCounts(datedTasks, today), [datedTasks, today]);
+  const dashboardCounts = useMemo(
+    () => getDashboardCounts(tasks.filter((task) => task.status !== "Complete"), today),
+    [tasks, today],
+  );
   const moreMenu = <CalendarMoreMenu onSignOut={signOut} />;
 
   return (
