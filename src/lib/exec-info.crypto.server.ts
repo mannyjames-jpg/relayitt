@@ -1,5 +1,9 @@
 // AES-256-GCM encryption for Executive info secrets. Server only.
 // Never log keys, plaintext, or ciphertext.
+//
+// Key rotation is NOT supported yet: every stored value is base64(iv || ciphertext+tag)
+// under the single EXEC_INFO_ENCRYPTION_KEY, with no key id. Changing the key makes
+// existing values unreadable until a re-encryption migration is written.
 
 const GENERIC = "Executive info encryption is unavailable";
 

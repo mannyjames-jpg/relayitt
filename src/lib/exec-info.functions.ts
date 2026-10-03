@@ -15,6 +15,22 @@ async function audit(sb: Sb, userId: string, action: AuditAction, label: string 
   await sb.from("exec_info_audit").insert({ user_id: userId, action, label });
 }
 
+/** True when the token's amr shows a TOTP verification within the last 120 seconds. */
+function hasFreshTotp(claims: unknown): boolean {
+  const amr = (claims as { amr?: unknown } | null)?.amr;
+  if (!Array.isArray(amr)) return false;
+  const now = Math.floor(Date.now() / 1000);
+  return amr.some((e) => {
+    const entry = e as { method?: unknown; timestamp?: unknown } | null;
+    return (
+      entry?.method === "totp" &&
+      typeof entry.timestamp === "number" &&
+      now - entry.timestamp <= 120 &&
+      entry.timestamp <= now + 30
+    );
+  });
+}
+
 function isAal2(claims: unknown): boolean {
   return (claims as { aal?: string } | null)?.aal === "aal2";
 }
@@ -46,7 +62,7 @@ export const unlockExecInfo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId, claims } = context;
-    if (!isAal2(claims)) throw new Error(LOCKED);
+    if (!isAal2(claims) || !hasFreshTotp(claims)) throw new Error(LOCKED);
     const { error } = await supabase
       .from("exec_info_session")
       .upsert(
@@ -183,7 +199,9 @@ export const saveExecField = createServerFn({ method: "POST" })
     const { supabase, userId, claims } = context;
     await requireUnlocked(supabase, userId, claims);
     // The shared schema decides secrecy; a client cannot downgrade a secret field.
-    const secret = data.is_secret || isSecretField(data.section, data.field_key);
+    const schemaSecret = isSecretField(data.section, data.field_key);
+    if (schemaSecret && !data.is_secret) throw new Error("Could not save");
+    const secret = schemaSecret || data.is_secret;
     const value = data.value.trim();
     let value_plain: string | null = null;
     let value_cipher: string | null = null;
@@ -340,7 +358,10 @@ function parseMdy(v: unknown): { month: number; day: number; year: number } | nu
 export const listKeyDates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<KeyDate[]> => {
-    const { supabase, userId } = context;
+    const { userId } = context;
+    // exec_info RLS requires aal2; the calendar only needs non-secret dates at aal1,
+    // so read them with the server-only admin client, always scoped to this user.
+    const { supabaseAdmin: supabase } = await import("@/integrations/supabase/client.server");
     const [rowsRes, fieldsRes] = await Promise.all([
       supabase
         .from("exec_info_rows")
