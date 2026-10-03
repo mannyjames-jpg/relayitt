@@ -19,6 +19,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppMobileTabs, AppMoreMenu, AppSidebar, useAppShell } from "@/components/AppSidebar";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
@@ -121,22 +122,8 @@ function CalendarPage() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth" });
-  }
-
-  const displayName = profile?.display_name?.trim() || "Relay user";
-  const initial = displayName.charAt(0).toUpperCase();
-  const dashboardCounts = useMemo(
-    () =>
-      getDashboardCounts(
-        tasks.filter((task) => task.status !== "Complete"),
-        today,
-      ),
-    [tasks, today],
-  );
-  const moreMenu = <CalendarMoreMenu onSignOut={signOut} />;
+  const shell = useAppShell();
+  const moreMenu = <AppMoreMenu onSignOut={shell.signOut} />;
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -144,11 +131,12 @@ function CalendarPage() {
         data-relay-workspace
         className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]"
       >
-        <CalendarSidebar
-          counts={dashboardCounts}
-          displayName={displayName}
-          initial={initial}
-          onSignOut={signOut}
+        <AppSidebar
+          counts={shell.counts}
+          currentRoute="/calendar"
+          displayName={shell.displayName}
+          initial={shell.initial}
+          onSignOut={shell.signOut}
         />
         <main className="min-w-0 bg-card px-5 pb-28 pt-6 sm:px-8 sm:pb-12 min-[821px]:px-14">
           <div className="mx-auto max-w-[900px]">
@@ -220,7 +208,7 @@ function CalendarPage() {
             )}
           </div>
         </main>
-        <CalendarMobileTabs counts={dashboardCounts} />
+        <AppMobileTabs current="/calendar" />
         <Sheet open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
           <SheetContent
             side="right"
@@ -422,164 +410,6 @@ function MobileAgenda({
   );
 }
 
-type Counts = { today: number; overdue: number; waiting: number; coming: number; someday: number };
-
-function CalendarSidebar({
-  counts,
-  displayName,
-  initial,
-  onSignOut,
-}: {
-  counts: Counts;
-  displayName: string;
-  initial: string;
-  onSignOut: () => void;
-}) {
-  const taskLinks = [
-    { label: "Today", count: counts.today, alert: counts.overdue > 0 },
-    { label: "Waiting on someone", count: counts.waiting },
-    { label: "Coming up", count: counts.coming },
-    { label: "Whenever", count: counts.someday },
-  ];
-  const routeLinks = [
-    { label: "People", to: "/contacts" as const },
-    { label: "Completed", to: "/completed" as const },
-    { label: "Calendar", to: "/calendar" as const },
-    { label: "Applicants", to: "/applicants" as const },
-    { label: "Settings", to: "/settings" as const },
-  ];
-  return (
-    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 min-[821px]:flex">
-      <Link
-        to="/dashboard"
-        className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground"
-      >
-        Relay
-      </Link>
-      <nav aria-label="Task sections">
-        {taskLinks.map((item) => (
-          <Link
-            key={item.label}
-            to="/dashboard"
-            className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 border-transparent px-3 py-2.5 text-[14px] text-muted-foreground hover:text-foreground"
-          >
-            <span className="truncate">{item.label}</span>
-            <span className={item.alert ? "text-alert" : "text-muted-foreground"}>
-              {item.count}
-            </span>
-          </Link>
-        ))}
-      </nav>
-      <nav className="mx-3 mt-3 border-t border-border pt-3" aria-label="Main navigation">
-        {routeLinks.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            aria-current={item.to === "/calendar" ? "page" : undefined}
-            className={`flex min-h-11 items-center border-l-2 px-3 py-2.5 text-[14px] ${item.to === "/calendar" ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="mt-auto border-t border-border pb-5 pt-5">
-        <div className="grid grid-cols-[30px_minmax(0,1fr)] items-center gap-3">
-          <span className="grid h-[30px] w-[30px] place-items-center bg-primary text-xs font-semibold text-primary-foreground">
-            {initial}
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-[14px] font-medium text-foreground">
-              {displayName}
-            </span>
-            <span className="block text-[12px] text-muted-foreground">Personal assistant</span>
-          </span>
-        </div>
-        <Button
-          variant="ghost"
-          className="mt-1 h-10 w-full justify-start rounded-none px-2 text-xs"
-          onClick={onSignOut}
-        >
-          <LogOut />
-          Sign out
-        </Button>
-      </div>
-    </aside>
-  );
-}
-
-function CalendarMoreMenu({ onSignOut }: { onSignOut: () => void }) {
-  const links = [
-    ["People", "/contacts"],
-    ["Completed", "/completed"],
-    ["Calendar", "/calendar"],
-    ["Applicants", "/applicants"],
-    ["Settings", "/settings"],
-  ] as const;
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-11 w-11" aria-label="More">
-          <Menu />
-        </Button>
-      </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="w-[min(84vw,320px)] rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms]"
-      >
-        <SheetHeader className="text-left">
-          <SheetTitle className="font-wordmark">Relay</SheetTitle>
-        </SheetHeader>
-        <nav className="mt-8 border-t border-border" aria-label="More navigation">
-          {links.map(([label, to]) => (
-            <SheetClose asChild key={to}>
-              <Link
-                to={to}
-                className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground"
-              >
-                {label}
-              </Link>
-            </SheetClose>
-          ))}
-        </nav>
-        <Button variant="ghost" className="mt-6 h-11 w-full justify-start" onClick={onSignOut}>
-          <LogOut />
-          Sign out
-        </Button>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function CalendarMobileTabs({ counts }: { counts: Counts }) {
-  const tabs = [
-    { label: "Today", count: counts.today, alert: counts.overdue > 0 },
-    { label: "Waiting", count: counts.waiting },
-    { label: "Coming", count: counts.coming },
-    { label: "Someday", count: counts.someday },
-  ];
-  return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 grid min-h-[60px] grid-cols-4 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] min-[821px]:hidden"
-      aria-label="Task sections"
-    >
-      {tabs.map((tab) => (
-        <Link
-          key={tab.label}
-          to="/dashboard"
-          className="relative flex min-w-0 flex-col items-center justify-center px-1 py-2 text-foreground"
-        >
-          <span
-            className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}
-          >
-            {tab.count}
-          </span>
-          <span className="truncate text-[11px] uppercase tracking-[0.08em]">{tab.label}</span>
-        </Link>
-      ))}
-    </nav>
-  );
-}
-
 function buildMonthDays(month: Date): MonthDay[] {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   const start = new Date(first.getFullYear(), first.getMonth(), 1 - first.getDay());
@@ -610,21 +440,4 @@ function shortDate(iso: string) {
     month: "short",
     day: "numeric",
   });
-}
-
-function getDashboardCounts(tasks: Task[], today: string): Counts {
-  let overdue = 0,
-    dueToday = 0,
-    waiting = 0,
-    coming = 0,
-    someday = 0;
-  for (const task of tasks) {
-    if (task.status === "Waiting on Someone") waiting += 1;
-    if (!task.due_date) {
-      if (task.status !== "Waiting on Someone") someday += 1;
-    } else if (task.due_date < today) overdue += 1;
-    else if (task.due_date === today) dueToday += 1;
-    else coming += 1;
-  }
-  return { today: overdue + dueToday, overdue, waiting, coming, someday };
 }

@@ -23,6 +23,7 @@ import {
 import { QuickCapture, type FilterSource } from "@/components/QuickCapture";
 import { TaskRow, type Task } from "@/components/TaskRow";
 import { HeroSummary } from "@/components/HeroSummary";
+import { AppMoreMenu, AppSidebar } from "@/components/AppSidebar";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import {
   byPriority,
@@ -323,64 +324,21 @@ function Dashboard() {
   const showCalendarConnect = google && !google.connected && google.configured;
 
   const moreMenu = (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-11 w-11 shrink-0 rounded-none min-[821px]:hidden"
-          aria-label="More"
-        >
-          <Menu className="h-5 w-5" strokeWidth={2} />
-        </Button>
-      </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="w-[min(84vw,320px)] rounded-none border-border-strong bg-background shadow-none [transition-duration:300ms]"
-      >
-        <SheetHeader className="text-left">
-          <SheetTitle className="font-wordmark">Relay</SheetTitle>
-        </SheetHeader>
-        <nav className="mt-8 border-t border-border" aria-label="More navigation">
-          {[
-            ["People", "/contacts"],
-            ["Completed", "/completed"],
-            ["Calendar", "/calendar"],
-            ["Applicants", "/applicants"],
-            ["Settings", "/settings"],
-          ].map(([label, to]) => (
-            <SheetClose asChild key={to}>
-              <Link
-                to={to}
-                className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground"
-              >
-                {label}
-              </Link>
-            </SheetClose>
-          ))}
-        </nav>
-        <div className="mt-6 space-y-2">
-          {showCalendarConnect && (
-            <Button
-              variant="outline"
-              className="h-11 w-full justify-start rounded-none shadow-none"
-              onClick={connectGoogle}
-            >
-              <CalIcon className="h-4 w-4" strokeWidth={2} />
-              Connect Calendar
-            </Button>
-          )}
+    <AppMoreMenu
+      onSignOut={signOut}
+      extra={
+        showCalendarConnect ? (
           <Button
-            variant="ghost"
-            className="h-11 w-full justify-start rounded-none"
-            onClick={signOut}
+            variant="outline"
+            className="h-11 w-full justify-start rounded-none shadow-none"
+            onClick={connectGoogle}
           >
-            <LogOut className="h-4 w-4" strokeWidth={2} />
-            Sign out
+            <CalIcon className="h-4 w-4" strokeWidth={2} />
+            Connect Calendar
           </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        ) : null
+      }
+    />
   );
 
   return (
@@ -389,13 +347,16 @@ function Dashboard() {
         data-relay-workspace
         className="min-h-screen bg-surface min-[821px]:grid min-[821px]:grid-cols-[232px_minmax(0,1fr)]"
       >
-        <DashboardSidebar
-          overdue={groups.overdue.length}
-          dueToday={groups.today.length}
-          waiting={waitingCount}
-          coming={upcomingCount}
-          whenever={groups.someday.length}
+        <AppSidebar
+          counts={{
+            overdue: groups.overdue.length,
+            dueToday: groups.today.length,
+            waiting: waitingCount,
+            coming: upcomingCount,
+            whenever: groups.someday.length,
+          }}
           current={currentSection}
+          currentRoute="/dashboard"
           displayName={displayName}
           initial={initial}
           showCalendarConnect={!!showCalendarConnect}
@@ -642,138 +603,6 @@ type DashboardNavigationProps = {
   current: PanelKey;
   onSection: (id: string) => void;
 };
-
-function DashboardSidebar({
-  overdue,
-  dueToday,
-  waiting,
-  coming,
-  whenever,
-  current,
-  displayName,
-  initial,
-  showCalendarConnect,
-  onConnectCalendar,
-  onSignOut,
-  onSection,
-}: DashboardNavigationProps & {
-  displayName: string;
-  initial: string;
-  showCalendarConnect: boolean;
-  onConnectCalendar: () => void;
-  onSignOut: () => void;
-}) {
-  const sectionLinks: Array<{
-    label: string;
-    count: number;
-    id: string;
-    active: boolean;
-    alert?: boolean;
-  }> = [
-    {
-      label: "Today",
-      count: overdue + dueToday,
-      id: "sec-overdue",
-      active: current === "overdue" || current === "today",
-      alert: overdue > 0,
-    },
-    {
-      label: "Waiting on someone",
-      count: waiting,
-      id: "sec-waiting",
-      active: current === "waiting",
-    },
-    { label: "Coming up", count: coming, id: "sec-coming", active: current === "upcoming" },
-    { label: "Whenever", count: whenever, id: "sec-whenever", active: current === "someday" },
-  ];
-  const routeLinks = [
-    { label: "People", to: "/contacts" as const },
-    { label: "Completed", to: "/completed" as const },
-    { label: "Calendar", to: "/calendar" as const },
-    { label: "Applicants", to: "/applicants" as const },
-    { label: "Settings", to: "/settings" as const },
-  ];
-
-  return (
-    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 min-[821px]:flex">
-      <div className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground">
-        Relay
-      </div>
-      <nav aria-label="Task sections">
-        {sectionLinks.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSection(item.id)}
-            aria-current={item.active ? "location" : undefined}
-            className={`grid min-h-11 w-full grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 px-3 py-2.5 text-left text-[14px] ${
-              item.active
-                ? "border-foreground font-semibold text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <span className="truncate">{item.label}</span>
-            <span className="flex items-center text-[12px] tabular-nums text-muted-foreground">
-              {item.label === "Today" && overdue > 0 && (
-                <span className="mr-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-alert">
-                  {overdue} late
-                </span>
-              )}
-              {item.count}
-            </span>
-          </button>
-        ))}
-      </nav>
-      <nav
-        className="relative mt-3 pt-3 before:absolute before:inset-x-3 before:top-0 before:border-t before:border-border"
-        aria-label="Dashboard navigation"
-      >
-        {routeLinks.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            className="flex min-h-11 items-center border-l-2 border-transparent px-3 py-2.5 text-[14px] text-muted-foreground hover:text-foreground"
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="mt-auto border-t border-border pb-5 pt-5">
-        <div className="grid grid-cols-[30px_minmax(0,1fr)] items-center gap-3">
-          <span className="grid h-[30px] w-[30px] place-items-center bg-primary text-xs font-semibold text-primary-foreground">
-            {initial}
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-[14px] font-medium text-foreground">
-              {displayName}
-            </span>
-            <span className="block truncate text-[12px] text-muted-foreground">
-              Personal assistant
-            </span>
-          </span>
-        </div>
-        {showCalendarConnect && (
-          <Button
-            variant="outline"
-            className="mt-4 h-10 w-full justify-start rounded-none text-xs shadow-none"
-            onClick={onConnectCalendar}
-          >
-            <CalIcon className="h-4 w-4" strokeWidth={2} />
-            Connect Calendar
-          </Button>
-        )}
-        <Button
-          variant="ghost"
-          className="mt-1 h-10 w-full justify-start rounded-none px-2 text-xs"
-          onClick={onSignOut}
-        >
-          <LogOut className="h-4 w-4" strokeWidth={2} />
-          Sign out
-        </Button>
-      </div>
-    </aside>
-  );
-}
 
 function MobileTabBar({
   overdue,
