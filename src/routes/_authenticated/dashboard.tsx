@@ -203,15 +203,21 @@ function Dashboard() {
           const remaining = Array.from(
             document.querySelectorAll<HTMLButtonElement>("[data-task-title]"),
           ).filter((button) => button.offsetParent !== null);
-          if (taskId && remaining.some((button) => button.dataset.taskTitle === taskId)) {
-            window.requestAnimationFrame(focusAfterRemoval);
-            return;
-          }
           const next = remaining[Math.min(currentIndex, remaining.length - 1)];
           next?.focus();
           next?.scrollIntoView({ block: "nearest" });
         };
-        window.requestAnimationFrame(focusAfterRemoval);
+        const observer = new MutationObserver(() => {
+          if (
+            !taskId ||
+            !document.querySelector(`[data-task-title="${CSS.escape(taskId)}"]`)
+          ) {
+            observer.disconnect();
+            focusAfterRemoval();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        window.setTimeout(() => observer.disconnect(), 5000);
       }
     }
 
