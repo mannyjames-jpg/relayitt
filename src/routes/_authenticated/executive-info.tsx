@@ -1,7 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -23,12 +31,14 @@ export const Route = createFileRoute("/_authenticated/executive-info")({
       { title: "Executive info — Relay" },
       {
         name: "description",
-        content: "A private, encrypted place for your executive's personal, travel, and company details.",
+        content:
+          "A private, encrypted place for your executive's personal, travel, and company details.",
       },
       { property: "og:title", content: "Executive info — Relay" },
       {
         property: "og:description",
-        content: "A private, encrypted place for your executive's personal, travel, and company details.",
+        content:
+          "A private, encrypted place for your executive's personal, travel, and company details.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -73,7 +83,12 @@ type RowView = {
   position: number;
   has_secret: boolean;
 };
-type RowDraft = { kind: ExecRowKind; data: Record<string, string>; secret?: string; isNew?: boolean };
+type RowDraft = {
+  kind: ExecRowKind;
+  data: Record<string, string>;
+  secret?: string;
+  isNew?: boolean;
+};
 
 type Ctx = {
   editing: boolean;
@@ -169,9 +184,7 @@ function ExecutiveInfoPage() {
             <span className="font-wordmark text-foreground">Relay</span>
             <AppMoreMenu onSignOut={shell.signOut} />
           </div>
-          {access === "checking" && (
-            <p className="py-10 text-sm text-muted-foreground">Loading…</p>
-          )}
+          {access === "checking" && <p className="py-10 text-sm text-muted-foreground">Loading…</p>}
           {access === "none" && (
             <div className="mt-10 border border-foreground p-8">
               <h1 className="text-[24px] font-normal">Set up two-step login first</h1>
@@ -301,7 +314,10 @@ function CodeOverlay({ factorId, onUnlocked }: { factorId: string; onUnlocked: (
             That code did not work. Try again.
           </p>
         )}
-        <Link to="/dashboard" className="mt-6 inline-block text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+        <Link
+          to="/dashboard"
+          className="mt-6 inline-block text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
           Back
         </Link>
       </div>
@@ -366,7 +382,8 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
         const secret = isSecretField(section, field_key);
         if (secret && v === "") continue;
         const current = fields.get(k);
-        if (!secret && current && !current.is_secret && (current.value ?? "") === v.trim()) continue;
+        if (!secret && current && !current.is_secret && (current.value ?? "") === v.trim())
+          continue;
         await saveField({ data: { section, field_key, value: v, is_secret: secret } });
       }
       for (const [id, d] of Object.entries(rowDrafts)) {
@@ -421,7 +438,10 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
 
       <div className="mt-6 flex h-12 items-stretch justify-between border border-foreground">
         <span className="flex min-w-0 items-center truncate px-4 text-[13px]">
-          <span aria-hidden className="mr-2">■</span>Unlocked · locks after 10 minutes idle
+          <span aria-hidden className="mr-2">
+            ■
+          </span>
+          Unlocked · locks after 10 minutes idle
         </span>
         <div className="flex shrink-0">
           <button
@@ -456,11 +476,15 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
             onClick={() => setTab(key)}
             className={cn(
               "relative h-12 shrink-0 whitespace-nowrap px-[14px] text-[12px] uppercase tracking-[0.12em]",
-              tab === key ? "font-semibold text-foreground" : "text-muted-foreground hover:text-foreground",
+              tab === key
+                ? "font-semibold text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             {label}
-            {tab === key && <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-foreground" />}
+            {tab === key && (
+              <span aria-hidden className="absolute inset-x-0 bottom-0 h-0.5 bg-foreground" />
+            )}
           </button>
         ))}
       </div>
@@ -470,7 +494,10 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
           <p className="py-8 text-sm text-muted-foreground">Loading…</p>
         ) : q.isError ? (
           isLockedError(q.error) ? null : (
-            <ErrorState message="Couldn't load Executive info. Try again." onRetry={() => q.refetch()} />
+            <ErrorState
+              message="Couldn't load Executive info. Try again."
+              onRetry={() => q.refetch()}
+            />
           )
         ) : (
           <>
@@ -491,7 +518,15 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
 /* Building blocks                                                     */
 /* ------------------------------------------------------------------ */
 
-function Group({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Group({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mt-10">
       <div className="flex items-baseline justify-between gap-4 border-t-[1.5px] border-foreground pb-2 pt-3">
@@ -555,7 +590,12 @@ function SecretValue({ fieldId, rowId }: { fieldId?: string; rowId?: string }) {
       setValue(res.value);
     } catch (e) {
       if (isLockedError(e)) onLocked();
-      else toast.error(e instanceof Error && /slow down/i.test(e.message) ? "Slow down — try again in a few minutes" : "Couldn't show this value");
+      else
+        toast.error(
+          e instanceof Error && /slow down/i.test(e.message)
+            ? "Slow down — try again in a few minutes"
+            : "Couldn't show this value",
+        );
     } finally {
       setBusy(false);
     }
@@ -563,7 +603,12 @@ function SecretValue({ fieldId, rowId }: { fieldId?: string; rowId?: string }) {
 
   return (
     <span className="flex min-w-0 items-center justify-between gap-3">
-      <span className={cn("min-w-0", value === null ? "whitespace-nowrap tracking-[0.12em]" : "break-all")}>
+      <span
+        className={cn(
+          "min-w-0",
+          value === null ? "whitespace-nowrap tracking-[0.12em]" : "break-all",
+        )}
+      >
         {value ?? "••••••••"}
       </span>
       <button
@@ -573,7 +618,9 @@ function SecretValue({ fieldId, rowId }: { fieldId?: string; rowId?: string }) {
         onClick={() => void toggle()}
         className={cn(
           "min-h-11 shrink-0 border border-border px-3 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors",
-          value !== null ? "border-foreground bg-foreground text-background" : "hover:border-foreground",
+          value !== null
+            ? "border-foreground bg-foreground text-background"
+            : "hover:border-foreground",
         )}
       >
         {value !== null ? `Hide ${left}s` : "Show"}
@@ -589,9 +636,18 @@ function ExpiryLine({ value }: { value: string }) {
   today.setHours(0, 0, 0, 0);
   const days = Math.round((d.getTime() - today.getTime()) / 86400000);
   if (days < 0)
-    return <span className="block text-[13px] font-semibold text-alert">Expired {-days} {-days === 1 ? "day" : "days"} ago</span>;
+    return (
+      <span className="block text-[13px] font-semibold text-alert">
+        Expired {-days} {-days === 1 ? "day" : "days"} ago
+      </span>
+    );
   return (
-    <span className={cn("block text-[13px]", days <= 90 ? "font-semibold text-alert" : "text-muted-foreground")}>
+    <span
+      className={cn(
+        "block text-[13px]",
+        days <= 90 ? "font-semibold text-alert" : "text-muted-foreground",
+      )}
+    >
       Expires in {days} {days === 1 ? "day" : "days"}
     </span>
   );
@@ -660,7 +716,9 @@ function FieldRow({
     <div
       className={cn(
         "grid min-h-[52px] items-center gap-x-4 gap-y-1 border-t border-border py-2.5",
-        narrow ? "min-[821px]:grid-cols-[140px_minmax(0,1fr)]" : "sm:grid-cols-[200px_minmax(0,1fr)]",
+        narrow
+          ? "min-[821px]:grid-cols-[140px_minmax(0,1fr)]"
+          : "sm:grid-cols-[200px_minmax(0,1fr)]",
       )}
     >
       <div className="text-[12px] uppercase tracking-[0.1em] text-muted-foreground">
@@ -694,7 +752,9 @@ function RowTable({
   const { editing, rowDrafts, setRowDraft, errors } = useExec();
   const mine = rows.filter((r) => r.kind === kind);
   if (sort) mine.sort(sort);
-  const newIds = Object.keys(rowDrafts).filter((id) => rowDrafts[id]!.isNew && rowDrafts[id]!.kind === kind);
+  const newIds = Object.keys(rowDrafts).filter(
+    (id) => rowDrafts[id]!.isNew && rowDrafts[id]!.kind === kind,
+  );
 
   // Placeholder role rows (pro table): shown until a row with that role exists.
   const missingRoles = (seedRoles ?? []).filter(
@@ -731,7 +791,9 @@ function RowTable({
           }
           className={inputCls}
         />
-        {errors.has(`${id}.${col.key}`) && <span className="mt-1 block text-[13px] text-alert">Use mm.dd.yyyy</span>}
+        {errors.has(`${id}.${col.key}`) && (
+          <span className="mt-1 block text-[13px] text-alert">Use mm.dd.yyyy</span>
+        )}
       </>
     );
   }
@@ -768,7 +830,9 @@ function RowTable({
     >
       {columns.map((c) => (
         <div key={c.key} className="min-w-0">
-          <span className="block text-[11px] uppercase tracking-[0.1em] text-muted-foreground sm:hidden">{c.label}</span>
+          <span className="block text-[11px] uppercase tracking-[0.1em] text-muted-foreground sm:hidden">
+            {c.label}
+          </span>
           {ghostRole && !editing && c.key === "role" ? ghostRole : cell(id, base, c)}
         </div>
       ))}
@@ -804,7 +868,9 @@ function RowTable({
       {!editing && missingRoles.map((role) => line(`seed-${kind}-${role}`, null, role))}
       {editing && newIds.map((id) => line(id, null))}
       {!editing && mine.length === 0 && missingRoles.length === 0 && (
-        <p className="border-t border-border py-4 text-[14.5px] text-muted-foreground">Nothing added yet.</p>
+        <p className="border-t border-border py-4 text-[14.5px] text-muted-foreground">
+          Nothing added yet.
+        </p>
       )}
       {editing && (
         <button
@@ -849,7 +915,14 @@ function Fields({ list, readOnly, narrow }: { list: F[]; readOnly?: boolean; nar
   return (
     <>
       {list.map(([s, k, l]) => (
-        <FieldRow key={`${s}.${k}`} section={s} fieldKey={k} label={l} readOnly={readOnly} narrow={narrow} />
+        <FieldRow
+          key={`${s}.${k}`}
+          section={s}
+          fieldKey={k}
+          label={l}
+          readOnly={readOnly}
+          narrow={narrow}
+        />
       ))}
     </>
   );
@@ -860,10 +933,15 @@ function GlanceTab({ rows }: { rows: RowView[] }) {
   const emerg = fields.get("emergency.name_relationship");
   const emergPhone = fields.get("emergency.phone");
   const emergText = [emerg, emergPhone]
-    .map((f) => (f && !f.is_secret ? f.value ?? "" : ""))
+    .map((f) => (f && !f.is_secret ? (f.value ?? "") : ""))
     .filter(Boolean)
     .join(" · ");
-  const accountant = rowValue(rows, "pro", (r) => r.data["role"] === "Accountant / bookkeeper", "name_firm");
+  const accountant = rowValue(
+    rows,
+    "pro",
+    (r) => r.data["role"] === "Accountant / bookkeeper",
+    "name_firm",
+  );
   const staticRow = (label: string, value: string) => (
     <div className="grid min-h-[52px] items-center gap-x-4 gap-y-1 border-t border-border py-2.5 sm:grid-cols-[200px_minmax(0,1fr)]">
       <div className="text-[12px] uppercase tracking-[0.1em] text-muted-foreground">{label}</div>
@@ -964,7 +1042,10 @@ function nextOccurrence(v: string | undefined): number {
 
 function FamilyTab({ rows }: { rows: RowView[] }) {
   return (
-    <Group title="Family & important dates" hint="Use mm.dd.yyyy. Sorted by the next one coming up.">
+    <Group
+      title="Family & important dates"
+      hint="Use mm.dd.yyyy. Sorted by the next one coming up."
+    >
       <RowTable
         kind="date"
         rows={rows}
@@ -1090,7 +1171,8 @@ function AccountsTab({ rows }: { rows: RowView[] }) {
   return (
     <>
       <div className="mt-8 border border-foreground px-4 py-3 text-[14px]">
-        Relay never stores passwords. Save each login in your password app, then note its item name here.
+        Relay never stores passwords. Save each login in your password app, then note its item name
+        here.
       </div>
       {(
         [
@@ -1100,14 +1182,26 @@ function AccountsTab({ rows }: { rows: RowView[] }) {
         ] as const
       ).map(([kind, title]) => (
         <Group key={kind} title={title}>
-          <RowTable kind={kind} rows={rows} columns={cols} secretLabel="Member #" addLabel="Add row" />
+          <RowTable
+            kind={kind}
+            rows={rows}
+            columns={cols}
+            secretLabel="Member #"
+            addLabel="Add row"
+          />
         </Group>
       ))}
     </>
   );
 }
 
-const PRO_ROLES = ["Accountant / bookkeeper", "Lawyer", "Bank contact", "Insurance agent", "IT / tech support"];
+const PRO_ROLES = [
+  "Accountant / bookkeeper",
+  "Lawyer",
+  "Bank contact",
+  "Insurance agent",
+  "IT / tech support",
+];
 
 function CompanyTab({ rows }: { rows: RowView[] }) {
   return (

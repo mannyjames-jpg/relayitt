@@ -74,7 +74,12 @@ export function AppSidebar({
       id: "sec-overdue",
       active: current === "overdue" || current === "today",
     },
-    { label: "Waiting on someone", count: waiting, id: "sec-waiting", active: current === "waiting" },
+    {
+      label: "Waiting on someone",
+      count: waiting,
+      id: "sec-waiting",
+      active: current === "waiting",
+    },
     { label: "Coming up", count: coming, id: "sec-coming", active: current === "upcoming" },
     { label: "Whenever", count: whenever, id: "sec-whenever", active: current === "someday" },
   ];
@@ -260,7 +265,10 @@ export function AppMobileTabs({ current }: { current: AppRoute }) {
             className="relative flex min-w-0 items-center justify-center px-1 py-2 text-foreground"
           >
             {active && (
-              <span aria-hidden className="absolute left-[20%] right-[20%] top-0 h-0.5 bg-foreground" />
+              <span
+                aria-hidden
+                className="absolute left-[20%] right-[20%] top-0 h-0.5 bg-foreground"
+              />
             )}
             <span
               className={`truncate text-[11px] uppercase tracking-[0.08em] ${active ? "font-semibold" : ""}`}
