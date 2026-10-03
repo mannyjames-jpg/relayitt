@@ -313,3 +313,100 @@ export const recordMfaEvent = createServerFn({ method: "POST" })
     await audit(context.supabase, context.userId, data.action, null);
     return { ok: true };
   });
+
+export type KeyDate =
+  | {
+      kind: "date";
+      label: string;
+      month: number;
+      day: number;
+      year: number | null;
+      relationship: string | null;
+      notes: string | null;
+    }
+  | { kind: "doc"; label: string; month: number; day: number; year: number };
+
+function parseMdy(v: unknown): { month: number; day: number; year: number } | null {
+  if (typeof v !== "string") return null;
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(v.trim());
+  if (!m) return null;
+  const month = Number(m[1]);
+  const day = Number(m[2]);
+  const year = Number(m[3]);
+  const d = new Date(year, month - 1, day);
+  if (d.getMonth() !== month - 1 || d.getDate() !== day) return null;
+  return { month, day, year };
+}
+
+/** Non-secret dates for the calendar. Normal session only; never touches ciphertext. */
+export const listKeyDates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<KeyDate[]> => {
+    const { supabase, userId } = context;
+    const [rowsRes, fieldsRes] = await Promise.all([
+      supabase
+        .from("exec_info_rows")
+        .select("kind,data")
+        .eq("user_id", userId)
+        .in("kind", ["date", "child"]),
+      supabase
+        .from("exec_info_fields")
+        .select("section,field_key,value_plain")
+        .eq("user_id", userId)
+        .eq("is_secret", false)
+        .in("field_key", ["dob", "wedding_anniversary", "expires"]),
+    ]);
+    if (rowsRes.error || fieldsRes.error) throw new Error("Could not load key dates");
+
+    const out: KeyDate[] = [];
+    const seen = new Set<string>();
+    const push = (k: KeyDate) => {
+      const id = `${k.label.toLowerCase()}|${k.month}|${k.day}|${k.year ?? ""}`;
+      if (seen.has(id)) return;
+      seen.add(id);
+      out.push(k);
+    };
+    const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+
+    for (const r of rowsRes.data ?? []) {
+      const data = (r.data ?? {}) as Record<string, unknown>;
+      if (r.kind === "date") {
+        const p = parseMdy(data["date"]);
+        const occasion = str(data["occasion"]);
+        if (!p || !occasion) continue;
+        const label = occasion
+          .replace(/,\s*birthday$/i, "'s birthday")
+          .replace(/,\s*anniversary$/i, " anniversary");
+        push({
+          kind: "date",
+          label,
+          ...p,
+          relationship: str(data["relationship"]),
+          notes: str(data["notes"]),
+        });
+      } else if (r.kind === "child") {
+        const p = parseMdy(data["dob"]);
+        const name = str(data["name"]);
+        if (!p || !name) continue;
+        push({ kind: "date", label: `${name}'s birthday`, ...p, relationship: "Child", notes: null });
+      }
+    }
+
+    const FIELD_LABELS: Record<string, { label: string; kind: "date" | "doc"; rel?: string }> = {
+      "personal.dob": { label: "Executive's birthday", kind: "date", rel: "Executive" },
+      "spouse.dob": { label: "Spouse's birthday", kind: "date", rel: "Spouse" },
+      "personal.wedding_anniversary": { label: "Wedding anniversary", kind: "date" },
+      "passport1.expires": { label: "Passport #1 expires", kind: "doc" },
+      "passport2.expires": { label: "Passport #2 expires", kind: "doc" },
+      "visa1.expires": { label: "Visa #1 expires", kind: "doc" },
+      "visa2.expires": { label: "Visa #2 expires", kind: "doc" },
+    };
+    for (const f of fieldsRes.data ?? []) {
+      const def = FIELD_LABELS[`${f.section}.${f.field_key}`];
+      const p = parseMdy(f.value_plain);
+      if (!def || !p) continue;
+      if (def.kind === "doc") push({ kind: "doc", label: def.label, ...p });
+      else push({ kind: "date", label: def.label, ...p, relationship: def.rel ?? null, notes: null });
+    }
+    return out;
+  });
