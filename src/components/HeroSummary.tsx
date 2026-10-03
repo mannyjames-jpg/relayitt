@@ -36,6 +36,22 @@ export function HeroSummary({
           <h1 className="text-[30px] font-normal leading-tight tracking-[-0.02em] text-foreground min-[821px]:text-[36px]">
             {greeting}
           </h1>
+          <div className="mt-5 min-[821px]:hidden">
+            <p className="mb-2 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {remaining} left today
+            </p>
+            <div
+              className="flex w-full gap-1"
+              aria-label={`${doneToday} of ${total} tasks completed today`}
+            >
+              {Array.from({ length: total }).map((_, index) => (
+                <span
+                  key={index}
+                  className={`h-[3px] min-w-0 flex-1 ${index < doneToday ? "bg-alert" : "bg-foreground/25"}`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
         <div className="hidden min-w-[200px] min-[821px]:block">
           <p className="mb-2 text-right text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">

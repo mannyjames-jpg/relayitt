@@ -454,6 +454,23 @@ export function TaskRow({
               ))}
             </div>
           )}
+          {rightColumn && (
+            <div className="mt-1 flex items-baseline gap-2.5 whitespace-nowrap text-[12.5px] tabular-nums text-muted-foreground sm:hidden">
+              <span
+                className={cn(
+                  "font-semibold",
+                  rightColumn.alert ? "text-alert" : "text-foreground",
+                )}
+              >
+                {rightColumn.first}
+              </span>
+              {rightColumn.second && (
+                <span className={cn(rightColumn.alert && showWaitingBadge && "text-alert")}>
+                  {rightColumn.second}
+                </span>
+              )}
+            </div>
+          )}
           {!expanded && latestStep && (
             <button
               type="button"
@@ -466,7 +483,7 @@ export function TaskRow({
         </div>
 
         {rightColumn && (
-          <div className="col-start-2 pb-3 pr-2 text-left text-[12.5px] tabular-nums text-muted-foreground sm:col-start-3 sm:row-start-1 sm:pb-0 sm:pl-4 sm:pt-3 sm:text-right">
+          <div className="hidden pb-0 pl-4 pt-3 text-right text-[12.5px] tabular-nums text-muted-foreground sm:col-start-3 sm:row-start-1 sm:block">
             <div
               className={cn(
                 "whitespace-nowrap text-[13px] font-semibold",
@@ -510,7 +527,7 @@ export function TaskRow({
               <Input
                 value={stepDraft}
                 maxLength={300}
-                placeholder="Log the next step"
+                placeholder="Add a step"
                 onChange={(event) => setStepDraft(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
