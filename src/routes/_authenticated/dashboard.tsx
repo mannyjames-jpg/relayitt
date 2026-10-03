@@ -682,45 +682,46 @@ function DashboardSidebar({
   ];
 
   return (
-    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 py-6 min-[821px]:flex">
-      <div className="font-wordmark px-2 text-foreground">Relay</div>
-      <nav className="mt-10" aria-label="Task sections">
+    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 min-[821px]:flex">
+      <div className="px-3 py-7 text-[13px] font-semibold uppercase tracking-[0.32em] text-foreground">Relay</div>
+      <nav aria-label="Task sections">
         {sectionLinks.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => onSection(item.id)}
             aria-current={item.active ? "location" : undefined}
-            className={`grid min-h-11 w-full grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 px-3 text-left text-[13px] ${
+            className={`grid min-h-11 w-full grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 px-3 py-2.5 text-left text-[14px] ${
               item.active
                 ? "border-foreground font-semibold text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
             <span className="truncate">{item.label}</span>
-            <span className={item.alert ? "text-alert" : "text-muted-foreground"}>
+            <span className="flex items-center text-[12px] tabular-nums text-muted-foreground">
+              {item.label === "Today" && overdue > 0 && <span className="mr-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-alert">{overdue} late</span>}
               {item.count}
             </span>
           </button>
         ))}
       </nav>
-      <nav className="mt-5 border-t border-border pt-5" aria-label="Dashboard navigation">
+      <nav className="mx-3 mt-3 border-t border-border pt-3" aria-label="Dashboard navigation">
         {routeLinks.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className="flex min-h-11 items-center border-l-2 border-transparent px-3 text-[13px] text-muted-foreground hover:text-foreground"
+            className="flex min-h-11 items-center border-l-2 border-transparent px-3 py-2.5 text-[14px] text-muted-foreground hover:text-foreground"
           >
             {item.label}
           </Link>
         ))}
       </nav>
-      <div className="mt-auto border-t border-border pt-5">
-        <div className="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-3">
-          <span className="grid h-8 w-8 place-items-center bg-primary text-xs font-semibold text-primary-foreground">
+      <div className="mt-auto border-t border-border pb-5 pt-5">
+        <div className="grid grid-cols-[30px_minmax(0,1fr)] items-center gap-3">
+          <span className="grid h-[30px] w-[30px] place-items-center bg-primary text-xs font-semibold text-primary-foreground">
             {initial}
           </span>
-          <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+          <span className="min-w-0"><span className="block truncate text-[14px] font-medium text-foreground">{displayName}</span><span className="block truncate text-[12px] text-muted-foreground">Personal assistant</span></span>
         </div>
         {showCalendarConnect && (
           <Button
@@ -824,33 +825,25 @@ function Panel({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="sticky z-20 grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-2 bg-background py-3 text-left"
+        className="sticky z-20 flex w-full items-baseline gap-2 bg-card py-3 text-left"
         style={{
           top: stickyTop,
           borderTop:
             group === "overdue"
               ? "2px solid var(--alert)"
               : group === "waiting" || group === "upcoming"
-                ? "1px solid var(--border-strong)"
+                ? "1px solid #645f58"
                 : group === "whenever"
-                  ? "1px solid var(--border)"
+                  ? "1px solid #b7b1a8"
                   : GROUP_RULE[group],
         }}
       >
-        {open ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />
-        )}
-        <span className="flex min-w-0 items-baseline gap-3">
-          <h2 className="shrink-0 font-display text-foreground">{title}</h2>
-          <span className="hidden min-w-0 truncate text-[11px] text-muted-foreground sm:block">
-            {subtitle}
-          </span>
-        </span>
-        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
+        <span className="w-3 shrink-0 text-[14px] text-foreground">{open ? "−" : "+"}</span>
+        <h2 className="shrink-0 text-[12px] font-semibold uppercase tracking-[0.16em] text-foreground">{title}</h2>
+        <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground">
           {count}
         </span>
+        <span className="ml-auto hidden min-w-0 truncate text-right text-[13px] text-muted-foreground sm:block">{subtitle}</span>
       </button>
       {open && <div className="pt-3">{children}</div>}
     </section>
@@ -858,7 +851,7 @@ function Panel({
 }
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
-  return <p className="px-1 py-2 text-sm text-muted-foreground">{children}</p>;
+  return <p className="border-t border-border py-[18px] text-[14.5px] text-muted-foreground">{children}</p>;
 }
 
 function groupByCategory(tasks: Task[]) {
