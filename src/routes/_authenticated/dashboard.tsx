@@ -406,6 +406,10 @@ function Dashboard() {
 
         <div className="min-w-0 bg-card">
           <div className="mx-auto max-w-[900px] px-5 min-[821px]:px-14">
+            <div className="flex h-11 items-center justify-between min-[821px]:hidden">
+              <span className="font-wordmark text-foreground">Relay</span>
+              {moreMenu}
+            </div>
             {tasksQ.isPending && <LoadingState label="Loading your tasks…" />}
             {tasksQ.isError && (
               <ErrorState
@@ -428,7 +432,6 @@ function Dashboard() {
             ref={quickCaptureRef}
             filter={filter}
             onFilterChange={setFilter}
-            headerAction={moreMenu}
             onHeightChange={setCaptureHeight}
           />
 
@@ -721,7 +724,10 @@ function DashboardSidebar({
           </button>
         ))}
       </nav>
-      <nav className="mx-3 mt-3 border-t border-border pt-3" aria-label="Dashboard navigation">
+      <nav
+        className="relative mt-3 pt-3 before:absolute before:inset-x-3 before:top-0 before:border-t before:border-border"
+        aria-label="Dashboard navigation"
+      >
         {routeLinks.map((item) => (
           <Link
             key={item.to}

@@ -47,10 +47,9 @@ export const QuickCapture = forwardRef<
   {
     filter: FilterSource;
     onFilterChange: (f: FilterSource) => void;
-    headerAction?: React.ReactNode;
     onHeightChange?: (height: number) => void;
   }
->(function QuickCapture({ filter, onFilterChange, headerAction, onHeightChange }, forwardedRef) {
+>(function QuickCapture({ filter, onFilterChange, onHeightChange }, forwardedRef) {
   const qc = useQueryClient();
   const create = taskFns.create;
   const createC = contactFns.create;
@@ -105,10 +104,6 @@ export const QuickCapture = forwardRef<
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contacts"] }),
     onError: (e) => toast.error(errorMessage(e)),
   });
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   useEffect(() => {
     const node = captureRef.current;
@@ -189,11 +184,6 @@ export const QuickCapture = forwardRef<
       className={cn("sticky top-0 z-30 bg-card", scrolled && "border-b border-border")}
     >
       <div className="mx-auto max-w-[900px] px-5 pb-3.5 pt-3 min-[821px]:px-14">
-        <div className="mb-3 flex items-center justify-between min-[821px]:hidden">
-          <span className="font-wordmark text-foreground">Relay</span>
-          {headerAction}
-        </div>
-
         <form
           onSubmit={onSubmit}
           className={cn(
@@ -238,13 +228,13 @@ export const QuickCapture = forwardRef<
           </div>
           <Button
             type="submit"
-            className="h-12 shrink-0 px-3 text-[12px] tracking-[0.14em] sm:h-[52px] sm:px-[22px]"
+            className="h-12 shrink-0 bg-primary px-3 text-[12px] text-primary-foreground opacity-100 tracking-[0.14em] hover:bg-alert disabled:pointer-events-none disabled:bg-primary disabled:text-primary-foreground disabled:opacity-100 sm:h-[52px] sm:px-[22px]"
             disabled={!title.trim() || m.isPending}
           >
             Add task
           </Button>
         </form>
-        <span className="sr-only max-sm:not-sr-only max-sm:absolute max-sm:left-9 max-sm:top-[72px] max-sm:pointer-events-none max-sm:text-[16px] max-sm:text-muted-foreground peer-focus:hidden">
+        <span className="sr-only max-sm:not-sr-only max-sm:pointer-events-none max-sm:absolute max-sm:left-9 max-sm:top-7 max-sm:text-[16px] max-sm:text-muted-foreground peer-focus:hidden">
           {!title && "Add a task"}
         </span>
 
