@@ -9,6 +9,8 @@ import { ErrorState, LoadingState } from "@/components/QueryState";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useServerFn } from "@tanstack/react-start";
+import { listKeyDates, type KeyDate } from "@/lib/exec-info.functions";
 import { AppMobileTabs, AppMoreMenu, AppSidebar, useAppShell } from "@/components/AppSidebar";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
@@ -45,6 +47,8 @@ function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => taskFns.list() });
   const contactsQ = useQuery({ queryKey: ["contacts"], queryFn: () => contactFns.list() });
+  const getKeyDates = useServerFn(listKeyDates);
+  const keyDatesQ = useQuery({ queryKey: ["key-dates"], queryFn: () => getKeyDates() });
   const tasks = (tasksQ.data ?? []) as Task[];
   const contacts = contactsQ.data ?? [];
   const today = todayISO();
@@ -71,16 +75,36 @@ function CalendarPage() {
   }, [datedTasks]);
 
   const monthDays = useMemo(() => buildMonthDays(visibleMonth), [visibleMonth]);
+  const keyByDate = useMemo(() => {
+    const map = new Map<string, KeyDate[]>();
+    const list = keyDatesQ.data ?? [];
+    if (!list.length) return map;
+    for (const day of monthDays) {
+      const m = day.date.getMonth() + 1;
+      const d = day.date.getDate();
+      const y = day.date.getFullYear();
+      const hits = list.filter(
+        (k) => k.month === m && k.day === d && (k.kind === "date" || k.year === y),
+      );
+      if (hits.length) map.set(day.iso, hits);
+    }
+    return map;
+  }, [keyDatesQ.data, monthDays]);
   const monthPrefix = `${visibleMonth.getFullYear()}-${String(visibleMonth.getMonth() + 1).padStart(2, "0")}`;
   const monthDates = useMemo(
-    () => [...tasksByDate.keys()].filter((date) => date.startsWith(monthPrefix)).sort(),
-    [tasksByDate, monthPrefix],
+    () =>
+      [...new Set([...tasksByDate.keys(), ...keyByDate.keys()])]
+        .filter((date) => date.startsWith(monthPrefix))
+        .sort(),
+    [tasksByDate, keyByDate, monthPrefix],
   );
   const monthTaskCount = monthDates.reduce(
-    (total, date) => total + (tasksByDate.get(date)?.length ?? 0),
+    (total, date) =>
+      total + (tasksByDate.get(date)?.length ?? 0) + (keyByDate.get(date)?.length ?? 0),
     0,
   );
   const selectedTasks = selectedDate ? (tasksByDate.get(selectedDate) ?? []) : [];
+  const selectedKeys = selectedDate ? (keyByDate.get(selectedDate) ?? []) : [];
 
   const moveMonth = (amount: number) =>
     setVisibleMonth((month) => new Date(month.getFullYear(), month.getMonth() + amount, 1));
@@ -137,7 +161,14 @@ function CalendarPage() {
                   {visibleMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
                 </h1>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {monthTaskCount} {monthTaskCount === 1 ? "task" : "tasks"} this month
+                  {monthTaskCount} {monthTaskCount === 1 ? "item" : "items"} this month
+                </p>
+                <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-muted-foreground">
+                  <span>■ Task</span>
+                  <span>◆ Birthday or anniversary</span>
+                  <span>
+                    <span className="text-alert">⚑</span> Document expiry
+                  </span>
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
@@ -180,6 +211,7 @@ function CalendarPage() {
                 <DesktopMonthGrid
                   days={monthDays}
                   tasksByDate={tasksByDate}
+                  keyByDate={keyByDate}
                   today={today}
                   onSelect={setSelectedDate}
                 />
@@ -188,9 +220,15 @@ function CalendarPage() {
                   days={monthDays.filter((day) => day.inMonth)}
                   monthDates={monthDates}
                   tasksByDate={tasksByDate}
+                  keyByDate={keyByDate}
                   today={today}
                   onSelect={setSelectedDate}
                 />
+                <p className="mt-6 text-[12.5px] text-muted-foreground">
+                  Birthdays and anniversaries come from Executive info &gt; Family &amp; dates.
+                  Passport and visa expiries come from Travel &amp; documents. Edit them there and
+                  the calendar updates.
+                </p>
               </>
             )}
           </div>
@@ -206,6 +244,16 @@ function CalendarPage() {
                 {selectedDate ? fullDate(selectedDate) : "Tasks"}
               </SheetTitle>
             </SheetHeader>
+            {selectedKeys.length > 0 && selectedDate && (
+              <ul className="mb-4 border-t border-border">
+                {selectedKeys.map((k) => (
+                  <li key={`${k.kind}-${k.label}`} className="border-b border-border py-3">
+                    <KeyLabel item={k} className="text-[15px]" />
+                    <KeySubline item={k} iso={selectedDate} today={today} />
+                  </li>
+                ))}
+              </ul>
+            )}
             {selectedTasks.length ? (
               <div className="space-y-2">
                 {selectedTasks.map((task) => (
@@ -217,7 +265,7 @@ function CalendarPage() {
                   />
                 ))}
               </div>
-            ) : (
+            ) : selectedKeys.length ? null : (
               <p className="border-t border-border py-6 text-sm text-muted-foreground">
                 Nothing scheduled
               </p>
@@ -232,11 +280,13 @@ function CalendarPage() {
 function DesktopMonthGrid({
   days,
   tasksByDate,
+  keyByDate,
   today,
   onSelect,
 }: {
   days: MonthDay[];
   tasksByDate: Map<string, Task[]>;
+  keyByDate: Map<string, KeyDate[]>;
   today: string;
   onSelect: (date: string) => void;
 }) {
@@ -255,6 +305,11 @@ function DesktopMonthGrid({
       <div className="grid grid-cols-7 border-l border-border">
         {days.map((day) => {
           const dayTasks = tasksByDate.get(day.iso) ?? [];
+          const dayKeys = keyByDate.get(day.iso) ?? [];
+          const keyShown = dayKeys.slice(0, 3);
+          const taskSlots = Math.max(0, 3 - keyShown.length);
+          const hidden =
+            dayKeys.length - keyShown.length + Math.max(0, dayTasks.length - taskSlots);
           return (
             <button
               key={day.iso}
@@ -269,7 +324,14 @@ function DesktopMonthGrid({
                 {day.date.getDate()}
               </span>
               <span className="block space-y-1">
-                {dayTasks.slice(0, 3).map((task) => (
+                {keyShown.map((k) => (
+                  <KeyLabel
+                    key={`${k.kind}-${k.label}`}
+                    item={k}
+                    className="text-[11px] leading-4"
+                  />
+                ))}
+                {dayTasks.slice(0, taskSlots).map((task) => (
                   <span
                     key={task.id}
                     className={`block truncate text-[11px] leading-4 ${task.priority === "Urgent" ? "font-bold" : "font-normal"} ${day.iso < today ? "text-alert" : "text-foreground"}`}
@@ -278,10 +340,8 @@ function DesktopMonthGrid({
                     {task.title}
                   </span>
                 ))}
-                {dayTasks.length > 3 && (
-                  <span className="block text-[11px] text-muted-foreground">
-                    +{dayTasks.length - 3} more
-                  </span>
+                {hidden > 0 && (
+                  <span className="block text-[11px] text-muted-foreground">+{hidden} more</span>
                 )}
               </span>
             </button>
@@ -297,6 +357,7 @@ function MobileAgenda({
   days,
   monthDates,
   tasksByDate,
+  keyByDate,
   today,
   onSelect,
 }: {
@@ -304,6 +365,7 @@ function MobileAgenda({
   days: MonthDay[];
   monthDates: string[];
   tasksByDate: Map<string, Task[]>;
+  keyByDate: Map<string, KeyDate[]>;
   today: string;
   onSelect: (date: string) => void;
 }) {
@@ -329,7 +391,7 @@ function MobileAgenda({
             <span key={`blank-${index}`} className="h-11 border-b border-r border-border" />
           ))}
           {days.map((day) => {
-            const hasTasks = tasksByDate.has(day.iso);
+            const hasTasks = tasksByDate.has(day.iso) || keyByDate.has(day.iso);
             return (
               <button
                 key={day.iso}
@@ -371,6 +433,21 @@ function MobileAgenda({
                 {shortDate(date)}
               </button>
               <div className="divide-y divide-border border-b border-border">
+                {(keyByDate.get(date) ?? []).map((k) => (
+                  <button
+                    key={`${k.kind}-${k.label}`}
+                    type="button"
+                    onClick={() => onSelect(date)}
+                    className="grid min-h-12 w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 py-2 text-left"
+                  >
+                    <span
+                      className={`w-[68px] text-[11px] ${k.kind === "doc" ? "font-semibold text-alert" : "text-muted-foreground"}`}
+                    >
+                      {k.kind === "doc" ? "Expiry" : "Date"}
+                    </span>
+                    <KeyLabel item={k} className="text-sm" />
+                  </button>
+                ))}
                 {(tasksByDate.get(date) ?? []).map((task) => (
                   <button
                     key={task.id}
@@ -427,4 +504,44 @@ function shortDate(iso: string) {
     month: "short",
     day: "numeric",
   });
+}
+
+function KeyLabel({ item, className }: { item: KeyDate; className?: string }) {
+  const doc = item.kind === "doc";
+  return (
+    <span
+      className={`block min-w-0 truncate ${doc ? "font-semibold text-alert" : "font-normal text-foreground"} ${className ?? ""}`}
+    >
+      <span aria-hidden className="mr-1 text-[9px] align-middle">
+        {doc ? "⚑" : "◆"}
+      </span>
+      {item.label}
+    </span>
+  );
+}
+
+function KeySubline({ item, iso, today }: { item: KeyDate; iso: string; today: string }) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const [ty, tm, td] = today.split("-").map(Number);
+  let text: string | null = null;
+  if (item.kind === "doc") {
+    const days = Math.round(
+      (new Date(y, m - 1, d).getTime() - new Date(ty, tm - 1, td).getTime()) / 86400000,
+    );
+    text =
+      days >= 0
+        ? `In ${days} ${days === 1 ? "day" : "days"}`
+        : `Expired ${-days} ${-days === 1 ? "day" : "days"} ago`;
+  } else {
+    const parts: string[] = [];
+    if (item.relationship) parts.push(item.relationship);
+    if (item.year && item.year < y) {
+      const n = y - item.year;
+      parts.push(`${n} ${n === 1 ? "year" : "years"}`);
+    }
+    text = parts.join(" · ") || null;
+  }
+  return text ? (
+    <span className="mt-0.5 block text-[13px] text-muted-foreground">{text}</span>
+  ) : null;
 }
