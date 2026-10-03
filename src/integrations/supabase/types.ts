@@ -100,6 +100,111 @@ export type Database = {
         }
         Relationships: []
       }
+      exec_info_audit: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          label: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          label?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exec_info_fields: {
+        Row: {
+          field_key: string
+          id: string
+          is_secret: boolean
+          section: string
+          updated_at: string
+          user_id: string
+          value_cipher: string | null
+          value_plain: string | null
+        }
+        Insert: {
+          field_key: string
+          id?: string
+          is_secret?: boolean
+          section: string
+          updated_at?: string
+          user_id: string
+          value_cipher?: string | null
+          value_plain?: string | null
+        }
+        Update: {
+          field_key?: string
+          id?: string
+          is_secret?: boolean
+          section?: string
+          updated_at?: string
+          user_id?: string
+          value_cipher?: string | null
+          value_plain?: string | null
+        }
+        Relationships: []
+      }
+      exec_info_rows: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+          position: number
+          secret_cipher: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          kind: string
+          position?: number
+          secret_cipher?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          kind?: string
+          position?: number
+          secret_cipher?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exec_info_session: {
+        Row: {
+          last_active_at: string
+          user_id: string
+        }
+        Insert: {
+          last_active_at: string
+          user_id: string
+        }
+        Update: {
+          last_active_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       google_oauth_states: {
         Row: {
           created_at: string
