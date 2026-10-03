@@ -316,7 +316,6 @@ function Dashboard() {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const todayIsCurrent = currentSection === "overdue" || currentSection === "today";
   const displayName = profile?.display_name?.trim() || "Relay user";
   const initial = displayName.charAt(0).toUpperCase();
   const showCalendarConnect = google && !google.connected && google.configured;
@@ -613,6 +612,173 @@ function Dashboard() {
   );
 }
 
+type DashboardNavigationProps = {
+  overdue: number;
+  dueToday: number;
+  waiting: number;
+  coming: number;
+  whenever: number;
+  current: PanelKey;
+  onSection: (id: string) => void;
+};
+
+function DashboardSidebar({
+  overdue,
+  dueToday,
+  waiting,
+  coming,
+  whenever,
+  current,
+  displayName,
+  initial,
+  showCalendarConnect,
+  onConnectCalendar,
+  onSignOut,
+  onSection,
+}: DashboardNavigationProps & {
+  displayName: string;
+  initial: string;
+  showCalendarConnect: boolean;
+  onConnectCalendar: () => void;
+  onSignOut: () => void;
+}) {
+  const sectionLinks: Array<{
+    label: string;
+    count: number;
+    id: string;
+    active: boolean;
+    alert?: boolean;
+  }> = [
+    {
+      label: "Today",
+      count: overdue + dueToday,
+      id: "sec-overdue",
+      active: current === "overdue" || current === "today",
+      alert: overdue > 0,
+    },
+    {
+      label: "Waiting on someone",
+      count: waiting,
+      id: "sec-waiting",
+      active: current === "waiting",
+    },
+    { label: "Coming up", count: coming, id: "sec-coming", active: current === "upcoming" },
+    { label: "Whenever", count: whenever, id: "sec-whenever", active: current === "someday" },
+  ];
+  const routeLinks = [
+    { label: "People", to: "/contacts" as const },
+    { label: "Completed", to: "/completed" as const },
+    { label: "Applicants", to: "/applicants" as const },
+    { label: "Settings", to: "/settings" as const },
+  ];
+
+  return (
+    <aside className="sticky top-0 hidden h-screen flex-col border-r border-border bg-surface px-5 py-6 min-[821px]:flex">
+      <div className="font-wordmark px-2 text-foreground">Relay</div>
+      <nav className="mt-10" aria-label="Task sections">
+        {sectionLinks.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSection(item.id)}
+            aria-current={item.active ? "location" : undefined}
+            className={`grid min-h-11 w-full grid-cols-[minmax(0,1fr)_auto] items-center border-l-2 px-3 text-left text-[13px] ${
+              item.active
+                ? "border-foreground font-semibold text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="truncate">{item.label}</span>
+            <span className={item.alert ? "text-alert" : "text-muted-foreground"}>{item.count}</span>
+          </button>
+        ))}
+      </nav>
+      <nav className="mt-5 border-t border-border pt-5" aria-label="Dashboard navigation">
+        {routeLinks.map((item) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className="flex min-h-11 items-center border-l-2 border-transparent px-3 text-[13px] text-muted-foreground hover:text-foreground"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="mt-auto border-t border-border pt-5">
+        <div className="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-3">
+          <span className="grid h-8 w-8 place-items-center bg-primary text-xs font-semibold text-primary-foreground">
+            {initial}
+          </span>
+          <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+        </div>
+        {showCalendarConnect && (
+          <Button
+            variant="outline"
+            className="mt-4 h-10 w-full justify-start rounded-none text-xs shadow-none"
+            onClick={onConnectCalendar}
+          >
+            <CalIcon className="h-4 w-4" strokeWidth={2} />
+            Connect Calendar
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          className="mt-1 h-10 w-full justify-start rounded-none px-2 text-xs"
+          onClick={onSignOut}
+        >
+          <LogOut className="h-4 w-4" strokeWidth={2} />
+          Sign out
+        </Button>
+      </div>
+    </aside>
+  );
+}
+
+function MobileTabBar({
+  overdue,
+  dueToday,
+  waiting,
+  coming,
+  whenever,
+  current,
+  onSection,
+}: DashboardNavigationProps) {
+  const tabs = [
+    {
+      label: "Today",
+      count: overdue + dueToday,
+      id: "sec-overdue",
+      active: current === "overdue" || current === "today",
+      alert: overdue > 0,
+    },
+    { label: "Waiting", count: waiting, id: "sec-waiting", active: current === "waiting" },
+    { label: "Coming", count: coming, id: "sec-coming", active: current === "upcoming" },
+    { label: "Someday", count: whenever, id: "sec-whenever", active: current === "someday" },
+  ];
+  return (
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 grid min-h-[60px] grid-cols-4 border-t border-foreground bg-background pb-[env(safe-area-inset-bottom)] min-[821px]:hidden"
+      aria-label="Task sections"
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onSection(tab.id)}
+          aria-current={tab.active ? "location" : undefined}
+          className="relative flex min-w-0 flex-col items-center justify-center px-1 py-2 text-foreground"
+        >
+          {tab.active && <span aria-hidden className="absolute left-[20%] right-[20%] top-0 h-0.5 bg-foreground" />}
+          <span className={`text-[15px] font-semibold tabular-nums ${tab.alert ? "text-alert" : ""}`}>
+            {tab.count}
+          </span>
+          <span className="truncate text-[11px] uppercase tracking-[0.08em]">{tab.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 function Panel({
   id,
   title,
@@ -621,10 +787,10 @@ function Panel({
   children,
   group,
   stickyTop,
-  id: string;
   open,
   onToggle,
 }: {
+  id: string;
   title: string;
   subtitle: string;
   count: number;
@@ -645,7 +811,15 @@ function Panel({
         onClick={onToggle}
         aria-expanded={open}
         className="sticky z-20 grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-baseline gap-2 bg-background py-3 text-left"
-        style={{ top: stickyTop, borderTop: GROUP_RULE[group] }}
+        style={{
+          top: stickyTop,
+          borderTop:
+            group === "overdue"
+              ? "2px solid var(--alert)"
+              : group === "whenever"
+                ? "1px solid var(--border)"
+                : GROUP_RULE[group],
+        }}
       >
         {open ? (
           <ChevronDown className="h-3.5 w-3.5 shrink-0 text-foreground" strokeWidth={2} />

@@ -40,7 +40,8 @@ export function HeroSummary({
               {overdue > 0 && followUpCount > 0 && " · "}
               {followUpCount > 0 && (
                 <>
-                  <strong className="font-semibold text-foreground">{followUpCount}</strong> to follow up
+                  <strong className="font-semibold text-foreground">{followUpCount}</strong> to
+                  follow up
                 </>
               )}
             </p>
@@ -78,6 +79,7 @@ export function HeroSummary({
               left today
             </span>
           </div>
+        </div>
       </div>
     </section>
   );
