@@ -144,7 +144,7 @@ export function AppSidebar({
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {item.label}
+              <span className="min-w-0">{item.label}</span>
               {item.isNew && <NewTag />}
             </Link>
           );
@@ -220,7 +220,7 @@ export function AppMoreMenu({
                 to={item.to}
                 className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground"
               >
-                {item.label}
+                <span className="min-w-0">{item.label}</span>
                 {item.isNew && <NewTag />}
               </Link>
             </SheetClose>

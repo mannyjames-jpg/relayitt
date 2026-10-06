@@ -1,10 +1,19 @@
-import { describe, expect, test } from "bun:test";
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
 import { effectiveQuickValues, quickDateOptions } from "./quick-capture-values";
 import { parseQuickEntry } from "./quick-parse";
 import { NO_RECURRENCE } from "./recurrence";
 
 const today = "2026-10-06";
 const parsed = parseQuickEntry("Book flights 2026-10-09 9am #travel !important weekly");
+
+function expect(actual: unknown) {
+  return {
+    toBe: (expected: unknown) => assert.equal(actual, expected),
+    toBeNull: () => assert.equal(actual, null),
+    toEqual: (expected: unknown) => assert.deepEqual(actual, expected),
+  };
+}
 
 describe("quick-add controls", () => {
   test("untouched controls display parsed scheduling and details", () => {

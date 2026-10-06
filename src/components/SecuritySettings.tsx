@@ -308,7 +308,7 @@ export function SecuritySettings() {
                   })}
                 </span>
                 <span className="min-w-0 truncate text-right text-[15px]">
-                  {a.label ?? ACTION_TEXT[a.action] ?? a.action}
+                  {(a.label ?? ACTION_TEXT[a.action] ?? a.action).replaceAll("Executive info", "Executive personal")}
                 </span>
               </li>
             ))}

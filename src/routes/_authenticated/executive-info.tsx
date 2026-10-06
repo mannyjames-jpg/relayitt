@@ -260,7 +260,7 @@ function CodeOverlay({ factorId, onUnlocked }: { factorId: string; onUnlocked: (
           Enter your 6-digit code
         </h2>
         <p className="mt-2 text-[15px] text-muted-foreground">
-          Open your password app or authenticator and type the current Relay code.
+          Open your password app or authenticator and type the current Relay code to unlock Executive personal.
         </p>
         <div className="mt-6 grid grid-cols-6 gap-2">
           {digits.map((d, i) => (
