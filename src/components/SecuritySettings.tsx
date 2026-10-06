@@ -28,8 +28,8 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 const ACTION_TEXT: Record<string, string> = {
-  unlock: "Unlocked Executive info",
-  lock: "Locked Executive info",
+  unlock: "Unlocked Executive personal",
+  lock: "Locked Executive personal",
   mfa_enrolled: "Turned on two-step login",
   mfa_removed: "Turned off two-step login",
 };
@@ -159,7 +159,7 @@ export function SecuritySettings() {
               <span className="font-semibold">Two-step login is on</span>
               <span className="text-muted-foreground">
                 {" "}
-                · Executive info asks for a 6-digit code
+                · Executive personal asks for a 6-digit code
               </span>
             </div>
             {offMode ? (
@@ -273,7 +273,7 @@ export function SecuritySettings() {
             </span>
           </div>
         </Row>
-        <Row label="Auto lock">Executive info locks after 10 minutes idle</Row>
+        <Row label="Auto lock">Executive personal locks after 10 minutes idle</Row>
         <Row label="Hidden by default">
           Numbers show as dots until you tap Show, then hide again after 30 seconds
         </Row>
@@ -308,7 +308,10 @@ export function SecuritySettings() {
                   })}
                 </span>
                 <span className="min-w-0 truncate text-right text-[15px]">
-                  {a.label ?? ACTION_TEXT[a.action] ?? a.action}
+                  {(a.label ?? ACTION_TEXT[a.action] ?? a.action).replaceAll(
+                    "Executive info",
+                    "Executive personal",
+                  )}
                 </span>
               </li>
             ))}

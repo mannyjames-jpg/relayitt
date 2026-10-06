@@ -1,8 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Plus, X } from "lucide-react";
-import { Link } from "@tanstack/react-router";
-import { sourceLabel, SOURCE_HELP } from "@/lib/task-style";
+import { Check, ChevronDown, X } from "lucide-react";
+import { SOURCE_HELP } from "@/lib/task-style";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,12 @@ import { VoiceCapture } from "./VoiceCapture";
 import { toast } from "sonner";
 import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
 import { RepeatField } from "./RepeatField";
-import { NO_RECURRENCE, nextDueDate, type Recurrence } from "@/lib/recurrence";
 import { todayISO } from "@/lib/date-utils";
+import {
+  effectiveQuickValues,
+  quickDateOptions,
+  type QuickOverrides,
+} from "@/lib/quick-capture-values";
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
@@ -70,9 +73,10 @@ export const QuickCapture = forwardRef<
   const [source, setSource] = useState<Source>("Personal Reminder");
   const [contactId, setContactId] = useState<string | null>(null);
   const [freeText, setFreeText] = useState("");
-  const [priority, setPriority] = useState<Priority>("Normal");
-  const [category, setCategory] = useState<Category | null>(null);
-  const [repeat, setRepeat] = useState<Recurrence>(NO_RECURRENCE);
+  const [manual, setManual] = useState<QuickOverrides>({});
+  function override<K extends keyof QuickOverrides>(field: K, value: QuickOverrides[K]) {
+    setManual((current) => ({ ...current, [field]: value }));
+  }
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -123,6 +127,11 @@ export const QuickCapture = forwardRef<
   }, []);
 
   const parsed = useMemo(() => parseQuickEntry(title), [title]);
+  const today = todayISO();
+  const effective = effectiveQuickValues(parsed, manual, today);
+  const quickDates = quickDateOptions(today);
+  const controlClass =
+    "h-11 w-full min-w-0 rounded-none border border-border bg-control px-3 text-[15px] shadow-none focus-visible:border-foreground focus-visible:ring-0";
 
   async function submitTask() {
     const trimmed = parsed.title.trim() || title.trim();
@@ -132,18 +141,15 @@ export const QuickCapture = forwardRef<
       return;
     }
     const usedFreeText = !contactId && freeText.trim();
-    const rule = parsed.recurrence ?? repeat;
-    // A repeating task with no date starts on its first matching day.
-    const firstDue =
-      parsed.due_date ?? (rule.recurrence_type !== "none" ? nextDueDate(todayISO(), rule) : null);
+    const rule = effective.recurrence;
     await m.mutateAsync({
       data: {
         title: trimmed,
         source,
-        priority: parsed.priority ?? priority,
-        category: parsed.category ?? category,
-        due_date: firstDue,
-        due_time: parsed.due_time,
+        priority: effective.priority,
+        category: effective.category,
+        due_date: effective.due_date,
+        due_time: effective.due_time,
         assigned_to: contactId,
         assigned_to_name: contactId ? null : freeText.trim() || null,
         recurrence_type: rule.recurrence_type,
@@ -166,9 +172,8 @@ export const QuickCapture = forwardRef<
     }
     setContactId(null);
     setFreeText("");
-    setPriority("Normal");
-    setCategory(null);
-    setRepeat(NO_RECURRENCE);
+    setSource("Personal Reminder");
+    setManual({});
 
     inputRef.current?.focus();
   }
@@ -187,7 +192,7 @@ export const QuickCapture = forwardRef<
         <form
           onSubmit={onSubmit}
           className={cn(
-            "flex min-w-0 border border-foreground bg-white outline-offset-2 focus-within:border-alert focus-within:outline focus-within:outline-1 focus-within:outline-alert",
+            "flex min-w-0 border border-foreground bg-control outline-offset-2 focus-within:border-alert focus-within:outline focus-within:outline-1 focus-within:outline-alert",
             shake && "animate-shake",
           )}
         >
@@ -287,86 +292,141 @@ export const QuickCapture = forwardRef<
           )}
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={() => setDetailsOpen((value) => !value)}
           aria-expanded={detailsOpen}
-          className="mt-2 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground"
+          className="mt-2 h-11 justify-start gap-1 rounded-none px-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground hover:bg-transparent hover:text-foreground sm:h-8"
         >
           <ChevronDown
             className={cn("h-3.5 w-3.5 transition-transform", detailsOpen && "rotate-180")}
           />
           {detailsOpen ? "Hide details" : "Add details"}
-        </button>
+        </Button>
 
-        <div
-          hidden={!detailsOpen}
-          className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2.5 data-[hidden]:hidden"
-        >
-          <Field label="Created by / From" help={SOURCE_HELP[source]}>
-            <Select value={source} onValueChange={(v) => setSource(v as Source)}>
-              <SelectTrigger className="h-8 w-[168px] text-xs" aria-label="Created by or from">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SOURCES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
-            <AssigneeCombobox
-              compact
-              contacts={contacts}
-              contactId={contactId}
-              freeText={freeText}
-              onChange={({ contactId: id, freeText: text }) => {
-                setContactId(id);
-                setFreeText(text);
-              }}
-            />
-          </Field>
-          <Field label="Priority" help="Urgent tasks pin to the top of a list.">
-            <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-              <SelectTrigger className="h-8 w-[110px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITIES.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Category" help="Used to group tasks.">
-            <Select
-              value={category ?? "__none"}
-              onValueChange={(v) => setCategory(v === "__none" ? null : (v as Category))}
+        <div hidden={!detailsOpen} className="mt-3 max-sm:max-h-[55vh] max-sm:overflow-y-auto">
+          <div className="grid min-w-0 grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3">
+            <Field label="Due date" help="When this task is due.">
+              <Input
+                type="date"
+                aria-label="Due date"
+                value={effective.due_date ?? ""}
+                onChange={(e) => override("due_date", e.target.value || null)}
+                className={controlClass}
+              />
+            </Field>
+            <Field label="Time" help="Choose a due date first.">
+              <Input
+                type="time"
+                aria-label="Time"
+                disabled={!effective.due_date}
+                value={effective.due_time ?? ""}
+                onChange={(e) => override("due_time", e.target.value || null)}
+                className={controlClass}
+              />
+            </Field>
+            <Field label="Priority" help="Urgent tasks pin to the top of a list.">
+              <Select
+                value={effective.priority}
+                onValueChange={(v) => override("priority", v as Priority)}
+              >
+                <SelectTrigger className={controlClass} aria-label="Priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Category" help="Used to group tasks.">
+              <Select
+                value={effective.category ?? "__none"}
+                onValueChange={(v) => override("category", v === "__none" ? null : (v as Category))}
+              >
+                <SelectTrigger className={controlClass} aria-label="Category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">None</SelectItem>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Created by / From" help={SOURCE_HELP[source]}>
+              <Select value={source} onValueChange={(v) => setSource(v as Source)}>
+                <SelectTrigger className={controlClass} aria-label="Created by or from">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["Personal Reminder", "From Boss", "Delegated by Me"] as Source[]).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
+              <div className="min-w-0 [&>button]:h-11 [&>button]:w-full [&>button]:rounded-none [&>button]:border-border [&>button]:bg-control [&>button]:px-3 [&>button]:text-[15px] [&>button]:shadow-none [&>button:focus-visible]:border-foreground [&>button:focus-visible]:ring-0">
+                <AssigneeCombobox
+                  contacts={contacts}
+                  contactId={contactId}
+                  freeText={freeText}
+                  onChange={({ contactId: id, freeText: text }) => {
+                    setContactId(id);
+                    setFreeText(text);
+                  }}
+                />
+              </div>
+            </Field>
+            <Field
+              label="Repeats"
+              help="Spawns the next occurrence automatically when you complete this one."
             >
-              <SelectTrigger className="h-8 w-[130px] text-xs">
-                <SelectValue placeholder="None" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none">None</SelectItem>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
+              <div className="min-w-0 [&_[role=combobox]]:mt-0 [&_[role=combobox]]:h-11 [&_[role=combobox]]:w-full [&_[role=combobox]]:min-w-0 [&_[role=combobox]]:rounded-none [&_[role=combobox]]:border-border [&_[role=combobox]]:bg-control [&_[role=combobox]]:text-[15px] [&_[role=combobox]]:shadow-none [&_[role=combobox]:focus]:border-foreground [&_[role=combobox]:focus]:ring-0 [&_input]:max-w-full">
+                <RepeatField
+                  value={effective.recurrence}
+                  onChange={(v) => override("recurrence", v)}
+                />
+              </div>
+            </Field>
+            <div className="col-span-2 min-w-0">
+              <div className="mb-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                Quick dates
+              </div>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Quick dates">
+                {quickDates.map((option) => (
+                  <Button
+                    key={option.label}
+                    type="button"
+                    variant={effective.due_date === option.value ? "default" : "outline"}
+                    aria-pressed={effective.due_date === option.value}
+                    onClick={() => override("due_date", option.value)}
+                    className={cn(
+                      "h-11 rounded-none border border-border px-3 text-[12px] uppercase tracking-[0.08em] shadow-none",
+                      effective.due_date !== option.value &&
+                        "bg-transparent text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {option.label}
+                  </Button>
                 ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field
-            label="Repeats"
-            help="Spawns the next occurrence automatically when you complete this one."
-          >
-            <RepeatField compact value={parsed.recurrence ?? repeat} onChange={setRepeat} />
-          </Field>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-[13px] text-muted-foreground">
+            Typing still works too. “Book flights friday #travel !important” fills these in as you
+            type, and you can change any of them before you press Add task.
+          </p>
         </div>
 
         {savePrompt && (
@@ -413,14 +473,16 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="micro-label whitespace-nowrap">{label}</span>
+          <span className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            {label}
+          </span>
         </TooltipTrigger>
         <TooltipContent>{help}</TooltipContent>
       </Tooltip>
       {children}
-    </label>
+    </div>
   );
 }

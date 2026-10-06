@@ -32,7 +32,7 @@ const ROUTE_LINKS = [
   { label: "People", to: "/contacts" as const },
   { label: "Completed", to: "/completed" as const },
   { label: "Calendar", to: "/calendar" as const },
-  { label: "Executive info", to: "/executive-info" as const, isNew: true },
+  { label: "Executive personal", to: "/executive-info" as const, isNew: true },
   { label: "Applicants", to: "/applicants" as const },
   { label: "Settings", to: "/settings" as const },
 ];
@@ -144,7 +144,7 @@ export function AppSidebar({
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              {item.label}
+              <span className="min-w-0">{item.label}</span>
               {item.isNew && <NewTag />}
             </Link>
           );
@@ -220,7 +220,7 @@ export function AppMoreMenu({
                 to={item.to}
                 className="flex min-h-12 items-center border-b border-border text-sm font-medium text-foreground"
               >
-                {item.label}
+                <span className="min-w-0">{item.label}</span>
                 {item.isNew && <NewTag />}
               </Link>
             </SheetClose>
@@ -242,7 +242,7 @@ export function AppMoreMenu({
   );
 }
 
-/** Phone bottom bar for Calendar, Executive info and Settings. */
+/** Phone bottom bar for Calendar, Executive personal and Settings. */
 export function AppMobileTabs({ current }: { current: AppRoute }) {
   const tabs = [
     { label: "Info", to: "/executive-info" as const },
