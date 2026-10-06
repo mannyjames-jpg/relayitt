@@ -225,7 +225,7 @@ function CalendarPage() {
                   onSelect={setSelectedDate}
                 />
                 <p className="mt-6 text-[12.5px] text-muted-foreground">
-                  Birthdays and anniversaries come from Executive info &gt; Family &amp; dates.
+                  Birthdays and anniversaries come from Executive personal &gt; Family &amp; dates.
                   Passport and visa expiries come from Travel &amp; documents. Edit them there and
                   the calendar updates.
                 </p>

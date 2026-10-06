@@ -28,13 +28,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/executive-info")({
   head: () => ({
     meta: [
-      { title: "Executive info — Relay" },
+      { title: "Executive personal — Relay" },
       {
         name: "description",
         content:
           "A private, encrypted place for your executive's personal, travel, and company details.",
       },
-      { property: "og:title", content: "Executive info — Relay" },
+      { property: "og:title", content: "Executive personal — Relay" },
       {
         property: "og:description",
         content:
@@ -189,7 +189,7 @@ function ExecutiveInfoPage() {
             <div className="mt-10 border border-foreground p-8">
               <h1 className="text-[24px] font-normal">Set up two-step login first</h1>
               <p className="mt-2 text-[15px] text-muted-foreground">
-                Executive info holds sensitive details, so it needs a second step to open.
+                Executive personal holds sensitive details, so it needs a second step to open.
               </p>
               <Link to="/settings" className={cn(ghost, "mt-6")}>
                 Open security settings
@@ -430,7 +430,7 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
     <ExecCtx.Provider value={ctx}>
       <header className="pt-8 min-[821px]:pt-11">
         <h1 className="text-[30px] font-normal tracking-[-0.02em] min-[821px]:text-[36px]">
-          {name || "Executive info"}
+          {name || "Executive personal"}
         </h1>
         <p className="mt-2 text-[15px] text-muted-foreground">
           Everything you reach for about your executive, in one place.
@@ -465,7 +465,7 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
 
       <div
         role="tablist"
-        aria-label="Executive info sections"
+        aria-label="Executive personal sections"
         className="sticky top-0 z-20 -mx-5 mt-6 flex overflow-x-auto border-b border-border bg-card px-5 min-[821px]:mx-0 min-[821px]:px-0"
       >
         {TABS.map(([key, label]) => (
@@ -496,7 +496,7 @@ function ExecContent({ onLock, onLocked }: { onLock: () => void; onLocked: () =>
         ) : q.isError ? (
           isLockedError(q.error) ? null : (
             <ErrorState
-              message="Couldn't load Executive info. Try again."
+              message="Couldn't load Executive personal. Try again."
               onRetry={() => q.refetch()}
             />
           )

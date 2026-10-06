@@ -32,7 +32,7 @@ const ROUTE_LINKS = [
   { label: "People", to: "/contacts" as const },
   { label: "Completed", to: "/completed" as const },
   { label: "Calendar", to: "/calendar" as const },
-  { label: "Executive info", to: "/executive-info" as const, isNew: true },
+  { label: "Executive personal", to: "/executive-info" as const, isNew: true },
   { label: "Applicants", to: "/applicants" as const },
   { label: "Settings", to: "/settings" as const },
 ];
@@ -242,7 +242,7 @@ export function AppMoreMenu({
   );
 }
 
-/** Phone bottom bar for Calendar, Executive info and Settings. */
+/** Phone bottom bar for Calendar, Executive personal and Settings. */
 export function AppMobileTabs({ current }: { current: AppRoute }) {
   const tabs = [
     { label: "Info", to: "/executive-info" as const },
