@@ -16,7 +16,9 @@ describe("quick-add controls", () => {
     expect(value.recurrence.recurrence_type).toBe("weekly");
   });
   test("manual due date overrides the parsed date", () => {
-    expect(effectiveQuickValues(parsed, { due_date: "2026-10-13" }, today).due_date).toBe("2026-10-13");
+    expect(effectiveQuickValues(parsed, { due_date: "2026-10-13" }, today).due_date).toBe(
+      "2026-10-13",
+    );
   });
   test("manual time overrides the parsed time", () => {
     expect(effectiveQuickValues(parsed, { due_time: "15:00" }, today).due_time).toBe("15:00");
@@ -28,7 +30,9 @@ describe("quick-add controls", () => {
     expect(effectiveQuickValues(parsed, { category: null }, today).category).toBeNull();
   });
   test("manual no recurrence overrides parsed weekly", () => {
-    expect(effectiveQuickValues(parsed, { recurrence: NO_RECURRENCE }, today).recurrence.recurrence_type).toBe("none");
+    expect(
+      effectiveQuickValues(parsed, { recurrence: NO_RECURRENCE }, today).recurrence.recurrence_type,
+    ).toBe("none");
   });
   test("No date suppresses date and time even with parsed recurrence", () => {
     const value = effectiveQuickValues(parsed, { due_date: null }, today);
@@ -39,7 +43,13 @@ describe("quick-add controls", () => {
     expect(effectiveQuickValues(parsed, { due_time: null }, today).due_time).toBeNull();
   });
   test("quick dates include today, tomorrow, two days out, seven days out, no date", () => {
-    expect(quickDateOptions(today).map((d) => d.value)).toEqual(["2026-10-06", "2026-10-07", "2026-10-08", "2026-10-13", null]);
+    expect(quickDateOptions(today).map((d) => d.value)).toEqual([
+      "2026-10-06",
+      "2026-10-07",
+      "2026-10-08",
+      "2026-10-13",
+      null,
+    ]);
   });
   test("resetting overrides restores parsed values", () => {
     const manual = { priority: "Normal" as const };

@@ -20,7 +20,11 @@ import { toast } from "sonner";
 import { parseQuickEntry, type QuickCategory } from "@/lib/quick-parse";
 import { RepeatField } from "./RepeatField";
 import { todayISO } from "@/lib/date-utils";
-import { effectiveQuickValues, quickDateOptions, type QuickOverrides } from "@/lib/quick-capture-values";
+import {
+  effectiveQuickValues,
+  quickDateOptions,
+  type QuickOverrides,
+} from "@/lib/quick-capture-values";
 
 const SOURCES = ["From Boss", "Delegated by Me", "Personal Reminder"] as const;
 type Source = (typeof SOURCES)[number];
@@ -126,7 +130,8 @@ export const QuickCapture = forwardRef<
   const today = todayISO();
   const effective = effectiveQuickValues(parsed, manual, today);
   const quickDates = quickDateOptions(today);
-  const controlClass = "h-11 w-full min-w-0 rounded-none border border-border bg-control px-3 text-[15px] shadow-none focus-visible:border-foreground focus-visible:ring-0";
+  const controlClass =
+    "h-11 w-full min-w-0 rounded-none border border-border bg-control px-3 text-[15px] shadow-none focus-visible:border-foreground focus-visible:ring-0";
 
   async function submitTask() {
     const trimmed = parsed.title.trim() || title.trim();
@@ -299,72 +304,128 @@ export const QuickCapture = forwardRef<
           {detailsOpen ? "Hide details" : "Add details"}
         </Button>
 
-        <div
-          hidden={!detailsOpen}
-          className="mt-3 max-sm:max-h-[55vh] max-sm:overflow-y-auto"
-        >
+        <div hidden={!detailsOpen} className="mt-3 max-sm:max-h-[55vh] max-sm:overflow-y-auto">
           <div className="grid min-w-0 grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-3">
-          <Field label="Due date" help="When this task is due.">
-            <Input type="date" aria-label="Due date" value={effective.due_date ?? ""} onChange={(e) => override("due_date", e.target.value || null)} className={controlClass} />
-          </Field>
-          <Field label="Time" help="Choose a due date first.">
-            <Input type="time" aria-label="Time" disabled={!effective.due_date} value={effective.due_time ?? ""} onChange={(e) => override("due_time", e.target.value || null)} className={controlClass} />
-          </Field>
-          <Field label="Priority" help="Urgent tasks pin to the top of a list.">
-            <Select value={effective.priority} onValueChange={(v) => override("priority", v as Priority)}>
-              <SelectTrigger className={controlClass} aria-label="Priority"><SelectValue /></SelectTrigger>
-              <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
-          <Field label="Category" help="Used to group tasks.">
-            <Select value={effective.category ?? "__none"} onValueChange={(v) => override("category", v === "__none" ? null : v as Category)}>
-              <SelectTrigger className={controlClass} aria-label="Category"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="__none">None</SelectItem>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
-          <Field label="Created by / From" help={SOURCE_HELP[source]}>
-            <Select value={source} onValueChange={(v) => setSource(v as Source)}>
-              <SelectTrigger className={controlClass} aria-label="Created by or from">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(["Personal Reminder", "From Boss", "Delegated by Me"] as Source[]).map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
+            <Field label="Due date" help="When this task is due.">
+              <Input
+                type="date"
+                aria-label="Due date"
+                value={effective.due_date ?? ""}
+                onChange={(e) => override("due_date", e.target.value || null)}
+                className={controlClass}
+              />
+            </Field>
+            <Field label="Time" help="Choose a due date first.">
+              <Input
+                type="time"
+                aria-label="Time"
+                disabled={!effective.due_date}
+                value={effective.due_time ?? ""}
+                onChange={(e) => override("due_time", e.target.value || null)}
+                className={controlClass}
+              />
+            </Field>
+            <Field label="Priority" help="Urgent tasks pin to the top of a list.">
+              <Select
+                value={effective.priority}
+                onValueChange={(v) => override("priority", v as Priority)}
+              >
+                <SelectTrigger className={controlClass} aria-label="Priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITIES.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Category" help="Used to group tasks.">
+              <Select
+                value={effective.category ?? "__none"}
+                onValueChange={(v) => override("category", v === "__none" ? null : (v as Category))}
+              >
+                <SelectTrigger className={controlClass} aria-label="Category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">None</SelectItem>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Created by / From" help={SOURCE_HELP[source]}>
+              <Select value={source} onValueChange={(v) => setSource(v as Source)}>
+                <SelectTrigger className={controlClass} aria-label="Created by or from">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(["Personal Reminder", "From Boss", "Delegated by Me"] as Source[]).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
+              <div className="min-w-0 [&>button]:h-11 [&>button]:w-full [&>button]:rounded-none [&>button]:border-border [&>button]:bg-control [&>button]:px-3 [&>button]:text-[15px] [&>button]:shadow-none [&>button:focus-visible]:border-foreground [&>button:focus-visible]:ring-0">
+                <AssigneeCombobox
+                  contacts={contacts}
+                  contactId={contactId}
+                  freeText={freeText}
+                  onChange={({ contactId: id, freeText: text }) => {
+                    setContactId(id);
+                    setFreeText(text);
+                  }}
+                />
+              </div>
+            </Field>
+            <Field
+              label="Repeats"
+              help="Spawns the next occurrence automatically when you complete this one."
+            >
+              <div className="min-w-0 [&_[role=combobox]]:mt-0 [&_[role=combobox]]:h-11 [&_[role=combobox]]:w-full [&_[role=combobox]]:min-w-0 [&_[role=combobox]]:rounded-none [&_[role=combobox]]:border-border [&_[role=combobox]]:bg-control [&_[role=combobox]]:text-[15px] [&_[role=combobox]]:shadow-none [&_[role=combobox]:focus]:border-foreground [&_[role=combobox]:focus]:ring-0 [&_input]:max-w-full">
+                <RepeatField
+                  value={effective.recurrence}
+                  onChange={(v) => override("recurrence", v)}
+                />
+              </div>
+            </Field>
+            <div className="col-span-2 min-w-0">
+              <div className="mb-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                Quick dates
+              </div>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Quick dates">
+                {quickDates.map((option) => (
+                  <Button
+                    key={option.label}
+                    type="button"
+                    variant={effective.due_date === option.value ? "default" : "outline"}
+                    aria-pressed={effective.due_date === option.value}
+                    onClick={() => override("due_date", option.value)}
+                    className={cn(
+                      "h-11 rounded-none border border-border px-3 text-[12px] uppercase tracking-[0.08em] shadow-none",
+                      effective.due_date !== option.value &&
+                        "bg-transparent text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {option.label}
+                  </Button>
                 ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Assigned to" help="Who will actually do this. Leave empty if it's you.">
-            <div className="min-w-0 [&>button]:h-11 [&>button]:w-full [&>button]:rounded-none [&>button]:border-border [&>button]:bg-control [&>button]:px-3 [&>button]:text-[15px] [&>button]:shadow-none [&>button:focus-visible]:border-foreground [&>button:focus-visible]:ring-0">
-            <AssigneeCombobox
-              contacts={contacts}
-              contactId={contactId}
-              freeText={freeText}
-              onChange={({ contactId: id, freeText: text }) => {
-                setContactId(id);
-                setFreeText(text);
-              }}
-            />
-            </div>
-          </Field>
-          <Field
-            label="Repeats"
-            help="Spawns the next occurrence automatically when you complete this one."
-          >
-            <div className="min-w-0 [&_[role=combobox]]:mt-0 [&_[role=combobox]]:h-11 [&_[role=combobox]]:w-full [&_[role=combobox]]:min-w-0 [&_[role=combobox]]:rounded-none [&_[role=combobox]]:border-border [&_[role=combobox]]:bg-control [&_[role=combobox]]:text-[15px] [&_[role=combobox]]:shadow-none [&_[role=combobox]:focus]:border-foreground [&_[role=combobox]:focus]:ring-0 [&_input]:max-w-full">
-              <RepeatField value={effective.recurrence} onChange={(v) => override("recurrence", v)} />
-            </div>
-          </Field>
-          <div className="col-span-2 min-w-0">
-            <div className="mb-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Quick dates</div>
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Quick dates">
-              {quickDates.map((option) => <Button key={option.label} type="button" variant={effective.due_date === option.value ? "default" : "outline"} aria-pressed={effective.due_date === option.value} onClick={() => override("due_date", option.value)} className={cn("h-11 rounded-none border border-border px-3 text-[12px] uppercase tracking-[0.08em] shadow-none", effective.due_date !== option.value && "bg-transparent text-muted-foreground hover:text-foreground")}>{option.label}</Button>)}
+              </div>
             </div>
           </div>
-          </div>
-          <p className="mt-4 text-[13px] text-muted-foreground">Typing still works too. “Book flights friday #travel !important” fills these in as you type, and you can change any of them before you press Add task.</p>
+          <p className="mt-4 text-[13px] text-muted-foreground">
+            Typing still works too. “Book flights friday #travel !important” fills these in as you
+            type, and you can change any of them before you press Add task.
+          </p>
         </div>
 
         {savePrompt && (
@@ -414,7 +475,9 @@ function Field({
     <div className="flex min-w-0 flex-col gap-1.5">
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
+          <span className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            {label}
+          </span>
         </TooltipTrigger>
         <TooltipContent>{help}</TooltipContent>
       </Tooltip>

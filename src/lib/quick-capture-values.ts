@@ -9,10 +9,17 @@ export type QuickOverrides = {
   recurrence?: Recurrence;
 };
 
-export function effectiveQuickValues(parsed: ParsedQuickEntry, manual: QuickOverrides, today: string) {
+export function effectiveQuickValues(
+  parsed: ParsedQuickEntry,
+  manual: QuickOverrides,
+  today: string,
+) {
   const recurrence = manual.recurrence ?? parsed.recurrence ?? NO_RECURRENCE;
-  const due_date = manual.due_date !== undefined ? manual.due_date :
-    parsed.due_date ?? (recurrence.recurrence_type !== "none" ? nextDueDate(today, recurrence) : null);
+  const due_date =
+    manual.due_date !== undefined
+      ? manual.due_date
+      : (parsed.due_date ??
+        (recurrence.recurrence_type !== "none" ? nextDueDate(today, recurrence) : null));
   return {
     due_date,
     due_time: due_date ? (manual.due_time !== undefined ? manual.due_time : parsed.due_time) : null,
@@ -26,13 +33,23 @@ export function quickDateOptions(today: string) {
   const [year, month, day] = today.split("-").map(Number);
   const shifted = (offset: number) => {
     const date = new Date(year, month - 1, day + offset);
-    return { date, value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}` };
+    return {
+      date,
+      value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+    };
   };
   const twoDays = shifted(2);
   return [
     { label: "Today", value: today },
     { label: "Tomorrow", value: shifted(1).value },
-    { label: twoDays.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }), value: twoDays.value },
+    {
+      label: twoDays.date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      }),
+      value: twoDays.value,
+    },
     { label: "Next week", value: shifted(7).value },
     { label: "No date", value: null },
   ];
