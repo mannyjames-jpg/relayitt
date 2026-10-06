@@ -172,6 +172,7 @@ export const QuickCapture = forwardRef<
     }
     setContactId(null);
     setFreeText("");
+    setSource("Personal Reminder");
     setManual({});
 
     inputRef.current?.focus();
