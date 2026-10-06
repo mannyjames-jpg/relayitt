@@ -12,3 +12,4 @@
 <!-- LOVABLE:END -->
 
 - The authenticated calendar is a dedicated `/calendar` route and reuses the shared task and contact query keys so edits stay synchronized with the dashboard.
+- Quick capture resolves parsed defaults and explicit manual overrides in a pure client helper so displayed controls and submitted values share the same rules.
